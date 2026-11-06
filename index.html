@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Không Gian Họp & Giảng Đường 3D Chuyên Nghiệp</title>
+  <title>Khán Phòng Vòng Cung Giảng Đường & Họp Trực Tuyến 3D</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -51,18 +51,18 @@
     <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl">
       <div class="flex items-center gap-2 mb-1">
         <span class="w-3 h-3 rounded-full bg-emerald-400 animate-ping"></span>
-        <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">Hệ Thống Phòng Họp & Giảng Đường 3D</span>
+        <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">Hệ Thống Khán Phòng Vòng Cung & Phòng Họp 3D</span>
       </div>
       <h1 class="text-xl font-extrabold text-white mb-1">Chọn Phòng & Chủ Trì</h1>
       <p class="text-xs text-slate-400 mb-4">Chọn đúng Chủ trì phòng họp và nhập họ tên của bạn (nếu Chủ trì đã xếp chỗ trước, bạn sẽ tự động ngồi đúng ghế).</p>
 
       <div class="space-y-3">
         <div>
-          <label class="block text-xs font-semibold text-amber-300 mb-1">🏛️ Chọn Chủ trì / Phòng họp đang mở *</label>
+          <label class="block text-xs font-semibold text-amber-300 mb-1">🏟️ Chọn Chủ trì / Khán phòng đang mở *</label>
           <select id="loginRoomHostSelect" class="w-full bg-slate-800 border border-amber-500/50 rounded-xl px-3.5 py-2.5 text-sm font-bold text-white focus:outline-none">
-            <option value="Đình Lâm">👑 Phòng Chủ trì: Đình Lâm (Họp Chiến Lược & Lớp Học 3D)</option>
-            <option value="Hội Đồng Khoa">🎓 Phòng Chủ trì: Hội Đồng Khoa (Báo cáo & Thảo luận)</option>
-            <option value="Ban Dự Án">🚀 Phòng Chủ trì: Ban Dự Án (Review Tiến Độ)</option>
+            <option value="Đình Lâm">👑 Chủ trì: Đình Lâm (Khán Phòng Vòng Cung Giảng Đường 3D)</option>
+            <option value="Hội Đồng Khoa">🎓 Chủ trì: Hội Đồng Khoa (Bảo vệ Đồ án & Hội thảo)</option>
+            <option value="Ban Dự Án">🚀 Chủ trì: Ban Dự Án (Họp Chiến Lược Toàn Công Ty)</option>
           </select>
         </div>
 
@@ -89,7 +89,7 @@
         </div>
 
         <button type="button" onclick="enterMeetingRoom()" class="w-full bg-gradient-to-r from-amber-500 to-emerald-500 hover:from-amber-400 hover:to-emerald-400 text-slate-950 font-extrabold py-3 rounded-xl text-sm shadow-lg transition cursor-pointer">
-          🚀 VÀO ĐÚNG PHÒNG HỌP NGAY
+          🚀 VÀO KHÁN PHÒNG 3D NGAY
         </button>
       </div>
     </div>
@@ -112,8 +112,9 @@
 
     <!-- CHỌN MẪU BỐI CẢNH 3D (CHỈ CHỦ TỌA MỚI ĐƯỢC ĐỔI) -->
     <div class="flex items-center gap-1 bg-slate-800/90 p-1 rounded-xl border border-slate-700 overflow-x-auto">
-      <button onclick="changeScene('lop')" id="btn-scene-lop" class="scene-btn px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500 text-slate-950 transition whitespace-nowrap">🏫 Mẫu Phòng Học & Họp</button>
-      <button onclick="changeScene('hoitruong')" id="btn-scene-hoitruong" class="scene-btn px-2.5 py-1 rounded-lg text-xs font-bold text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">🏛️ Mẫu Hội Trường Đối Diện</button>
+      <button onclick="changeScene('vongcung')" id="btn-scene-vongcung" class="scene-btn px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500 text-slate-950 transition whitespace-nowrap">🏟️ Khán Phòng Vòng Cung</button>
+      <button onclick="changeScene('lop')" id="btn-scene-lop" class="scene-btn px-2.5 py-1 rounded-lg text-xs font-bold text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">🏫 Lớp Học & Họp</button>
+      <button onclick="changeScene('hoitruong')" id="btn-scene-hoitruong" class="scene-btn px-2.5 py-1 rounded-lg text-xs font-bold text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">🏛️ Hội Trường</button>
       <button onclick="changeScene('nhau')" id="btn-scene-nhau" class="scene-btn px-2.5 py-1 rounded-lg text-xs font-bold text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">🍺 Quán Nhậu 3D</button>
       <button onclick="changeScene('chua')" id="btn-scene-chua" class="scene-btn px-2.5 py-1 rounded-lg text-xs font-bold text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">🪷 Thiền Đường 3D</button>
     </div>
@@ -204,7 +205,7 @@
         <div class="flex flex-wrap gap-1.5">
           <button onclick="setCamPreset('overview')" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 px-2 py-1 rounded-lg text-xs font-semibold">🌌 Toàn cảnh</button>
           <button onclick="setCamPreset('hostView')" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 px-2 py-1 rounded-lg text-xs font-semibold">👑 Góc Chủ Tọa</button>
-          <button onclick="setCamPreset('audienceView')" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 px-2 py-1 rounded-lg text-xs font-semibold">🧑‍🎓 Nhìn Lên Bảng</button>
+          <button onclick="setCamPreset('audienceView')" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 px-2 py-1 rounded-lg text-xs font-semibold">🧑‍🎓 Khán Đài Nhìn Xuống</button>
           <button onclick="toggle3DDragMode()" id="btn3DDragMode" class="bg-slate-800 hover:bg-amber-500 hover:text-slate-950 border border-amber-500/50 text-amber-300 px-2.5 py-1 rounded-lg text-xs font-bold transition">
             ✋ Kéo Thả 3D: Tắt
           </button>
@@ -243,7 +244,7 @@
 
         <div class="flex gap-1.5">
           <button onclick="triggerSceneSpecialAction()" id="btnSpecialAction" class="flex-1 py-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 rounded-lg text-xs font-extrabold shadow">
-            👏 VỖ TAY / TƯƠNG TÁC TOÀN PHÒNG
+            👏 VỖ TAY TOÀN KHÁN PHÒNG VÒNG CUNG
           </button>
           <button onclick="simulateColleagueSpeak()" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg text-xs font-semibold">
             🗣️ Mời người nói
@@ -333,7 +334,7 @@
       <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
         <div>
           <h3 class="text-base font-extrabold text-amber-400">🗺️ Sơ Đồ Sắp Xếp (Kéo Thả) & Chỉ Định Chỗ Ngồi Trước</h3>
-          <p class="text-xs text-slate-400">Kéo thả thẻ người dùng giữa các ghế, hoặc gõ tên đặt chỗ trước vào ghế trống (khi người đó vào phòng sẽ ngồi đúng ghế đã chỉ định).</p>
+          <p class="text-xs text-slate-400">Kéo thả thẻ người dùng giữa các ghế vòng cung, hoặc gõ tên đặt chỗ trước vào ghế trống (khi người đó vào phòng sẽ ngồi đúng ghế đã chỉ định).</p>
         </div>
         <button onclick="closeSeatingPlannerModal()" class="bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded-lg text-xs font-bold">✕ Đóng</button>
       </div>
@@ -341,9 +342,9 @@
       <!-- Thanh chỉnh tổng số ghế & Thêm trước người tham gia -->
       <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-800/70 p-3 rounded-xl mb-3">
         <div class="flex items-center gap-2">
-          <span class="text-xs font-bold text-slate-300">Quy mô ghế dưới:</span>
-          <input id="seatRangeSlider" type="range" min="6" max="24" step="2" value="12" onchange="applyCapacityChange(this.value)" class="w-28 accent-emerald-500" />
-          <span id="sliderSeatVal" class="text-xs font-extrabold text-amber-300">12 chỗ</span>
+          <span class="text-xs font-bold text-slate-300">Số ghế khán đài:</span>
+          <input id="seatRangeSlider" type="range" min="6" max="30" step="2" value="16" onchange="applyCapacityChange(this.value)" class="w-28 accent-emerald-500" />
+          <span id="sliderSeatVal" class="text-xs font-extrabold text-amber-300">16 chỗ</span>
         </div>
         <div class="flex items-center gap-1.5">
           <input id="newMemberName" type="text" placeholder="Tên người tham gia..." class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white" />
@@ -355,7 +356,7 @@
 
       <!-- Minh họa Bàn Chủ tọa đối diện -->
       <div class="bg-amber-500/15 border-2 border-amber-400/60 rounded-xl p-2.5 mb-3 text-center">
-        <div class="text-xs font-extrabold text-amber-300">👑 BÀN CHỦ TỌA (QUAY ĐỐI DIỆN NHÌN XUỐNG CÁC DÃY BÀN BÊN DƯỚI)</div>
+        <div class="text-xs font-extrabold text-amber-300">👑 BÀN CHỦ TỌA / GIẢNG VIÊN (TÂM ĐIỂM ĐỐI DIỆN TOÀN BỘ KHÁN ĐÀI VÒNG CUNG)</div>
         <div id="plannerHostSeatInfo" class="text-[11px] text-white mt-0.5">Ghế Chủ Tọa (#0): Đình Lâm</div>
       </div>
 
@@ -370,7 +371,7 @@
       <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
         <div>
           <h3 class="text-base font-extrabold text-amber-400">🖼️ Quản Lý Logo Ban Tổ Chức & Nhà Tài Trợ 3D</h3>
-          <p class="text-xs text-slate-400">Upload ảnh Logo từ máy tính hoặc nhập tên đơn vị cho Banner phía trên bảng chính và 8 Slot bờ bao xung quanh phòng.</p>
+          <p class="text-xs text-slate-400">Upload ảnh Logo từ máy tính hoặc nhập tên đơn vị cho Banner phía trên bảng chính và 8 Slot bờ bao xung quanh khán phòng.</p>
         </div>
         <button onclick="closeSponsorLogoModal()" class="bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded-lg text-xs font-bold">✕ Đóng</button>
       </div>
@@ -382,7 +383,7 @@
   <!-- MODAL 3: QUẢN TRỊ CHỦ TỌA & KICK -->
   <div id="hostModal" class="hidden fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4">
     <div class="bg-slate-900 border border-amber-500/40 rounded-2xl max-w-lg w-full p-5 shadow-2xl">
-      <h3 class="text-base font-extrabold text-amber-400 mb-1">👑 Quản Trị Phòng Họp (Chủ Tọa)</h3>
+      <h3 class="text-base font-extrabold text-amber-400 mb-1">👑 Quản Trị Khán Phòng (Chủ Tọa)</h3>
       <p class="text-xs text-slate-400 mb-3">Gán quyền Chủ tọa, mời phát biểu (mở Camera mặt 3D & Share màn hình) hoặc Kick thành viên.</p>
       <div id="hostCandidateList" class="space-y-2 max-h-72 overflow-y-auto mb-4"></div>
       <div class="flex justify-end">
@@ -412,11 +413,10 @@
     let assignedHostId = 'p0';
     let activeSpeakerId = null;
     let selectedTargetMemberId = null;
-    let currentScene = 'lop'; // Mặc định mở Mẫu Phòng Học & Họp có bàn Chủ tọa đối diện
-    let maxSeats = 13; // Ghế #0 là bàn Chủ tọa đối diện + 12 ghế bên dưới
+    let currentScene = 'vongcung'; // Mặc định mở Khán Phòng Vòng Cung Giảng Đường 3D
+    let maxSeats = 17; // Ghế #0 là bàn Chủ tọa tại tâm + 16 ghế xếp trên 3 tầng bậc thang vòng cung
     let is3DDragEnabled = false;
 
-    // Share màn hình & Camera gắn lên mặt trước nhân vật 3D
     let isScreenSharing = false;
     let screenStream = null;
     let screenVideoTexture = null;
@@ -426,7 +426,6 @@
     let camVideoTexture = null;
     let camOwnerId = null;
 
-    // Danh sách thành viên (seat = 0 là ghế Bàn Chủ tọa quay xuống dưới)
     let participants = [
       { id: 'p0', name: 'Đình Lâm', role: 'Chủ Tọa', seat: 0, color: 0xf59e0b, speaking: false, bubble: '', bounceUntil: 0 },
       { id: 'p1', name: 'Bảo Ngọc', role: 'Thiết kế 3D/UX', seat: 1, color: 0xec4899, speaking: false, bubble: '', bounceUntil: 0 },
@@ -435,44 +434,44 @@
       { id: 'p4', name: 'Minh Tuấn', role: 'Kế toán trưởng', seat: 4, color: 0x10b981, speaking: false, bubble: '', bounceUntil: 0 },
       { id: 'p5', name: 'Đức Thịnh', role: 'Quản lý Dự án', seat: 5, color: 0x06b6d4, speaking: false, bubble: '', bounceUntil: 0 },
       { id: 'p6', name: 'Thầy Thanh', role: 'Cố vấn Chiến lược', seat: 6, color: 0xeab308, speaking: false, bubble: '', bounceUntil: 0 },
-      { id: 'p7', name: 'Khánh Linh', role: 'Chăm sóc KH', seat: 7, color: 0xf97316, speaking: false, bubble: '', bounceUntil: 0 }
+      { id: 'p7', name: 'Khánh Linh', role: 'Chăm sóc KH', seat: 7, color: 0xf97316, speaking: false, bubble: '', bounceUntil: 0 },
+      { id: 'p8', name: 'Quốc Khánh', role: 'Vận hành', seat: 8, color: 0x14b8a6, speaking: false, bubble: '', bounceUntil: 0 },
+      { id: 'p9', name: 'Thanh Trúc', role: 'Tài chính', seat: 9, color: 0x8b5cf6, speaking: false, bubble: '', bounceUntil: 0 }
     ];
 
-    // Lưu tên người được Chủ trì chỉ định trước vào từng ghế trống (seatIndex -> reservedName)
     let preassignedSeatNames = {
-      8: 'Văn Hùng',
-      9: 'Phương Thảo'
+      10: 'Văn Hùng',
+      11: 'Phương Thảo'
     };
 
-    // Hệ thống Logo: Slot 'top_banner' (Phía trên bảng chính) + 8 Slot bờ bao xung quanh ('wall_0' -> 'wall_7')
     const sponsorSlots = [
-      { id: 'top_banner', name: 'Banner Chính (Trên Bảng)', label: 'ĐÀM ĐẠO LIVE 3D - KHÔNG GIAN HỘI NGHỊ & ĐÀO TẠO SỐ', bgColor: '#1e3a8a', accent: '#fbbf24', imgUrl: null, texture: null },
-      { id: 'wall_0', name: 'Bờ bao Trái #1', label: 'NHÀ TÀI TRỢ KIM CƯƠNG', bgColor: '#0f172a', accent: '#38bdf8', imgUrl: null, texture: null },
-      { id: 'wall_1', name: 'Bờ bao Trái #2', label: 'ĐỐI TÁC CÔNG NGHỆ AI', bgColor: '#064e3b', accent: '#34d399', imgUrl: null, texture: null },
-      { id: 'wall_2', name: 'Bờ bao Trái #3', label: 'ĐỒNG HÀNH KHỞI NGHIỆP', bgColor: '#3b0764', accent: '#c084fc', imgUrl: null, texture: null },
-      { id: 'wall_3', name: 'Bờ bao Phải #1', label: 'NHÀ TÀI TRỢ VÀNG', bgColor: '#451a03', accent: '#fbbf24', imgUrl: null, texture: null },
-      { id: 'wall_4', name: 'Bờ bao Phải #2', label: 'ĐỐI TÁC CHIẾN LƯỢC', bgColor: '#1e1b4b', accent: '#818cf8', imgUrl: null, texture: null },
-      { id: 'wall_5', name: 'Bờ bao Phải #3', label: 'HỆ SINH THÁI SỐ 3D', bgColor: '#0f172a', accent: '#22d3ee', imgUrl: null, texture: null },
-      { id: 'wall_6', name: 'Bờ bao Sau #1', label: 'CLICK ĐỂ UP LOGO TÀI TRỢ', bgColor: '#334155', accent: '#f8fafc', imgUrl: null, texture: null },
-      { id: 'wall_7', name: 'Bờ bao Sau #2', label: 'CLICK ĐỂ UP LOGO TÀI TRỢ', bgColor: '#334155', accent: '#f8fafc', imgUrl: null, texture: null }
+      { id: 'top_banner', name: 'Banner Chính (Trên Bảng)', label: 'KHÁN PHÒNG VÒNG CUNG GIẢNG ĐƯỜNG & HỘI NGHỊ 3D', bgColor: '#1e3a8a', accent: '#fbbf24', imgUrl: null, texture: null },
+      { id: 'wall_0', name: 'Bờ bao Vòng cung Trái #1', label: 'NHÀ TÀI TRỢ KIM CƯƠNG', bgColor: '#0f172a', accent: '#38bdf8', imgUrl: null, texture: null },
+      { id: 'wall_1', name: 'Bờ bao Vòng cung Trái #2', label: 'ĐỐI TÁC CÔNG NGHỆ AI', bgColor: '#064e3b', accent: '#34d399', imgUrl: null, texture: null },
+      { id: 'wall_2', name: 'Bờ bao Vòng cung Trái #3', label: 'ĐỒNG HÀNH KHỞI NGHIỆP', bgColor: '#3b0764', accent: '#c084fc', imgUrl: null, texture: null },
+      { id: 'wall_3', name: 'Bờ bao Vòng cung Phải #1', label: 'NHÀ TÀI TRỢ VÀNG', bgColor: '#451a03', accent: '#fbbf24', imgUrl: null, texture: null },
+      { id: 'wall_4', name: 'Bờ bao Vòng cung Phải #2', label: 'ĐỐI TÁC CHIẾN LƯỢC', bgColor: '#1e1b4b', accent: '#818cf8', imgUrl: null, texture: null },
+      { id: 'wall_5', name: 'Bờ bao Vòng cung Phải #3', label: 'HỆ SINH THÁI SỐ 3D', bgColor: '#0f172a', accent: '#22d3ee', imgUrl: null, texture: null },
+      { id: 'wall_6', name: 'Bờ bao Đỉnh Khán Đài #1', label: 'CLICK ĐỂ UP LOGO TÀI TRỢ', bgColor: '#334155', accent: '#f8fafc', imgUrl: null, texture: null },
+      { id: 'wall_7', name: 'Bờ bao Đỉnh Khán Đài #2', label: 'CLICK ĐỂ UP LOGO TÀI TRỢ', bgColor: '#334155', accent: '#f8fafc', imgUrl: null, texture: null }
     ];
     let currentEditingSponsorId = null;
 
     const slides = [
-      { title: 'CHIẾN LƯỢC & ĐÀO TẠO TRỰC TUYẾN 3D', lines: ['1. Bàn Chủ tọa đối diện trực tiếp cử tọa bên dưới', '2. Kéo thả sắp xếp chỗ ngồi & chỉ định ghế trước', '3. Bờ bao 8 Slot Logo Nhà Tài Trợ xung quanh'] },
-      { title: 'TƯƠNG TÁC TRỰC TIẾP TRÊN MÔ HÌNH 3D', lines: ['• Click vào người nhân vật để Chọc / Dời chỗ / Kick', '• Camera hiển thị trực tiếp lên mặt trước nhân vật', '• Share màn hình máy tính lên bảng lớn 3D'] },
-      { title: 'THẢO LUẬN & GHI NHẬN BIÊN BẢN AI', lines: ['• Tự động chuyển giọng nói tiếng Việt thành văn bản', '• Chat nhóm nhiều người không giới hạn', '• Xuất biên bản cuộc họp chỉ với 1 cú click'] }
+      { title: 'KHÁN PHÒNG VÒNG CUNG GIẢNG ĐƯỜNG 3D', lines: ['1. Các hàng ghế xếp vòng cung trên bậc thang cao dần', '2. Bàn Chủ tọa đặt tại tâm sân khấu nhìn đối diện khán đài', '3. Kéo thả xếp chỗ ngồi & Đặt tên ghế trước cho đại biểu'] },
+      { title: 'TRÌNH CHIẾU & CAMERA GẮN MẶT NHÂN VẬT', lines: ['• Chủ tọa & Người phát biểu chiếu màn hình máy tính lên bảng', '• Camera thật hiển thị ngay trên mặt trước nhân vật 3D', '• Click trực tiếp vào cơ thể 3D để Chọc / Dời ghế / Kick'] },
+      { title: 'BỜ BAO LOGO TÀI TRỢ & BIÊN BẢN AI', lines: ['• 8 Slot bờ bao xung quanh + Banner trên bảng gắn Logo', '• Tự động ghi nhận lời phát biểu tiếng Việt theo thời gian thực', '• Tổng hợp biên bản cuộc họp chuẩn hành chính'] }
     ];
     let currentSlideIdx = 0;
 
     const transcripts = [
-      { time: '09:00:10', speaker: 'Đình Lâm', role: 'Chủ Tọa', text: 'Chào mừng mọi người! Bàn Chủ tọa của tôi đang quay đối diện trực tiếp với anh chị em bên dưới để chúng ta nhìn mặt nhau trao đổi nhé.' },
-      { time: '09:02:15', speaker: 'Bảo Ngọc', role: 'Thiết kế 3D/UX', text: 'Xung quanh bờ bao không gian đã chia sẵn các Slot để gắn Logo nhà tài trợ và phía trên bảng chính cũng có Banner thương hiệu.' }
+      { time: '09:00:10', speaker: 'Đình Lâm', role: 'Chủ Tọa', text: 'Chào mừng anh chị em vào Khán Phòng Vòng Cung Giảng Đường 3D! Các dãy bàn ghế đã được nâng bậc thang cao dần giúp mọi người đều nhìn rõ sân khấu.' },
+      { time: '09:02:15', speaker: 'Bảo Ngọc', role: 'Thiết kế 3D/UX', text: 'Từ trên các bậc khán đài vòng cung nhìn xuống tâm sân khấu và màn hình LED rất thoáng, không bị che khuất tầm nhìn.' }
     ];
 
     let whisperGroupIds = ['p2', 'p3', 'p4'];
     const whisperLogs = [
-      { time: '09:03', from: 'Đình Lâm', toNames: 'Nhóm dự án', text: 'Anh đã xếp chỗ ngồi trước cho các thành viên mới trong mục Sơ đồ Kéo Thả nhé!' }
+      { time: '09:03', from: 'Đình Lâm', toNames: 'Nhóm dự án', text: 'Anh đã xếp chỗ ngồi trên khán đài vòng cung cho các thành viên mới rồi nhé!' }
     ];
 
     // ================= CỔNG ĐĂNG NHẬP CHỌN CHỦ TRÌ & GHẾ CHỈ ĐỊNH TRƯỚC =================
@@ -513,13 +512,11 @@
         const memberName = rawName || 'Thành viên mới';
         const memberRole = rawRole || 'Thành viên';
 
-        // Kiểm tra xem tên người này đã có trong danh sách hoặc được Chủ trì chỉ định ghế trước chưa
         let existing = participants.find(p => p.id !== 'p0' && p.name.toLowerCase() === memberName.toLowerCase());
         if (existing) {
           currentViewerId = existing.id;
           existing.role = memberRole;
         } else {
-          // Kiểm tra ghế đặt trước (preassignedSeatNames)
           let targetSeat = null;
           for (const [sIdx, rName] of Object.entries(preassignedSeatNames)) {
             if (rName && rName.toLowerCase() === memberName.toLowerCase()) {
@@ -529,7 +526,6 @@
             }
           }
           if (targetSeat === null) {
-            // Tìm ghế trống đầu tiên từ 1 trở đi
             for (let i = 1; i < maxSeats; i++) {
               if (!participants.some(p => p.seat === i)) {
                 targetSeat = i;
@@ -719,10 +715,9 @@
     function renderSeatingPlannerGrid() {
       const hostP = participants.find(p => p.seat === 0);
       document.getElementById('plannerHostSeatInfo').innerText = hostP
-        ? `Ghế Chủ Tọa (#0 - Quay đối diện xuống dưới): ${hostP.name} (${hostP.role})`
+        ? `Ghế Chủ Tọa (#0 - Tâm sân khấu đối diện khán đài): ${hostP.name} (${hostP.role})`
         : `Ghế Chủ Tọa (#0): Đang trống`;
 
-      // Cập nhật dropdown chọn ghế khi thêm người mới
       const seatSel = document.getElementById('newMemberSeatSelect');
       let seatOpts = '';
       for (let i = 1; i < maxSeats; i++) {
@@ -737,6 +732,7 @@
         const p = participants.find(item => item.seat === i);
         const reserved = preassignedSeatNames[i] || '';
         const canDrag = isCurrentUserHost() || (p && p.id === currentViewerId);
+        const tierNum = i <= 5 ? 1 : (i <= 11 ? 2 : 3);
 
         html += `
           <div class="seat-slot-card bg-slate-800/90 border-2 ${p ? 'border-indigo-500/60' : (reserved ? 'border-amber-500/60' : 'border-slate-700 border-dashed')} rounded-xl p-2.5 flex flex-col justify-between"
@@ -744,7 +740,7 @@
                ondragleave="this.classList.remove('drag-over');"
                ondrop="handleSeatDrop(event, ${i}); this.classList.remove('drag-over');">
             <div class="flex items-center justify-between text-[11px] text-slate-400 mb-1">
-              <span class="font-extrabold text-amber-300">🪑 Ghế #${i}</span>
+              <span class="font-extrabold text-amber-300">🪑 Ghế #${i} <span class="text-[9px] text-cyan-300">(Bậc ${tierNum})</span></span>
               ${p ? `<span class="text-[10px] bg-indigo-950 text-indigo-300 px-1.5 py-0.5 rounded">Đã ngồi</span>` : `<span class="text-[10px] text-emerald-400">Trống</span>`}
             </div>
 
@@ -753,7 +749,7 @@
                    class="cursor-grab active:cursor-grabbing bg-slate-900 border border-slate-700 rounded-lg p-2 my-1">
                 <div class="text-xs font-extrabold text-white truncate">👤 ${p.name}</div>
                 <div class="text-[10px] text-slate-400 truncate">${p.role}</div>
-                <div class="text-[9px] text-amber-300 mt-1">✋ Giữ chuột kéo sang ghế khác</div>
+                <div class="text-[9px] text-amber-300 mt-1">✋ Kéo thả sang ghế khác</div>
               </div>
             ` : `
               <div class="my-1">
@@ -793,8 +789,12 @@
 
       if (pTo) {
         pTo.seat = fromIdx;
+        delete pTo.customX;
+        delete pTo.customZ;
       }
       pFrom.seat = toSeatIdx;
+      delete pFrom.customX;
+      delete pFrom.customZ;
       draggedSeatIndex = null;
 
       const me = participants.find(p => p.id === currentViewerId);
@@ -843,13 +843,13 @@
         return;
       }
       const belowSeats = parseInt(val, 10);
-      maxSeats = belowSeats + 1; // +1 cho ghế Chủ tọa #0
+      maxSeats = belowSeats + 1;
       document.getElementById('sliderSeatVal').innerText = `${belowSeats} chỗ`;
       renderSeatingPlannerGrid();
       build3DScene();
     }
 
-    // ================= QUẢN LÝ & UPLOAD LOGO NHÀ TÀI TRỢ (BỜ BAO + PHÍA TRÊN BẢNG) =================
+    // ================= QUẢN LÝ & UPLOAD LOGO NHÀ TÀI TRỢ =================
     function openSponsorLogoModal() {
       renderSponsorSlotsModal();
       document.getElementById('sponsorModal').classList.remove('hidden');
@@ -937,7 +937,6 @@
         img.onload = () => {
           ctx.fillStyle = slot.bgColor;
           ctx.fillRect(10, 10, w - 20, h - 20);
-          // Vẽ ảnh logo căn giữa hoặc bên trái kèm chữ
           if (slot.id === 'top_banner') {
             ctx.drawImage(img, 30, 20, 220, h - 40);
             ctx.fillStyle = '#ffffff';
@@ -982,7 +981,6 @@
       document.getElementById('popupTargetName').innerText = `${target.id === assignedHostId ? '👑 ' : '👤 '}${target.name} (Ghế #${target.seat})`;
       document.getElementById('popupTargetRole').innerText = target.role;
 
-      // Điền danh sách ghế để dời chỗ (cho chính mình hoặc do Chủ trì điều chuyển)
       const moveBox = document.getElementById('moveSeatBoxInPopup');
       const canMoveThisPerson = isCurrentUserHost() || target.id === currentViewerId;
       moveBox.style.display = canMoveThisPerson ? 'block' : 'none';
@@ -1026,7 +1024,11 @@
       }
       const newSeat = parseInt(document.getElementById('popupMoveSeatSelect').value, 10);
       const other = participants.find(p => p.seat === newSeat);
-      if (other) other.seat = target.seat;
+      if (other) {
+        other.seat = target.seat;
+        delete other.customX;
+        delete other.customZ;
+      }
       target.seat = newSeat;
       delete target.customX;
       delete target.customZ;
@@ -1175,7 +1177,7 @@
       build3DScene();
     }
 
-    // ================= ĐỒ HỌA THREE.JS 3D (BÀN CHỦ TỌA ĐỐI DIỆN + BỜ BAO LOGO + CLICK/DRAG 3D) =================
+    // ================= ĐỒ HỌA THREE.JS 3D (KHÁN PHÒNG VÒNG CUNG GIẢNG ĐƯỜNG + BỜ BAO LOGO) =================
     let scene, camera, renderer, controls, raycaster, mouseVec, floorPlane;
     let sceneObjectsGroup, screenMesh, screenCanvas, screenCtx, screenTexture;
     let seatPositions = [];
@@ -1193,8 +1195,8 @@
       scene = new THREE.Scene();
       scene.background = new THREE.Color(0x0f172a);
 
-      camera = new THREE.PerspectiveCamera(46, w / h, 0.1, 260);
-      camera.position.set(0, 15, 22);
+      camera = new THREE.PerspectiveCamera(46, w / h, 0.1, 280);
+      camera.position.set(0, 17, 25);
 
       renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas3d'), antialias: true, powerPreference: 'high-performance' });
       renderer.setSize(w, h);
@@ -1205,19 +1207,19 @@
       controls.dampingFactor = 0.06;
       controls.maxPolarAngle = Math.PI / 2 - 0.03;
       controls.minDistance = 5;
-      controls.maxDistance = 46;
-      controls.target.set(0, 2, -1);
+      controls.maxDistance = 48;
+      controls.target.set(0, 2.5, -2);
 
       raycaster = new THREE.Raycaster();
       mouseVec = new THREE.Vector2();
       floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
       const hemiLight = new THREE.HemisphereLight(0xffffff, 0x334155, 1.25);
-      hemiLight.position.set(0, 32, 0);
+      hemiLight.position.set(0, 35, 0);
       scene.add(hemiLight);
 
-      const dirLight = new THREE.DirectionalLight(0xfffbeb, 1.2);
-      dirLight.position.set(14, 28, 18);
+      const dirLight = new THREE.DirectionalLight(0xfffbeb, 1.25);
+      dirLight.position.set(14, 30, 20);
       scene.add(dirLight);
 
       sceneObjectsGroup = new THREE.Group();
@@ -1229,7 +1231,6 @@
       screenCtx = screenCanvas.getContext('2d');
       screenTexture = new THREE.CanvasTexture(screenCanvas);
 
-      // Khởi tạo Texture cho các bảng tài trợ
       sponsorSlots.forEach(s => createOrUpdateSponsorCanvasTexture(s));
 
       setup3DPointerEvents();
@@ -1250,7 +1251,6 @@
       }
     }
 
-    // Bắt sự kiện Click vào người nhân vật 3D, Click vào Bảng tài trợ & Kéo thả nhân vật trên sàn 3D
     function setup3DPointerEvents() {
       const canvas = document.getElementById('canvas3d');
 
@@ -1279,8 +1279,8 @@
         if (raycaster.ray.intersectPlane(floorPlane, intersectPt)) {
           const item = avatarMeshes[draggingAvatarId];
           if (item) {
-            item.group.position.x = Math.max(-14, Math.min(14, intersectPt.x));
-            item.group.position.z = Math.max(-9, Math.min(13, intersectPt.z));
+            item.group.position.x = Math.max(-16, Math.min(16, intersectPt.x));
+            item.group.position.z = Math.max(-9, Math.min(15, intersectPt.z));
             item.pos.x = item.group.position.x;
             item.pos.z = item.group.position.z;
           }
@@ -1289,12 +1289,11 @@
 
       canvas.addEventListener('pointerup', (e) => {
         if (draggingAvatarId) {
-          // Tự động hút (snap) vào ghế gần nhất nếu thả gần ghế
           const item = avatarMeshes[draggingAvatarId];
           const p = participants.find(x => x.id === draggingAvatarId);
           if (item && p) {
             let bestSeat = p.seat;
-            let bestDist = 3.2;
+            let bestDist = 3.5;
             seatPositions.forEach((sp, sIdx) => {
               const d = Math.hypot(item.pos.x - sp.x, item.pos.z - sp.z);
               if (d < bestDist) {
@@ -1304,7 +1303,11 @@
             });
             if (bestSeat !== p.seat) {
               const other = participants.find(x => x.seat === bestSeat);
-              if (other) other.seat = p.seat;
+              if (other) {
+                other.seat = p.seat;
+                delete other.customX;
+                delete other.customZ;
+              }
               p.seat = bestSeat;
               delete p.customX;
               delete p.customZ;
@@ -1319,14 +1322,12 @@
           return;
         }
 
-        // Kiểm tra nếu là Click chuột (không phải xoay camera)
         const moveDist = Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y);
         if (moveDist > 6) return;
 
         updateMouseVector(e);
         raycaster.setFromCamera(mouseVec, camera);
 
-        // 1. Ưu tiên kiểm tra click trực tiếp vào cơ thể / đầu của nhân vật 3D
         const avatarHits = raycaster.intersectObjects(clickableAvatarMeshes, true);
         if (avatarHits.length > 0) {
           const pid = findMemberIdFromObject(avatarHits[0].object);
@@ -1336,16 +1337,12 @@
           }
         }
 
-        // 2. Kiểm tra click vào các Slot Bảng Tài Trợ xung quanh bờ bao hoặc Banner trên bảng
         const sponsorHits = raycaster.intersectObjects(clickableSponsorMeshes, false);
         if (sponsorHits.length > 0) {
           const slotId = sponsorHits[0].object.userData.sponsorSlotId;
           if (slotId) {
-            if (isCurrentUserHost()) {
-              triggerUploadSponsorLogo(slotId);
-            } else {
-              openSponsorLogoModal();
-            }
+            if (isCurrentUserHost()) triggerUploadSponsorLogo(slotId);
+            else openSponsorLogoModal();
           }
         }
       });
@@ -1417,54 +1414,48 @@
       clickableAvatarMeshes = [];
       clickableSponsorMeshes = [];
 
-      // Sàn gỗ ấm áp giống mẫu lớp học / phòng họp trong ảnh minh họa
-      const floorColors = { lop: 0x78350f, hoitruong: 0x1e3a8a, nhau: 0x334155, chua: 0x451a03 };
+      const floorColors = { vongcung: 0x1e293b, lop: 0x78350f, hoitruong: 0x1e3a8a, nhau: 0x334155, chua: 0x451a03 };
       const floor = new THREE.Mesh(
-        new THREE.BoxGeometry(36, 0.5, 32),
-        new THREE.MeshLambertMaterial({ color: floorColors[currentScene] || 0x78350f })
+        new THREE.BoxGeometry(40, 0.5, 36),
+        new THREE.MeshLambertMaterial({ color: floorColors[currentScene] || 0x1e293b })
       );
       floor.position.set(0, -0.25, 1);
       sceneObjectsGroup.add(floor);
 
-      const grid = new THREE.GridHelper(36, 18, 0x92400e, 0x451a03);
-      grid.position.set(0, 0.01, 1);
-      sceneObjectsGroup.add(grid);
-
       // ================= 1. BỜ BAO XUNG QUANH PHÒNG + 8 SLOT LOGO NHÀ TÀI TRỢ =================
-      const wallMat = new THREE.MeshLambertMaterial({ color: 0xfef3c7 }); // Tường màu kem sáng như mẫu
-      const backStageWall = new THREE.Mesh(new THREE.BoxGeometry(36, 11, 0.5), wallMat);
-      backStageWall.position.set(0, 5.5, -14.5);
+      const wallMat = new THREE.MeshLambertMaterial({ color: currentScene === 'vongcung' ? 0x1e293b : 0xfef3c7 });
+      const backStageWall = new THREE.Mesh(new THREE.BoxGeometry(38, 12, 0.5), wallMat);
+      backStageWall.position.set(0, 6.0, -14.5);
       sceneObjectsGroup.add(backStageWall);
 
-      const leftPerimeterWall = new THREE.Mesh(new THREE.BoxGeometry(0.5, 4.2, 32), new THREE.MeshLambertMaterial({ color: 0x334155 }));
-      leftPerimeterWall.position.set(-17.8, 2.1, 1);
+      const leftPerimeterWall = new THREE.Mesh(new THREE.BoxGeometry(0.5, 5.2, 34), new THREE.MeshLambertMaterial({ color: 0x334155 }));
+      leftPerimeterWall.position.set(-19.2, 2.6, 1);
       sceneObjectsGroup.add(leftPerimeterWall);
 
-      const rightPerimeterWall = new THREE.Mesh(new THREE.BoxGeometry(0.5, 4.2, 32), new THREE.MeshLambertMaterial({ color: 0x334155 }));
-      rightPerimeterWall.position.set(17.8, 2.1, 1);
+      const rightPerimeterWall = new THREE.Mesh(new THREE.BoxGeometry(0.5, 5.2, 34), new THREE.MeshLambertMaterial({ color: 0x334155 }));
+      rightPerimeterWall.position.set(19.2, 2.6, 1);
       sceneObjectsGroup.add(rightPerimeterWall);
 
-      const rearPerimeterWall = new THREE.Mesh(new THREE.BoxGeometry(36, 3.2, 0.5), new THREE.MeshLambertMaterial({ color: 0x334155 }));
-      rearPerimeterWall.position.set(0, 1.6, 16.8);
+      const rearPerimeterWall = new THREE.Mesh(new THREE.BoxGeometry(38.5, 4.8, 0.5), new THREE.MeshLambertMaterial({ color: 0x334155 }));
+      rearPerimeterWall.position.set(0, 2.4, 17.8);
       sceneObjectsGroup.add(rearPerimeterWall);
 
-      // Gắn 8 Bảng Slot Logo Nhà Tài Trợ dọc theo bờ bao trái, phải và sau
       const wallSlotTransforms = [
-        { id: 'wall_0', x: -17.4, y: 2.3, z: -7.5, ry: Math.PI / 2 },
-        { id: 'wall_1', x: -17.4, y: 2.3, z: 0.5, ry: Math.PI / 2 },
-        { id: 'wall_2', x: -17.4, y: 2.3, z: 8.5, ry: Math.PI / 2 },
-        { id: 'wall_3', x: 17.4, y: 2.3, z: -7.5, ry: -Math.PI / 2 },
-        { id: 'wall_4', x: 17.4, y: 2.3, z: 0.5, ry: -Math.PI / 2 },
-        { id: 'wall_5', x: 17.4, y: 2.3, z: 8.5, ry: -Math.PI / 2 },
-        { id: 'wall_6', x: -6.5, y: 1.8, z: 16.4, ry: Math.PI },
-        { id: 'wall_7', x: 6.5, y: 1.8, z: 16.4, ry: Math.PI }
+        { id: 'wall_0', x: -18.8, y: 2.8, z: -7.5, ry: Math.PI / 2 },
+        { id: 'wall_1', x: -18.8, y: 2.8, z: 0.5, ry: Math.PI / 2 },
+        { id: 'wall_2', x: -18.8, y: 2.8, z: 8.5, ry: Math.PI / 2 },
+        { id: 'wall_3', x: 18.8, y: 2.8, z: -7.5, ry: -Math.PI / 2 },
+        { id: 'wall_4', x: 18.8, y: 2.8, z: 0.5, ry: -Math.PI / 2 },
+        { id: 'wall_5', x: 18.8, y: 2.8, z: 8.5, ry: -Math.PI / 2 },
+        { id: 'wall_6', x: -7.0, y: 2.8, z: 17.4, ry: Math.PI },
+        { id: 'wall_7', x: 7.0, y: 2.8, z: 17.4, ry: Math.PI }
       ];
 
       wallSlotTransforms.forEach(cfg => {
         const slot = sponsorSlots.find(s => s.id === cfg.id);
         if (!slot) return;
         const board = new THREE.Mesh(
-          new THREE.PlaneGeometry(6.2, 2.6),
+          new THREE.PlaneGeometry(6.4, 2.7),
           new THREE.MeshBasicMaterial({ map: slot.texture })
         );
         board.position.set(cfg.x, cfg.y, cfg.z);
@@ -1478,69 +1469,167 @@
       const topBannerSlot = sponsorSlots.find(s => s.id === 'top_banner');
       if (topBannerSlot) {
         const topBannerMesh = new THREE.Mesh(
-          new THREE.PlaneGeometry(15.2, 2.3),
+          new THREE.PlaneGeometry(16.0, 2.4),
           new THREE.MeshBasicMaterial({ map: topBannerSlot.texture })
         );
-        topBannerMesh.position.set(0, 9.2, -14.1);
+        topBannerMesh.position.set(0, 9.5, -14.1);
         topBannerMesh.userData = { sponsorSlotId: 'top_banner' };
         sceneObjectsGroup.add(topBannerMesh);
         clickableSponsorMeshes.push(topBannerMesh);
       }
 
       const boardFrame = new THREE.Mesh(
-        new THREE.BoxGeometry(15.4, 6.2, 0.3),
-        new THREE.MeshLambertMaterial({ color: 0x92400e })
+        new THREE.BoxGeometry(16.2, 6.4, 0.35),
+        new THREE.MeshLambertMaterial({ color: 0xb45309 })
       );
-      boardFrame.position.set(0, 4.7, -14.2);
+      boardFrame.position.set(0, 4.8, -14.2);
       sceneObjectsGroup.add(boardFrame);
 
       const activeBoardTexture = (isScreenSharing && screenVideoTexture) ? screenVideoTexture : screenTexture;
       screenMesh = new THREE.Mesh(
-        new THREE.PlaneGeometry(14.8, 5.7),
+        new THREE.PlaneGeometry(15.6, 5.9),
         new THREE.MeshBasicMaterial({ map: activeBoardTexture })
       );
-      screenMesh.position.set(0, 4.7, -14.0);
+      screenMesh.position.set(0, 4.8, -13.98);
       sceneObjectsGroup.add(screenMesh);
       if (!isScreenSharing) drawSlideTo3DScreen();
 
-      // ================= 3. BÀN CHỦ TỌA (#0) LUÔN QUAY ĐỐI DIỆN NHÌN XUỐNG NGƯỜI BÊN DƯỚI =================
-      // Đặt bục & bàn Chủ tọa ở Z = -8.2, nhân vật Chủ tọa ngồi ở Z = -9.4 quay mặt về phía +Z (rotationY = 0)
+      // ================= 3. BÀN CHỦ TỌA (#0) ĐẶT TẠI TÂM SÂN KHẤU QUAY ĐỐI DIỆN KHÁN ĐÀI =================
+      const stageRadius = currentScene === 'vongcung' ? 5.2 : 4.5;
       const podiumStage = new THREE.Mesh(
-        new THREE.BoxGeometry(10, 0.3, 4.2),
-        new THREE.MeshLambertMaterial({ color: 0xb45309 })
+        new THREE.CylinderGeometry(stageRadius, stageRadius + 0.4, 0.35, 36),
+        new THREE.MeshLambertMaterial({ color: 0x92400e })
       );
-      podiumStage.position.set(0, 0.15, -8.8);
+      podiumStage.position.set(0, 0.18, -8.8);
       sceneObjectsGroup.add(podiumStage);
 
+      // Viền LED vàng quanh thảm sân khấu Chủ tọa
+      const stageRing = new THREE.Mesh(
+        new THREE.RingGeometry(stageRadius - 0.15, stageRadius + 0.05, 40),
+        new THREE.MeshBasicMaterial({ color: 0xfbbf24, side: THREE.DoubleSide })
+      );
+      stageRing.rotation.x = -Math.PI / 2;
+      stageRing.position.set(0, 0.36, -8.8);
+      sceneObjectsGroup.add(stageRing);
+
       const hostDesk = new THREE.Mesh(
-        new THREE.BoxGeometry(4.4, 1.15, 1.5),
+        new THREE.BoxGeometry(4.4, 1.15, 1.45),
         new THREE.MeshLambertMaterial({ color: 0xd97706 })
       );
-      hostDesk.position.set(0, 0.85, -8.0);
+      hostDesk.position.set(0, 0.9, -7.8);
       sceneObjectsGroup.add(hostDesk);
 
-      // Bảng tên CHỦ TỌA gắn mặt trước bàn Chủ tọa
       const hostSign = new THREE.Mesh(
-        new THREE.BoxGeometry(1.8, 0.45, 0.1),
+        new THREE.BoxGeometry(1.9, 0.45, 0.1),
         new THREE.MeshLambertMaterial({ color: 0xfbbf24 })
       );
-      hostSign.position.set(0, 1.55, -7.3);
+      hostSign.position.set(0, 1.55, -7.05);
       sceneObjectsGroup.add(hostSign);
 
-      // Ghế #0 dành riêng cho Chủ tọa (rotationY = 0 -> nhìn thẳng xuống cử tọa bên dưới)
-      seatPositions.push({ x: 0, z: -9.4, rotY: 0, isHostSeat: true });
+      // Ghế #0 của Chủ tọa (baseY = 0.35 trên bục sân khấu, quay mặt thẳng về phía khán đài vòng cung)
+      seatPositions.push({ x: 0, baseY: 0.35, z: -9.3, rotY: 0, isHostSeat: true });
 
-      // ================= 4. CÁC DÃY BÀN HỌC / BÀN HỌP BÊN DƯỚI QUAY LÊN NHÌN MẶT CHỦ TỌA =================
+      // ================= 4. DỰNG KHÁN PHÒNG VÒNG CUNG BẬC THANG (AMPHITHEATER) HOẶC CÁC MẪU KHÁC =================
       const belowCount = maxSeats - 1;
-      if (currentScene === 'lop' || currentScene === 'hoitruong') {
-        const cols = 4; // 4 cột bàn hướng lên bục Chủ tọa giống hệt ảnh mẫu
+
+      if (currentScene === 'vongcung') {
+        // Chia ghế cử tọa thành các tầng vòng cung đồng tâm quanh tâm sân khấu (0, -8.2)
+        const focalX = 0;
+        const focalZ = -8.2;
+        const rowConfigs = [
+          { radius: 9.2, tierY: 0.0, maxInRow: 5, spreadAngle: Math.PI * 0.56 },
+          { radius: 13.4, tierY: 0.85, maxInRow: 6, spreadAngle: Math.PI * 0.64 },
+          { radius: 17.6, tierY: 1.70, maxInRow: 7, spreadAngle: Math.PI * 0.70 },
+          { radius: 21.8, tierY: 2.55, maxInRow: 12, spreadAngle: Math.PI * 0.74 }
+        ];
+
+        // Vẽ các thềm bậc thang vòng cung (Tiered Risers)
+        rowConfigs.forEach((rc, rIdx) => {
+          if (rIdx > 0 && belowCount > (rIdx === 1 ? 5 : (rIdx === 2 ? 11 : 18))) {
+            const riser = new THREE.Mesh(
+              new THREE.RingGeometry(rc.radius - 2.1, rc.radius + 2.1, 48, 1, Math.PI * 0.12, Math.PI * 0.76),
+              new THREE.MeshLambertMaterial({ color: rIdx % 2 === 1 ? 0x334155 : 0x475569, side: THREE.DoubleSide })
+            );
+            riser.rotation.x = -Math.PI / 2;
+            riser.position.set(focalX, rc.tierY, focalZ);
+            sceneObjectsGroup.add(riser);
+
+            // Thành bậc thang phát sáng nhẹ giúp phân biệt rõ từng tầng khán đài
+            const stepRim = new THREE.Mesh(
+              new THREE.RingGeometry(rc.radius - 2.15, rc.radius - 2.02, 48, 1, Math.PI * 0.12, Math.PI * 0.76),
+              new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide })
+            );
+            stepRim.rotation.x = -Math.PI / 2;
+            stepRim.position.set(focalX, rc.tierY + 0.02, focalZ);
+            sceneObjectsGroup.add(stepRim);
+          }
+        });
+
+        let placed = 0;
+        for (let r = 0; r < rowConfigs.length; r++) {
+          if (placed >= belowCount) break;
+          const cfg = rowConfigs[r];
+          const countThisRow = Math.min(cfg.maxInRow, belowCount - placed);
+
+          for (let k = 0; k < countThisRow; k++) {
+            const ratio = countThisRow === 1 ? 0 : (k / (countThisRow - 1)) - 0.5;
+            const angle = ratio * cfg.spreadAngle; // Góc mở hình quạt hướng về tâm sân khấu
+
+            const sx = focalX + Math.sin(angle) * cfg.radius;
+            const sz = focalZ + Math.cos(angle) * cfg.radius;
+            const lookRotY = Math.atan2(focalX - sx, focalZ - sz); // Quay mặt trực diện về phía Chủ tọa
+
+            // Bục đỡ dưới chân mỗi bàn ghế trên tầng bậc thang
+            if (cfg.tierY > 0) {
+              const stepBlock = new THREE.Mesh(
+                new THREE.CylinderGeometry(1.7, 1.8, cfg.tierY, 20),
+                new THREE.MeshLambertMaterial({ color: 0x1e293b })
+              );
+              stepBlock.position.set(sx, cfg.tierY / 2, sz);
+              sceneObjectsGroup.add(stepBlock);
+            }
+
+            // Bàn giảng đường vòng cung đặt ngay phía trước từng ghế, xoay vuông góc hướng về Chủ tọa
+            const deskGroup = new THREE.Group();
+            deskGroup.position.set(sx, cfg.tierY, sz);
+            deskGroup.rotation.y = lookRotY;
+
+            const curvedDeskTop = new THREE.Mesh(
+              new THREE.BoxGeometry(2.55, 0.16, 1.05),
+              new THREE.MeshLambertMaterial({ color: 0xd97706 })
+            );
+            curvedDeskTop.position.set(0, 1.22, 1.05);
+            deskGroup.add(curvedDeskTop);
+
+            const curvedDeskFront = new THREE.Mesh(
+              new THREE.BoxGeometry(2.5, 1.1, 0.1),
+              new THREE.MeshLambertMaterial({ color: 0x92400e })
+            );
+            curvedDeskFront.position.set(0, 0.62, 1.52);
+            deskGroup.add(curvedDeskFront);
+
+            // Laptop / Tài liệu học tập đặt trên bàn vòng cung
+            const laptop = new THREE.Mesh(
+              new THREE.BoxGeometry(0.65, 0.05, 0.45),
+              new THREE.MeshLambertMaterial({ color: 0xe2e8f0 })
+            );
+            laptop.position.set(0, 1.33, 1.05);
+            deskGroup.add(laptop);
+
+            sceneObjectsGroup.add(deskGroup);
+
+            seatPositions.push({ x: sx, baseY: cfg.tierY, z: sz, rotY: lookRotY, isHostSeat: false });
+            placed++;
+          }
+        }
+      } else if (currentScene === 'lop' || currentScene === 'hoitruong') {
+        const cols = 4;
         for (let i = 0; i < belowCount; i++) {
           const r = Math.floor(i / cols);
           const c = i % cols;
           const sx = (c - (cols - 1) / 2) * 5.2;
           const sz = -2.2 + r * 4.4;
 
-          // Bàn gỗ đặt phía trước người ngồi (về phía Chủ tọa)
           const deskTop = new THREE.Mesh(
             new THREE.BoxGeometry(3.2, 0.18, 1.35),
             new THREE.MeshLambertMaterial({ color: currentScene === 'lop' ? 0xf59e0b : 0x64748b })
@@ -1555,16 +1644,7 @@
           deskFront.position.set(sx, 0.65, sz - 1.45);
           sceneObjectsGroup.add(deskFront);
 
-          // Tài liệu / Laptop nhỏ trên bàn
-          const book = new THREE.Mesh(
-            new THREE.BoxGeometry(0.75, 0.05, 0.55),
-            new THREE.MeshLambertMaterial({ color: 0xffffff })
-          );
-          book.position.set(sx, 1.36, sz - 0.85);
-          sceneObjectsGroup.add(book);
-
-          // rotY = Math.PI -> Quay mặt hướng thẳng lên Bàn Chủ tọa (nhìn mặt nhau)
-          seatPositions.push({ x: sx, z: sz, rotY: Math.PI, isHostSeat: false });
+          seatPositions.push({ x: sx, baseY: 0, z: sz, rotY: Math.PI, isHostSeat: false });
         }
       } else if (currentScene === 'nhau') {
         const numTables = Math.ceil(belowCount / 4);
@@ -1594,28 +1674,28 @@
             const ang = (k * Math.PI) / 2 + Math.PI / 4;
             const px = tx + Math.cos(ang) * 3.0;
             const pz = tz + Math.sin(ang) * 3.0;
-            seatPositions.push({ x: px, z: pz, rotY: Math.atan2(tx - px, tz - pz), isHostSeat: false });
+            seatPositions.push({ x: px, baseY: 0, z: pz, rotY: Math.atan2(tx - px, tz - pz), isHostSeat: false });
           }
         }
       } else {
-        // Thiền đường: tất cả bồ đoàn quay hướng lên Bàn Chủ tọa
         const cols = 4;
         for (let i = 0; i < belowCount; i++) {
           const r = Math.floor(i / cols);
           const c = i % cols;
           const sx = (c - (cols - 1) / 2) * 4.6;
           const sz = -2.0 + r * 4.0;
-          seatPositions.push({ x: sx, z: sz, rotY: Math.PI, isHostSeat: false });
+          seatPositions.push({ x: sx, baseY: 0, z: sz, rotY: Math.PI, isHostSeat: false });
         }
       }
 
       // ================= 5. DỰNG NHÂN VẬT 3D + CAMERA TRÊN MẶT TRƯỚC NHÂN VẬT =================
       seatPositions.forEach((pos, idx) => {
+        const bY = pos.baseY || 0;
         const stool = new THREE.Mesh(
           new THREE.CylinderGeometry(0.75, 0.85, 0.35, 20),
           new THREE.MeshLambertMaterial({ color: pos.isHostSeat ? 0xd97706 : 0x475569 })
         );
-        stool.position.set(pos.x, 0.2, pos.z);
+        stool.position.set(pos.x, bY + 0.2, pos.z);
         sceneObjectsGroup.add(stool);
 
         const p = participants.find(item => item.seat === idx);
@@ -1625,11 +1705,10 @@
         const actualZ = typeof p.customZ === 'number' ? p.customZ : pos.z;
 
         const group = new THREE.Group();
-        group.position.set(actualX, 0, actualZ);
+        group.position.set(actualX, bY, actualZ);
         group.rotation.y = pos.rotY;
         group.userData = { memberId: p.id };
 
-        // Thân áo vest / sơ mi lịch sự
         const torso = new THREE.Mesh(
           new THREE.BoxGeometry(1.25, 1.45, 0.72),
           new THREE.MeshLambertMaterial({ color: p.color })
@@ -1638,7 +1717,6 @@
         torso.userData = { memberId: p.id };
         group.add(torso);
 
-        // Cà vạt / cổ áo phía mặt trước (+Z của nhân vật)
         const tie = new THREE.Mesh(
           new THREE.BoxGeometry(0.22, 0.65, 0.06),
           new THREE.MeshLambertMaterial({ color: 0xfef08a })
@@ -1647,7 +1725,6 @@
         tie.userData = { memberId: p.id };
         group.add(tie);
 
-        // Đầu nhân vật (Khối vuông bo/hộp để mặt trước phẳng hiển thị rõ Khuôn mặt & Camera)
         const headBox = new THREE.Mesh(
           new THREE.BoxGeometry(1.05, 1.05, 0.95),
           new THREE.MeshLambertMaterial({ color: 0xfde68a })
@@ -1656,7 +1733,6 @@
         headBox.userData = { memberId: p.id };
         group.add(headBox);
 
-        // Tóc phía trên đầu
         const hair = new THREE.Mesh(
           new THREE.BoxGeometry(1.1, 0.28, 1.0),
           new THREE.MeshLambertMaterial({ color: 0x1e293b })
@@ -1665,7 +1741,6 @@
         hair.userData = { memberId: p.id };
         group.add(hair);
 
-        // MẶT TRƯỚC CỦA NHÂN VẬT (+Z = +0.49): Nếu đang bật Camera thì chiếu thẳng Video khuôn mặt lên mặt trước nhân vật!
         const hasLiveFaceCam = (isCamActive && camVideoTexture && camOwnerId === p.id);
         if (hasLiveFaceCam) {
           const camFacePlane = new THREE.Mesh(
@@ -1676,7 +1751,6 @@
           camFacePlane.userData = { memberId: p.id };
           group.add(camFacePlane);
 
-          // Viền phát sáng quanh khuôn mặt đang bật Camera
           const camFrame = new THREE.Mesh(
             new THREE.BoxGeometry(1.12, 1.12, 0.04),
             new THREE.MeshBasicMaterial({ color: 0x10b981 })
@@ -1684,7 +1758,6 @@
           camFrame.position.set(0, 2.25, 0.46);
           group.add(camFrame);
         } else {
-          // Vẽ mắt & nụ cười mặc định trên mặt trước nhân vật
           const eyeL = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.14, 0.05), new THREE.MeshBasicMaterial({ color: 0x0f172a }));
           eyeL.position.set(-0.22, 2.32, 0.48);
           const eyeR = eyeL.clone();
@@ -1694,7 +1767,6 @@
           group.add(eyeL, eyeR, smile);
         }
 
-        // Vương miện vàng cho Chủ tọa
         if (p.id === assignedHostId) {
           const crown = new THREE.Mesh(
             new THREE.ConeGeometry(0.45, 0.48, 6),
@@ -1706,7 +1778,7 @@
         }
 
         sceneObjectsGroup.add(group);
-        avatarMeshes[p.id] = { group, pos: { x: actualX, z: actualZ } };
+        avatarMeshes[p.id] = { group, baseY: bY, pos: { x: actualX, z: actualZ } };
         clickableAvatarMeshes.push(group);
       });
 
@@ -1747,7 +1819,7 @@
 
     function moveMySeatTo(seatIdx) {
       if (seatIdx === 0 && !isCurrentUserHost()) {
-        alert('⛔ Ghế #0 là Bàn Chủ Tọa! Thành viên vui lòng chọn các ghế từ #1 trở đi.');
+        alert('⛔ Ghế #0 là Bàn Chủ Tọa! Thành viên vui lòng chọn các ghế trên khán đài từ #1 trở đi.');
         return;
       }
       const me = participants.find(p => p.id === currentViewerId);
@@ -1777,8 +1849,9 @@
         const meshData = p ? avatarMeshes[p.id] : null;
         const px = meshData ? meshData.pos.x : pos.x;
         const pz = meshData ? meshData.pos.z : pos.z;
-        const bounceOffset = meshData ? meshData.group.position.y : 0;
-        const yHeight = p ? (3.35 + bounceOffset) : 0.85;
+        const bY = pos.baseY || 0;
+        const currentGroupY = meshData ? meshData.group.position.y : bY;
+        const yHeight = p ? (currentGroupY + 3.35) : (bY + 0.85);
 
         const vec = new THREE.Vector3(px, yHeight, pz);
         vec.project(camera);
@@ -1800,10 +1873,11 @@
       participants.forEach(p => {
         const meshObj = avatarMeshes[p.id];
         if (!meshObj) return;
+        const bY = meshObj.baseY || 0;
         if (p.bounceUntil && now < p.bounceUntil) {
-          meshObj.group.position.y = Math.abs(Math.sin(now * 0.025)) * 0.85;
+          meshObj.group.position.y = bY + Math.abs(Math.sin(now * 0.025)) * 0.85;
         } else {
-          meshObj.group.position.y = 0;
+          meshObj.group.position.y = bY;
         }
       });
 
@@ -1811,7 +1885,7 @@
       renderer.render(scene, camera);
     }
 
-    // ================= ĐIỀU KHIỂN BỐI CẢNH & GÓC NHÌN ĐỐI DIỆN =================
+    // ================= ĐIỀU KHIỂN BỐI CẢNH & GÓC NHÌN =================
     function changeScene(sceneKey) {
       if (!isCurrentUserHost()) {
         const hostObj = participants.find(p => p.id === assignedHostId) || participants[0];
@@ -1829,15 +1903,15 @@
 
     function setCamPreset(type) {
       if (type === 'overview') {
-        camera.position.set(0, 15, 22);
-        controls.target.set(0, 2, -1);
+        camera.position.set(0, 17, 25);
+        controls.target.set(0, 2.5, -2);
       } else if (type === 'hostView') {
-        // Góc nhìn từ Bàn Chủ tọa nhìn thẳng xuống mặt các thành viên bên dưới
-        camera.position.set(0, 4.5, -10.5);
-        controls.target.set(0, 2.0, 4);
+        // Góc nhìn từ Bàn Chủ tọa nhìn lên toàn bộ các tầng khán đài vòng cung
+        camera.position.set(0, 4.8, -10.8);
+        controls.target.set(0, 2.5, 6);
       } else if (type === 'audienceView') {
-        // Góc nhìn từ ghế cử tọa nhìn thẳng vào mặt Chủ tọa và Bảng thuyết trình
-        camera.position.set(0, 4.2, 8.5);
+        // Góc nhìn từ tầng cao nhất của Khán đài vòng cung nhìn xuống tâm sân khấu & Bảng lớn
+        camera.position.set(0, 7.5, 14.5);
         controls.target.set(0, 3.8, -10);
       }
     }
@@ -1921,9 +1995,9 @@
       const pick = others[Math.floor(Math.random() * others.length)];
       if (!pick) return;
       const sampleLines = [
-        'Báo cáo Chủ trì, góc nhìn đối diện giúp chúng tôi theo dõi bài giảng và trao đổi rất rõ ràng!',
+        'Từ trên tầng bậc thang khán phòng vòng cung nhìn xuống tâm sân khấu và bảng LED cực kỳ rõ nét!',
         'Tôi xin phép bật Camera lên khuôn mặt 3D và Share màn hình báo cáo.',
-        'Nhóm chúng tôi hoàn toàn nhất trí với phương án trên bảng!'
+        'Khán đài chúng tôi hoàn toàn nhất trí với phương án của Chủ trì!'
       ];
       recordSpeech(pick.id, sampleLines[Math.floor(Math.random() * sampleLines.length)]);
     }
@@ -1970,7 +2044,7 @@
       }
     }
 
-    // ================= CHAT NHÓM NHIỀI NGƯỜI =================
+    // ================= CHAT NHÓM NHIỀU NGƯỜI =================
     function renderWhisperUI() {
       const box = document.getElementById('whisperMemberCheckboxes');
       box.innerHTML = participants.filter(p => p.id !== currentViewerId).map(p => {
@@ -2045,9 +2119,9 @@
       document.getElementById('summaryTextarea').value = `CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
 Độc lập - Tự do - Hạnh phúc
 ----------------------------------------
-BIÊN BẢN TỔNG HỢP CUỘC HỌP & ĐÀO TẠO TRỰC TUYẾN 3D
+BIÊN BẢN TỔNG HỢP HỘI NGHỊ KHÁN PHÒNG VÒNG CUNG 3D
 
-1. CHỦ TRÌ & SƠ ĐỒ CHỖ NGỒI:
+1. CHỦ TRÌ & SƠ ĐỒ KHÁN ĐÀI VÒNG CUNG:
 - Chủ trì điều hành: ${hostObj ? hostObj.name : 'Đình Lâm'}
 ${seatingSummary}
 
@@ -2063,7 +2137,7 @@ ${speakerSummary}
       const blob = new Blob([document.getElementById('summaryTextarea').value], { type: 'text/plain;charset=utf-8' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = 'Bien-Ban-Hop-3D.txt';
+      a.download = 'Bien-Ban-Khan-Phong-3D.txt';
       a.click();
     }
 
