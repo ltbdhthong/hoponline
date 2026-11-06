@@ -7,7 +7,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-  <!-- Thư viện MQTT qua WebSockets giúp kết nối các máy trực tiếp không cần cài Server -->
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
@@ -43,7 +42,7 @@
 </head>
 <body class="h-screen w-screen flex flex-col select-none">
 
-  <!-- VIDEO & INPUT FILE ẨN -->
+  <!-- VIDEO & INPUT FILE ẨN PHỤC VỤ STREAM SHARE MÀN HÌNH & CAMERA -->
   <video id="screenShareVideo" autoplay playsinline muted class="hidden"></video>
   <video id="activeCamVideo" autoplay playsinline muted class="hidden"></video>
   <input id="logoFileInput" type="file" accept="image/*" class="hidden" onchange="handleLogoFileSelected(event)" />
@@ -56,10 +55,10 @@
           <span class="w-3 h-3 rounded-full bg-emerald-400 animate-ping"></span>
           <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">Kết Nối Trực Tuyến Nhiều Máy 3D</span>
         </div>
-        <span class="text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full">● Realtime Sync</span>
+        <span class="text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full">● Live Video & Screen Sync</span>
       </div>
       <h1 class="text-xl font-extrabold text-white mb-1">Vào Khán Phòng & Lớp Học</h1>
-      <p class="text-xs text-slate-400 mb-4">Tất cả thành viên chọn cùng một Phòng Chủ trì sẽ nhìn thấy nhau, nghe phát biểu và cùng làm bài trắc nghiệm theo thời gian thực.</p>
+      <p class="text-xs text-slate-400 mb-4">Tất cả thành viên chọn cùng một Phòng Chủ trì sẽ nhìn thấy nhau, xem trực tiếp màn hình Share & Camera của Chủ tọa và cùng làm bài trắc nghiệm.</p>
 
       <div class="space-y-3">
         <div>
@@ -108,7 +107,6 @@
   <!-- HEADER ĐIỀU KHIỂN CHÍNH -->
   <header class="h-14 bg-slate-900/95 border-b border-slate-800 px-3 flex items-center justify-between z-30 shrink-0 gap-2">
     <div class="flex items-center gap-2">
-      <!-- Trạng thái kết nối mạng thời gian thực -->
       <div id="networkStatusPill" class="flex items-center gap-1.5 bg-emerald-500/15 border border-emerald-500/40 px-2.5 py-1 rounded-full">
         <span id="networkDot" class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
         <span id="networkText" class="text-[10px] font-extrabold text-emerald-400">Đang kết nối...</span>
@@ -131,7 +129,6 @@
       <button onclick="changeScene('chua')" id="btn-scene-chua" class="scene-btn px-2.5 py-1 rounded-lg text-xs font-bold text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">🪷 Thiền Đường 3D</button>
     </div>
 
-    <!-- SẮP XẾP CHỖ NGỒI (KÉO THẢ), UP LOGO TÀI TRỢ & ĐỔI TÀI KHOẢN -->
     <div class="flex items-center gap-1.5">
       <button onclick="switchTab('quiz')" class="bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-extrabold flex items-center gap-1 shadow">
         🎓 Đề Thi Trắc Nghiệm
@@ -247,13 +244,14 @@
         </div>
       </div>
 
-      <!-- KHUNG PREVIEW CAMERA NHỎ GÓC TRÁI -->
-      <div id="activeCamFloatingCard" class="hidden absolute top-24 left-3 w-52 bg-slate-900/95 border-2 border-emerald-400 rounded-2xl overflow-hidden shadow-2xl z-30">
+      <!-- KHUNG PREVIEW CAMERA NHỎ GÓC TRÁI (HIỂN THỊ CHO CẢ CHỦ TỌA VÀ CÁC THÀNH VIÊN TRONG PHÒNG) -->
+      <div id="activeCamFloatingCard" class="hidden absolute top-24 left-3 w-56 bg-slate-900/95 border-2 border-emerald-400 rounded-2xl overflow-hidden shadow-2xl z-30">
         <div class="bg-gradient-to-r from-emerald-500 to-amber-500 text-slate-950 px-2.5 py-1 text-[10px] font-extrabold flex items-center justify-between">
-          <span id="camCardHeaderTitle">📷 CAM ĐANG GẮN MẶT 3D</span>
-          <button onclick="toggleUserCamera()" class="text-slate-900 hover:text-red-900 font-black">✕</button>
+          <span id="camCardHeaderTitle">📷 CAMERA TRỰC TIẾP</span>
+          <button onclick="document.getElementById('activeCamFloatingCard').classList.add('hidden')" class="text-slate-900 hover:text-red-900 font-black">✕</button>
         </div>
-        <video id="activeCamPreviewUI" autoplay playsinline muted class="w-full h-32 object-cover bg-black transform scale-x-[-1]"></video>
+        <video id="activeCamPreviewUI" autoplay playsinline muted class="w-full h-36 object-cover bg-black transform scale-x-[-1]"></video>
+        <img id="remoteCamPreviewImg" class="hidden w-full h-36 object-cover bg-black transform scale-x-[-1]" alt="Remote Camera" />
         <div id="activeCamLabelName" class="px-2 py-1 text-[10px] font-bold text-emerald-300 bg-slate-950/90 text-center">
           Đang truyền lên khuôn mặt 3D
         </div>
@@ -335,7 +333,6 @@
 
       <!-- TAB 2: THI & KIỂM TRA TRẮC NGHIỆM TRỰC TUYẾN (LIVE QUIZ) -->
       <div id="panel-quiz" class="hidden flex-1 flex flex-col overflow-hidden p-3 space-y-3 overflow-y-auto">
-        <!-- Khu vực dành riêng cho Chủ tọa: Soạn câu hỏi & Phát đề -->
         <div id="hostQuizBuilderBox" class="bg-slate-800/90 border border-amber-500/40 rounded-xl p-3 space-y-2">
           <div class="flex items-center justify-between">
             <span class="text-xs font-extrabold text-amber-400">👑 Chủ tọa: Quản lý Đề Trắc Nghiệm</span>
@@ -370,7 +367,6 @@
           </div>
         </div>
 
-        <!-- Khu vực Làm bài của Thành viên / Học viên -->
         <div class="bg-slate-800/60 border border-slate-700 rounded-xl p-3">
           <div class="flex items-center justify-between mb-2">
             <span class="text-xs font-extrabold text-emerald-400">📝 Bài làm Trắc nghiệm của bạn</span>
@@ -382,7 +378,6 @@
           </button>
         </div>
 
-        <!-- Bảng Xếp Hạng & Điểm Số Trực Tuyến (Realtime Leaderboard) -->
         <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-3">
           <div class="flex items-center justify-between mb-2">
             <span class="text-xs font-extrabold text-amber-300">🏆 Bảng Kết Quả Trực Tuyến</span>
@@ -497,7 +492,7 @@
   </div>
 
   <script>
-    // ================= CẤU HÌNH MẶC ĐỊNH & ĐỒNG BỘ MẠNG (REALTIME MULTIPLAYER) =================
+    // ================= CẤU HÌNH MẶC ĐỊNH & ĐỒNG BỘ MẠNG (REALTIME MULTIPLAYER + VIDEO/SCREEN SYNC) =================
     const HOST_PIN = '2020';
     let isOwnerAuthenticated = false;
     let myClientId = 'u_' + Math.random().toString(36).substring(2, 9);
@@ -510,20 +505,39 @@
     let maxSeats = 17;
     let is3DDragEnabled = false;
 
-    // Kết nối MQTT WebSocket miễn phí giúp các máy thấy nhau theo thời gian thực
     let mqttClient = null;
     let mqttTopic = '';
 
+    // Trạng thái Share Màn Hình (Local + Remote Broadcast)
     let isScreenSharing = false;
+    let isRemoteScreenSharing = false;
     let screenStream = null;
     let screenVideoTexture = null;
+    let screenBroadcastTimer = null;
+    let screenCaptureCanvas = document.createElement('canvas');
+    screenCaptureCanvas.width = 720;
+    screenCaptureCanvas.height = 405;
+    let screenCaptureCtx = screenCaptureCanvas.getContext('2d');
 
+    // Trạng thái Camera Khuôn mặt 3D (Local + Remote Broadcast)
     let isCamActive = false;
+    let isRemoteCamActive = false;
     let camStream = null;
     let camVideoTexture = null;
     let camOwnerId = null;
+    let camBroadcastTimer = null;
+    let camCaptureCanvas = document.createElement('canvas');
+    camCaptureCanvas.width = 240;
+    camCaptureCanvas.height = 240;
+    let camCaptureCtx = camCaptureCanvas.getContext('2d');
 
-    // Danh sách thành viên (Mặc định có Chủ tọa ở ghế #0)
+    // Canvas & Texture dùng để nhận luồng Camera từ máy khác gắn lên mặt trước nhân vật 3D
+    let remoteFaceCanvas = document.createElement('canvas');
+    remoteFaceCanvas.width = 256;
+    remoteFaceCanvas.height = 256;
+    let remoteFaceCtx = remoteFaceCanvas.getContext('2d');
+    let remoteFaceTexture = null;
+
     let participants = [
       { id: 'p0', name: 'Đình Lâm', role: 'Chủ Tọa', seat: 0, color: 0xf59e0b, speaking: false, bubble: '', bounceUntil: 0, isBot: false }
     ];
@@ -537,7 +551,6 @@
 
     let preassignedSeatNames = {};
 
-    // ================= DỮ LIỆU ĐỀ THI TRẮC NGHIỆM TRỰC TUYẾN (LIVE QUIZ) =================
     let quizState = {
       isActive: false,
       title: 'ĐỀ KIỂM TRA TRẮC NGHIỆM TRỰC TUYẾN',
@@ -563,9 +576,9 @@
           correct: 1
         }
       ],
-      submissions: [] // { memberId, name, role, score, total, timeStr }
+      submissions: []
     };
-    let mySelectedAnswers = {}; // { questionIdx: optionIdx }
+    let mySelectedAnswers = {};
     let quizTimerInterval = null;
 
     const sponsorSlots = [
@@ -582,14 +595,14 @@
     let currentEditingSponsorId = null;
 
     const slides = [
-      { title: 'KHÁN PHÒNG VÒNG CUNG GIẢNG ĐƯỜNG 3D', lines: ['1. Đã bật Kết Nối Realtime: Mọi người vào link nhìn thấy nhau ngay!', '2. Bàn Chủ tọa đối diện toàn bộ các bậc thang khán đài', '3. Tích hợp Hệ thống Thi Trắc Nghiệm & Chấm Điểm Trực Tuyến'] },
+      { title: 'KHÁN PHÒNG VÒNG CUNG GIẢNG ĐƯỜNG 3D', lines: ['1. Đã đồng bộ Trực tiếp: Share Màn Hình & Camera sang máy các bạn!', '2. Bàn Chủ tọa đối diện toàn bộ các bậc thang khán đài', '3. Tích hợp Hệ thống Thi Trắc Nghiệm & Chấm Điểm Trực Tuyến'] },
       { title: 'HƯỚNG DẪN THI TRẮC NGHIỆM TRỰC TUYẾN', lines: ['• Chủ tọa soạn câu hỏi và bấm "Phát Đề Cho Toàn Phòng"', '• Đề thi tự động bật lên màn hình của tất cả thành viên', '• Bảng xếp hạng cập nhật điểm số ngay khi học viên nộp bài'] },
       { title: 'THẢO LUẬN & GHI NHẬN BIÊN BẢN AI', lines: ['• Tự động chuyển giọng nói tiếng Việt thành văn bản', '• Xuất biên bản cuộc họp kèm Bảng điểm thi trắc nghiệm'] }
     ];
     let currentSlideIdx = 0;
 
     const transcripts = [
-      { time: '09:00:00', speaker: 'Hệ thống', role: 'Realtime Sync', text: 'Chào mừng vào Khán Phòng 3D! Các thành viên chọn cùng phòng sẽ tự động nhìn thấy nhau và nhận đề thi trắc nghiệm trực tiếp.' }
+      { time: '09:00:00', speaker: 'Hệ thống', role: 'Realtime Sync', text: 'Chào mừng vào Khán Phòng 3D! Khi Chủ tọa hoặc Người phát biểu bật Camera hay Share Màn Hình, toàn bộ thành viên trong phòng sẽ nhìn thấy trực tiếp.' }
     ];
 
     let whisperGroupIds = [];
@@ -601,7 +614,7 @@
         try { mqttClient.end(true); } catch (e) {}
       }
       currentRoomChannel = roomKey;
-      mqttTopic = `damdao3d_live_v2/${roomKey}`;
+      mqttTopic = `damdao3d_live_v3/${roomKey}`;
 
       const dot = document.getElementById('networkDot');
       const txt = document.getElementById('networkText');
@@ -620,7 +633,6 @@
         txt.innerText = 'Đã kết nối Realtime';
         mqttClient.subscribe(mqttTopic, { qos: 0 });
 
-        // Gửi tín hiệu báo có người mới vào phòng & yêu cầu Chủ tọa đồng bộ trạng thái
         const me = participants.find(p => p.id === currentViewerId);
         if (me) {
           broadcastRealtime('USER_JOIN', { member: me });
@@ -658,7 +670,6 @@
         if (idx >= 0) {
           participants[idx] = { ...participants[idx], ...incoming };
         } else {
-          // Nếu ghế bị trùng với người đang ngồi (trừ ghế 0 của Chủ tọa), tự xếp ghế trống tiếp theo
           if (incoming.seat !== 0 && participants.some(p => p.seat === incoming.seat && p.id !== incoming.id)) {
             for (let s = 1; s < maxSeats; s++) {
               if (!participants.some(p => p.seat === s)) {
@@ -673,14 +684,12 @@
         renderWhisperUI();
         build3DScene();
 
-        // Nếu mình là Chủ tọa (hoặc người đang trong phòng), gửi trả toàn bộ danh sách phòng cho người mới vào thấy mình!
         if (isCurrentUserHost() || participants.length > 1) {
           sendFullRoomState();
         }
       } else if (type === 'REQUEST_STATE') {
         sendFullRoomState();
       } else if (type === 'FULL_STATE' && data) {
-        // Hợp nhất danh sách thành viên từ các máy khác để cả 2 bên đều nhìn thấy nhau
         if (Array.isArray(data.participants)) {
           data.participants.forEach(remoteP => {
             if (remoteP.isBot && !document.getElementById('keepDemoBotsCheckbox').checked) return;
@@ -712,13 +721,66 @@
         updateOnlineCountUI();
         renderWhisperUI();
         build3DScene();
+      } else if (type === 'SCREEN_FRAME' && data && data.jpg) {
+        // Nhận khung hình Share Màn Hình trực tiếp từ Chủ tọa / Người phát biểu vẽ lên Bảng 3D
+        isRemoteScreenSharing = true;
+        const img = new Image();
+        img.onload = () => {
+          if (screenCtx && screenMesh) {
+            if (screenMesh.material.map !== screenTexture) {
+              screenMesh.material.map = screenTexture;
+              screenMesh.material.needsUpdate = true;
+            }
+            screenCtx.drawImage(img, 0, 0, 1024, 512);
+            screenCtx.strokeStyle = '#06b6d4';
+            screenCtx.lineWidth = 10;
+            screenCtx.strokeRect(8, 8, 1008, 496);
+            screenCtx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+            screenCtx.fillRect(24, 445, 520, 44);
+            screenCtx.fillStyle = '#38bdf8';
+            screenCtx.font = 'bold 24px sans-serif';
+            screenCtx.fillText(`🖥️ Đang chiếu màn hình của: ${data.sharerName || 'Chủ tọa'}`, 40, 475);
+            screenTexture.needsUpdate = true;
+          }
+        };
+        img.src = data.jpg;
+      } else if (type === 'SCREEN_STOP') {
+        isRemoteScreenSharing = false;
+        drawSlideTo3DScreen();
+      } else if (type === 'CAM_FRAME' && data && data.jpg) {
+        // Nhận khung hình Camera khuôn mặt từ Chủ tọa / Người phát biểu gắn lên mặt trước nhân vật 3D & góc PiP
+        const needRebuild = (!isRemoteCamActive || camOwnerId !== data.ownerId);
+        isRemoteCamActive = true;
+        camOwnerId = data.ownerId;
+
+        const img = new Image();
+        img.onload = () => {
+          remoteFaceCtx.drawImage(img, 0, 0, 256, 256);
+          if (remoteFaceTexture) remoteFaceTexture.needsUpdate = true;
+          if (needRebuild) build3DScene();
+        };
+        img.src = data.jpg;
+
+        // Hiển thị đồng thời trong khung PiP bên trái cho các thành viên nhìn rõ mặt Chủ tọa
+        const pipCard = document.getElementById('activeCamFloatingCard');
+        const vidEl = document.getElementById('activeCamPreviewUI');
+        const remoteImgEl = document.getElementById('remoteCamPreviewImg');
+        vidEl.classList.add('hidden');
+        remoteImgEl.classList.remove('hidden');
+        remoteImgEl.src = data.jpg;
+        document.getElementById('camCardHeaderTitle').innerText = `📷 CAMERA: ${(data.ownerName || 'CHỦ TỌA').toUpperCase()}`;
+        document.getElementById('activeCamLabelName').innerText = `${data.ownerName || 'Chủ tọa'} (Đang phát trực tiếp)`;
+        pipCard.classList.remove('hidden');
+      } else if (type === 'CAM_STOP') {
+        isRemoteCamActive = false;
+        camOwnerId = null;
+        document.getElementById('activeCamFloatingCard').classList.add('hidden');
+        document.getElementById('remoteCamPreviewImg').classList.add('hidden');
+        document.getElementById('activeCamPreviewUI').classList.remove('hidden');
+        build3DScene();
       } else if (type === 'SEAT_UPDATE' && data) {
-        if (Array.isArray(data.participants)) {
-          participants = data.participants;
-        }
-        if (data.preassignedSeatNames) {
-          preassignedSeatNames = data.preassignedSeatNames;
-        }
+        if (Array.isArray(data.participants)) participants = data.participants;
+        if (data.preassignedSeatNames) preassignedSeatNames = data.preassignedSeatNames;
         const me = participants.find(p => p.id === currentViewerId);
         if (me) document.getElementById('currentUserBadge').innerText = `👤 ${me.name} (Ghế #${me.seat})`;
         build3DScene();
@@ -832,7 +894,6 @@
       const pinVal = document.getElementById('loginPinInput').value.trim();
       const useBots = document.getElementById('keepDemoBotsCheckbox').checked;
 
-      // Xóa bot nếu người dùng không tích chọn Bot mẫu
       participants = participants.filter(p => !p.isBot);
       if (useBots) {
         demoBots.forEach(b => {
@@ -856,7 +917,6 @@
         const memberName = rawName || ('Thành viên ' + Math.floor(Math.random() * 90 + 10));
         const memberRole = rawRole || 'Học viên';
 
-        // Kiểm tra xem Chủ trì có xếp chỗ trước theo tên không
         let targetSeat = null;
         for (const [sIdx, rName] of Object.entries(preassignedSeatNames)) {
           if (rName && rName.toLowerCase() === memberName.toLowerCase()) {
@@ -909,7 +969,6 @@
       renderQuizUI();
       build3DScene();
 
-      // Kết nối vào kênh Realtime chung của phòng
       connectRealtimeRoom(roomCode);
     }
 
@@ -954,6 +1013,145 @@
       } else {
         shareBtn.classList.add('opacity-40', 'cursor-not-allowed');
         camBtn.classList.add('opacity-40', 'cursor-not-allowed');
+      }
+    }
+
+    // ================= SHARE MÀN HÌNH & CAMERA ĐỒNG BỘ SANG MỌI MÁY TRONG PHÒNG =================
+    async function toggleScreenShare() {
+      if (!canCurrentUserPresentOrCam()) {
+        alert('💡 Vui lòng bấm "🎙️ Bật Mic Phát Biểu" (hoặc được Chủ tọa mời phát biểu) để Share Màn Hình!');
+        return;
+      }
+      const videoEl = document.getElementById('screenShareVideo');
+      const btn = document.getElementById('btnShareScreen');
+      const me = participants.find(p => p.id === currentViewerId) || participants[0];
+
+      if (!isScreenSharing) {
+        try {
+          screenStream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: 'always' }, audio: false });
+          videoEl.srcObject = screenStream;
+          await videoEl.play();
+
+          screenVideoTexture = new THREE.VideoTexture(videoEl);
+          screenVideoTexture.minFilter = THREE.LinearFilter;
+          screenVideoTexture.magFilter = THREE.LinearFilter;
+
+          isScreenSharing = true;
+          isRemoteScreenSharing = false;
+          if (screenMesh) {
+            screenMesh.material.map = screenVideoTexture;
+            screenMesh.material.needsUpdate = true;
+          }
+          btn.innerText = '🛑 Dừng Share';
+          btn.className = 'px-2.5 py-0.5 bg-rose-600 hover:bg-rose-500 text-white rounded text-xs font-extrabold flex items-center gap-1 shadow animate-pulse';
+
+          // Phát sóng liên tục khung hình màn hình sang tất cả các máy khác trong phòng (mỗi 450ms)
+          if (screenBroadcastTimer) clearInterval(screenBroadcastTimer);
+          screenBroadcastTimer = setInterval(() => {
+            if (!isScreenSharing || videoEl.readyState < 2) return;
+            screenCaptureCtx.drawImage(videoEl, 0, 0, screenCaptureCanvas.width, screenCaptureCanvas.height);
+            const jpgData = screenCaptureCanvas.toDataURL('image/jpeg', 0.55);
+            broadcastRealtime('SCREEN_FRAME', { sharerId: currentViewerId, sharerName: me.name, jpg: jpgData });
+          }, 450);
+
+          screenStream.getVideoTracks()[0].onended = () => stopScreenShareCleanup();
+          setCamPreset('audienceView');
+        } catch (err) {}
+      } else {
+        stopScreenShareCleanup();
+      }
+    }
+
+    function stopScreenShareCleanup() {
+      const btn = document.getElementById('btnShareScreen');
+      if (screenBroadcastTimer) {
+        clearInterval(screenBroadcastTimer);
+        screenBroadcastTimer = null;
+      }
+      if (screenStream) {
+        screenStream.getTracks().forEach(t => t.stop());
+        screenStream = null;
+      }
+      isScreenSharing = false;
+      if (screenMesh) {
+        screenMesh.material.map = screenTexture;
+        screenMesh.material.needsUpdate = true;
+      }
+      drawSlideTo3DScreen();
+      btn.innerText = '🖥️ Share Màn Hình';
+      btn.className = 'px-2.5 py-0.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded text-xs font-extrabold flex items-center gap-1 shadow';
+      broadcastRealtime('SCREEN_STOP', {});
+    }
+
+    async function toggleUserCamera() {
+      if (!canCurrentUserPresentOrCam()) {
+        alert('💡 Vui lòng bấm "🎙️ Bật Mic Phát Biểu" (hoặc được Chủ tọa mời phát biểu) để bật Camera lên mặt trước nhân vật 3D!');
+        return;
+      }
+      const camVideoEl = document.getElementById('activeCamVideo');
+      const pipVideoEl = document.getElementById('activeCamPreviewUI');
+      const remoteImgEl = document.getElementById('remoteCamPreviewImg');
+      const pipCard = document.getElementById('activeCamFloatingCard');
+      const btn = document.getElementById('btnUserCam');
+      const me = participants.find(p => p.id === currentViewerId) || participants[0];
+
+      if (!isCamActive) {
+        try {
+          camStream = await navigator.mediaDevices.getUserMedia({
+            video: { width: { ideal: 360 }, height: { ideal: 360 }, facingMode: 'user' },
+            audio: false
+          });
+          camVideoEl.srcObject = camStream;
+          pipVideoEl.srcObject = camStream;
+          await camVideoEl.play();
+          await pipVideoEl.play();
+
+          camVideoTexture = new THREE.VideoTexture(camVideoEl);
+          camVideoTexture.minFilter = THREE.LinearFilter;
+          camVideoTexture.magFilter = THREE.LinearFilter;
+
+          isCamActive = true;
+          isRemoteCamActive = false;
+          camOwnerId = currentViewerId;
+
+          remoteImgEl.classList.add('hidden');
+          pipVideoEl.classList.remove('hidden');
+          document.getElementById('camCardHeaderTitle').innerText = '📷 CAM ĐANG GẮN MẶT 3D';
+          document.getElementById('activeCamLabelName').innerText = `${me.name} (Đang phát sang mọi máy)`;
+          pipCard.classList.remove('hidden');
+
+          btn.innerText = '🛑 Tắt Cam Mặt 3D';
+          btn.className = 'px-2.5 py-0.5 bg-rose-600 hover:bg-rose-500 text-white rounded text-xs font-extrabold flex items-center gap-1 shadow animate-pulse';
+
+          build3DScene();
+
+          // Phát sóng liên tục khung hình Camera khuôn mặt sang toàn bộ các máy trong phòng (mỗi 400ms)
+          if (camBroadcastTimer) clearInterval(camBroadcastTimer);
+          camBroadcastTimer = setInterval(() => {
+            if (!isCamActive || camVideoEl.readyState < 2) return;
+            camCaptureCtx.drawImage(camVideoEl, 0, 0, camCaptureCanvas.width, camCaptureCanvas.height);
+            const jpgData = camCaptureCanvas.toDataURL('image/jpeg', 0.55);
+            broadcastRealtime('CAM_FRAME', { ownerId: currentViewerId, ownerName: me.name, jpg: jpgData });
+          }, 400);
+        } catch (err) {
+          alert('Không thể truy cập Camera. Vui lòng cấp quyền Camera trên trình duyệt!');
+        }
+      } else {
+        if (camBroadcastTimer) {
+          clearInterval(camBroadcastTimer);
+          camBroadcastTimer = null;
+        }
+        if (camStream) {
+          camStream.getTracks().forEach(t => t.stop());
+          camStream = null;
+        }
+        isCamActive = false;
+        camOwnerId = null;
+        pipCard.classList.add('hidden');
+        btn.innerText = '📷 Bật Cam Mặt 3D';
+        btn.className = 'px-2.5 py-0.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded text-xs font-extrabold flex items-center gap-1 shadow';
+        build3DScene();
+        broadcastRealtime('CAM_STOP', {});
       }
     }
 
@@ -1114,7 +1312,6 @@
       if (sideList) sideList.innerHTML = qHtml;
       if (floatBody) floatBody.innerHTML = qHtml;
 
-      // Render Bảng xếp hạng điểm số
       const subBadge = document.getElementById('quizSubmissionCountBadge');
       if (subBadge) subBadge.innerText = `${quizState.submissions.length} bài nộp`;
 
@@ -1165,108 +1362,6 @@
       screenCtx.font = 'bold 24px sans-serif';
       screenCtx.fillText(`📊 Đã nộp: ${quizState.submissions.length} học viên  |  Tổng số: ${quizState.questions.length} câu hỏi`, 55, 465);
       screenTexture.needsUpdate = true;
-    }
-
-    // ================= SHARE MÀN HÌNH & CAMERA HIỂN THỊ TRÊN MẶT TRƯỚC NHÂN VẬT 3D =================
-    async function toggleScreenShare() {
-      if (!canCurrentUserPresentOrCam()) {
-        alert('💡 Vui lòng bấm "🎙️ Bật Mic Phát Biểu" (hoặc được Chủ tọa mời phát biểu) để Share Màn Hình!');
-        return;
-      }
-      const videoEl = document.getElementById('screenShareVideo');
-      const btn = document.getElementById('btnShareScreen');
-
-      if (!isScreenSharing) {
-        try {
-          screenStream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: 'always' }, audio: false });
-          videoEl.srcObject = screenStream;
-          await videoEl.play();
-
-          screenVideoTexture = new THREE.VideoTexture(videoEl);
-          screenVideoTexture.minFilter = THREE.LinearFilter;
-          screenVideoTexture.magFilter = THREE.LinearFilter;
-
-          isScreenSharing = true;
-          if (screenMesh) {
-            screenMesh.material.map = screenVideoTexture;
-            screenMesh.material.needsUpdate = true;
-          }
-          btn.innerText = '🛑 Dừng Share';
-          btn.className = 'px-2.5 py-0.5 bg-rose-600 hover:bg-rose-500 text-white rounded text-xs font-extrabold flex items-center gap-1 shadow animate-pulse';
-          screenStream.getVideoTracks()[0].onended = () => stopScreenShareCleanup();
-          setCamPreset('audienceView');
-        } catch (err) {}
-      } else {
-        stopScreenShareCleanup();
-      }
-    }
-
-    function stopScreenShareCleanup() {
-      const btn = document.getElementById('btnShareScreen');
-      if (screenStream) {
-        screenStream.getTracks().forEach(t => t.stop());
-        screenStream = null;
-      }
-      isScreenSharing = false;
-      if (screenMesh) {
-        screenMesh.material.map = screenTexture;
-        screenMesh.material.needsUpdate = true;
-      }
-      drawSlideTo3DScreen();
-      btn.innerText = '🖥️ Share Màn Hình';
-      btn.className = 'px-2.5 py-0.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded text-xs font-extrabold flex items-center gap-1 shadow';
-    }
-
-    async function toggleUserCamera() {
-      if (!canCurrentUserPresentOrCam()) {
-        alert('💡 Vui lòng bấm "🎙️ Bật Mic Phát Biểu" (hoặc được Chủ tọa mời phát biểu) để bật Camera lên mặt trước nhân vật 3D!');
-        return;
-      }
-      const camVideoEl = document.getElementById('activeCamVideo');
-      const pipVideoEl = document.getElementById('activeCamPreviewUI');
-      const pipCard = document.getElementById('activeCamFloatingCard');
-      const btn = document.getElementById('btnUserCam');
-      const me = participants.find(p => p.id === currentViewerId) || participants[0];
-
-      if (!isCamActive) {
-        try {
-          camStream = await navigator.mediaDevices.getUserMedia({
-            video: { width: { ideal: 512 }, height: { ideal: 512 }, facingMode: 'user' },
-            audio: false
-          });
-          camVideoEl.srcObject = camStream;
-          pipVideoEl.srcObject = camStream;
-          await camVideoEl.play();
-          await pipVideoEl.play();
-
-          camVideoTexture = new THREE.VideoTexture(camVideoEl);
-          camVideoTexture.minFilter = THREE.LinearFilter;
-          camVideoTexture.magFilter = THREE.LinearFilter;
-
-          isCamActive = true;
-          camOwnerId = currentViewerId;
-          document.getElementById('activeCamLabelName').innerText = `${me.name} (Đang hiện trên mặt 3D)`;
-          pipCard.classList.remove('hidden');
-
-          btn.innerText = '🛑 Tắt Cam Mặt 3D';
-          btn.className = 'px-2.5 py-0.5 bg-rose-600 hover:bg-rose-500 text-white rounded text-xs font-extrabold flex items-center gap-1 shadow animate-pulse';
-
-          build3DScene();
-        } catch (err) {
-          alert('Không thể truy cập Camera. Vui lòng cấp quyền Camera trên trình duyệt!');
-        }
-      } else {
-        if (camStream) {
-          camStream.getTracks().forEach(t => t.stop());
-          camStream = null;
-        }
-        isCamActive = false;
-        camOwnerId = null;
-        pipCard.classList.add('hidden');
-        btn.innerText = '📷 Bật Cam Mặt 3D';
-        btn.className = 'px-2.5 py-0.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded text-xs font-extrabold flex items-center gap-1 shadow';
-        build3DScene();
-      }
     }
 
     // ================= SẮP XẾP KÉO THẢ (2D & 3D) VÀ CHỈ ĐỊNH CHỖ NGỒI =================
@@ -1801,6 +1896,8 @@
       screenCtx = screenCanvas.getContext('2d');
       screenTexture = new THREE.CanvasTexture(screenCanvas);
 
+      remoteFaceTexture = new THREE.CanvasTexture(remoteFaceCanvas);
+
       sponsorSlots.forEach(s => createOrUpdateSponsorCanvasTexture(s));
 
       setup3DPointerEvents();
@@ -1947,7 +2044,7 @@
     }
 
     function drawSlideTo3DScreen() {
-      if (!screenCtx) return;
+      if (!screenCtx || isRemoteScreenSharing) return;
       if (quizState.isActive) {
         drawQuizTo3DScreen();
         return;
@@ -2067,7 +2164,7 @@
       );
       screenMesh.position.set(0, 4.8, -13.98);
       sceneObjectsGroup.add(screenMesh);
-      if (!isScreenSharing) drawSlideTo3DScreen();
+      if (!isScreenSharing && !isRemoteScreenSharing) drawSlideTo3DScreen();
 
       // 3. Bàn Chủ tọa (#0) đặt tại tâm sân khấu quay đối diện khán đài
       const stageRadius = currentScene === 'vongcung' ? 5.2 : 4.5;
@@ -2255,7 +2352,7 @@
         }
       }
 
-      // 5. Dựng nhân vật 3D + Camera trên mặt trước nhân vật
+      // 5. Dựng nhân vật 3D + Camera trên mặt trước nhân vật (Cho cả máy mình và máy bạn)
       seatPositions.forEach((pos, idx) => {
         const bY = pos.baseY || 0;
         const stool = new THREE.Mesh(
@@ -2308,11 +2405,15 @@
         hair.userData = { memberId: p.id };
         group.add(hair);
 
-        const hasLiveFaceCam = (isCamActive && camVideoTexture && camOwnerId === p.id);
-        if (hasLiveFaceCam) {
+        // Kiểm tra nếu nhân vật này đang bật Camera (tại máy mình hoặc nhận từ máy Chủ tọa qua mạng)
+        const isLocalCamOnThisPerson = (isCamActive && camVideoTexture && camOwnerId === p.id);
+        const isRemoteCamOnThisPerson = (isRemoteCamActive && remoteFaceTexture && camOwnerId === p.id);
+
+        if (isLocalCamOnThisPerson || isRemoteCamOnThisPerson) {
+          const activeFaceTex = isLocalCamOnThisPerson ? camVideoTexture : remoteFaceTexture;
           const camFacePlane = new THREE.Mesh(
             new THREE.PlaneGeometry(1.02, 1.02),
-            new THREE.MeshBasicMaterial({ map: camVideoTexture, side: THREE.DoubleSide })
+            new THREE.MeshBasicMaterial({ map: activeFaceTex, side: THREE.DoubleSide })
           );
           camFacePlane.position.set(0, 2.25, 0.49);
           camFacePlane.userData = { memberId: p.id };
