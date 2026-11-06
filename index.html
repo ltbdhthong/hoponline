@@ -3,10 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Khán Phòng Vòng Cung Giảng Đường & Họp Trực Tuyến 3D</title>
+  <title>Khán Phòng Vòng Cung 3D - Họp & Thi Trắc Nghiệm Trực Tuyến</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <!-- Thư viện MQTT qua WebSockets giúp kết nối các máy trực tiếp không cần cài Server -->
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; }
@@ -46,38 +48,41 @@
   <video id="activeCamVideo" autoplay playsinline muted class="hidden"></video>
   <input id="logoFileInput" type="file" accept="image/*" class="hidden" onchange="handleLogoFileSelected(event)" />
 
-  <!-- MÀN HÌNH ĐĂNG NHẬP: CHỌN CHỦ TRÌ ĐỂ VÀO ĐÚNG PHÒNG -->
+  <!-- MÀN HÌNH ĐĂNG NHẬP: CHỌN CHỦ TRÌ ĐỂ KẾT NỐI ĐÚNG PHÒNG -->
   <div id="loginOverlay" style="display: flex;" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md items-center justify-center z-50 p-4">
     <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl">
-      <div class="flex items-center gap-2 mb-1">
-        <span class="w-3 h-3 rounded-full bg-emerald-400 animate-ping"></span>
-        <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">Hệ Thống Khán Phòng Vòng Cung & Phòng Họp 3D</span>
+      <div class="flex items-center justify-between mb-1">
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-emerald-400 animate-ping"></span>
+          <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">Kết Nối Trực Tuyến Nhiều Máy 3D</span>
+        </div>
+        <span class="text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full">● Realtime Sync</span>
       </div>
-      <h1 class="text-xl font-extrabold text-white mb-1">Chọn Phòng & Chủ Trì</h1>
-      <p class="text-xs text-slate-400 mb-4">Chọn đúng Chủ trì phòng họp và nhập họ tên của bạn (nếu Chủ trì đã xếp chỗ trước, bạn sẽ tự động ngồi đúng ghế).</p>
+      <h1 class="text-xl font-extrabold text-white mb-1">Vào Khán Phòng & Lớp Học</h1>
+      <p class="text-xs text-slate-400 mb-4">Tất cả thành viên chọn cùng một Phòng Chủ trì sẽ nhìn thấy nhau, nghe phát biểu và cùng làm bài trắc nghiệm theo thời gian thực.</p>
 
       <div class="space-y-3">
         <div>
-          <label class="block text-xs font-semibold text-amber-300 mb-1">🏟️ Chọn Chủ trì / Khán phòng đang mở *</label>
+          <label class="block text-xs font-semibold text-amber-300 mb-1">🏟️ Chọn Phòng theo Chủ trì (Các máy phải chọn giống nhau) *</label>
           <select id="loginRoomHostSelect" class="w-full bg-slate-800 border border-amber-500/50 rounded-xl px-3.5 py-2.5 text-sm font-bold text-white focus:outline-none">
-            <option value="Đình Lâm">👑 Chủ trì: Đình Lâm (Khán Phòng Vòng Cung Giảng Đường 3D)</option>
-            <option value="Hội Đồng Khoa">🎓 Chủ trì: Hội Đồng Khoa (Bảo vệ Đồ án & Hội thảo)</option>
-            <option value="Ban Dự Án">🚀 Chủ trì: Ban Dự Án (Họp Chiến Lược Toàn Công Ty)</option>
+            <option value="phong_dinh_lam">👑 Phòng Chủ trì: Đình Lâm (Khán Phòng Vòng Cung 3D)</option>
+            <option value="phong_hoi_dong">🎓 Phòng Chủ trì: Hội Đồng Khoa (Thi & Thảo Luận)</option>
+            <option value="phong_du_an">🚀 Phòng Chủ trì: Ban Dự Án (Họp Chiến Lược)</option>
           </select>
         </div>
 
         <div class="grid grid-cols-3 gap-2">
           <div class="col-span-2">
             <label class="block text-xs font-semibold text-slate-300 mb-1">Họ và tên của bạn *</label>
-            <input id="loginNameInput" type="text" placeholder="Nhập họ tên..." class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400" onkeydown="if(event.key==='Enter') enterMeetingRoom()" />
+            <input id="loginNameInput" type="text" placeholder="Nhập họ và tên..." class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400" onkeydown="if(event.key==='Enter') enterMeetingRoom()" />
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1">Chức vụ</label>
-            <input id="loginRoleInput" type="text" placeholder="Thành viên" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400" onkeydown="if(event.key==='Enter') enterMeetingRoom()" />
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Chức vụ / MSSV</label>
+            <input id="loginRoleInput" type="text" placeholder="Học viên / TV" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400" onkeydown="if(event.key==='Enter') enterMeetingRoom()" />
           </div>
         </div>
 
-        <!-- Tùy chọn xác thực Chủ tọa: Mặc định ẩn ô PIN, click vào mới hiện -->
+        <!-- Tùy chọn xác thực Chủ tọa: Mặc định ẩn ô PIN -->
         <div class="bg-slate-800/70 border border-amber-500/30 rounded-xl p-3">
           <label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-amber-300">
             <input id="loginIsHostCheckbox" type="checkbox" onchange="toggleHostPinBox()" class="accent-amber-500 w-4 h-4" />
@@ -88,8 +93,13 @@
           </div>
         </div>
 
+        <label class="flex items-center gap-2 cursor-pointer text-[11px] text-slate-400 pt-1">
+          <input id="keepDemoBotsCheckbox" type="checkbox" class="accent-emerald-500" />
+          <span>Hiển thị thêm các nhân vật mẫu (Bot) ngồi sẵn trong phòng</span>
+        </label>
+
         <button type="button" onclick="enterMeetingRoom()" class="w-full bg-gradient-to-r from-amber-500 to-emerald-500 hover:from-amber-400 hover:to-emerald-400 text-slate-950 font-extrabold py-3 rounded-xl text-sm shadow-lg transition cursor-pointer">
-          🚀 VÀO KHÁN PHÒNG 3D NGAY
+          🚀 KẾT NỐI VÀO PHÒNG 3D NGAY
         </button>
       </div>
     </div>
@@ -98,10 +108,12 @@
   <!-- HEADER ĐIỀU KHIỂN CHÍNH -->
   <header class="h-14 bg-slate-900/95 border-b border-slate-800 px-3 flex items-center justify-between z-30 shrink-0 gap-2">
     <div class="flex items-center gap-2">
-      <div class="flex items-center gap-1.5 bg-red-500/15 border border-red-500/40 px-2 py-1 rounded-full">
-        <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
-        <span class="text-[10px] font-extrabold text-red-400">LIVE 3D</span>
+      <!-- Trạng thái kết nối mạng thời gian thực -->
+      <div id="networkStatusPill" class="flex items-center gap-1.5 bg-emerald-500/15 border border-emerald-500/40 px-2.5 py-1 rounded-full">
+        <span id="networkDot" class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+        <span id="networkText" class="text-[10px] font-extrabold text-emerald-400">Đang kết nối...</span>
       </div>
+
       <div class="flex items-center gap-1.5 bg-slate-800 border border-amber-500/40 rounded-lg px-2.5 py-1 text-xs">
         <span>👑 Chủ trì: <b id="hostNameBadge" class="text-amber-400">Đình Lâm</b></span>
         <button id="btnAssignHost" onclick="openHostAssignModal()" class="ml-1 bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded font-semibold transition">
@@ -121,11 +133,14 @@
 
     <!-- SẮP XẾP CHỖ NGỒI (KÉO THẢ), UP LOGO TÀI TRỢ & ĐỔI TÀI KHOẢN -->
     <div class="flex items-center gap-1.5">
+      <button onclick="switchTab('quiz')" class="bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-extrabold flex items-center gap-1 shadow">
+        🎓 Đề Thi Trắc Nghiệm
+      </button>
       <button onclick="openSeatingPlannerModal()" id="btnSeatingPlanner" class="bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 shadow">
-        🗺️ Xếp Chỗ (Kéo Thả)
+        🗺️ Xếp Chỗ
       </button>
       <button onclick="openSponsorLogoModal()" id="btnSponsorConfig" class="bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 text-amber-300 px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1">
-        🖼️ Logo Tài Trợ
+        🖼️ Logo
       </button>
       <div onclick="reopenLoginModal()" class="cursor-pointer flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 px-2.5 py-1 rounded-xl text-xs" title="Đổi người dùng hoặc vào lại quyền Chủ tọa">
         <span id="currentUserBadge" class="font-bold text-emerald-400">👤 Khách</span>
@@ -141,6 +156,27 @@
       <canvas id="canvas3d"></canvas>
       <div id="labelsContainer" class="absolute inset-0 pointer-events-none overflow-hidden z-10"></div>
       <div id="floatingReactionsLayer" class="absolute inset-0 pointer-events-none overflow-hidden z-20"></div>
+
+      <!-- POPUP LÀM BÀI TRẮC NGHIỆM NỔI TRÊN MÀN HÌNH KHI CHỦ TỌA PHÁT ĐỀ -->
+      <div id="liveQuizFloatingBanner" class="hidden absolute top-16 left-1/2 -translate-x-1/2 bg-slate-900/95 border-2 border-rose-500 rounded-2xl p-4 shadow-2xl z-30 w-[92%] max-w-xl backdrop-blur-md">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-2.5">
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 bg-rose-600 text-white rounded text-[10px] font-extrabold animate-pulse">ĐANG THI TRỰC TUYẾN</span>
+            <span id="floatingQuizTitle" class="text-xs font-extrabold text-amber-300">Đề kiểm tra nhanh</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span id="floatingQuizTimer" class="text-xs font-extrabold text-emerald-400 bg-slate-800 px-2 py-0.5 rounded">⏱️ 00:00</span>
+            <button onclick="document.getElementById('liveQuizFloatingBanner').classList.add('hidden')" class="text-slate-400 hover:text-white text-xs font-bold">Thu nhỏ ✕</button>
+          </div>
+        </div>
+        <div id="floatingQuizQuestionBody" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
+        <div class="mt-3 pt-2 border-t border-slate-800 flex items-center justify-between">
+          <span id="floatingQuizStatusText" class="text-[11px] text-slate-300">Chọn đáp án đúng cho các câu hỏi rồi bấm Nộp bài.</span>
+          <button id="btnSubmitFloatingQuiz" onclick="submitMyQuizAnswers()" class="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-extrabold px-4 py-1.5 rounded-xl text-xs shadow-lg">
+            ✅ NỘP BÀI NGAY
+          </button>
+        </div>
+      </div>
 
       <!-- MENU TƯƠNG TÁC KHI CLICK VÀO NGƯỜI CỦA NHÂN VẬT 3D -->
       <div id="interactionPopup" class="hidden absolute z-40 bg-slate-900/95 border-2 border-amber-400 rounded-2xl p-3 shadow-2xl w-68 backdrop-blur-md" onclick="event.stopPropagation()">
@@ -172,7 +208,6 @@
           <button onclick="interactWithMember('customChat')" class="bg-indigo-600 hover:bg-indigo-500 px-2.5 py-1 rounded-lg text-xs font-bold">Gửi</button>
         </div>
 
-        <!-- Dời chỗ nhanh cho bản thân hoặc do Chủ trì điều chuyển -->
         <div id="moveSeatBoxInPopup" class="mb-2 bg-slate-800/80 p-2 rounded-xl border border-slate-700">
           <div class="text-[10px] font-bold text-slate-300 mb-1">🪑 Chuyển người này sang ghế số:</div>
           <div class="flex gap-1">
@@ -199,7 +234,7 @@
       <!-- Góc máy 3D & Chế độ Kéo thả trực tiếp trên 3D -->
       <div class="absolute top-3 left-3 bg-slate-900/90 border border-slate-700/80 backdrop-blur px-3 py-2 rounded-xl z-20 flex flex-col gap-1.5 shadow-lg">
         <div class="text-[11px] font-bold text-amber-400 flex items-center justify-between gap-3">
-          <span>🎥 CLICK NGƯỜI 3D ĐỂ TƯƠNG TÁC / KÉO THẢ</span>
+          <span>🎥 GÓC MÁY 3D (<span id="onlineCountLabel">1</span> NGƯỜI TRONG PHÒNG)</span>
           <span id="permissionMiniTag" class="text-emerald-400">👑 Chủ tọa</span>
         </div>
         <div class="flex flex-wrap gap-1.5">
@@ -212,7 +247,7 @@
         </div>
       </div>
 
-      <!-- KHUNG PREVIEW CAMERA NHỎ GÓC TRÁI (ĐỒNG THỜI HIỂN THỊ TRÊN MẶT TRƯỚC NHÂN VẬT 3D) -->
+      <!-- KHUNG PREVIEW CAMERA NHỎ GÓC TRÁI -->
       <div id="activeCamFloatingCard" class="hidden absolute top-24 left-3 w-52 bg-slate-900/95 border-2 border-emerald-400 rounded-2xl overflow-hidden shadow-2xl z-30">
         <div class="bg-gradient-to-r from-emerald-500 to-amber-500 text-slate-950 px-2.5 py-1 text-[10px] font-extrabold flex items-center justify-between">
           <span id="camCardHeaderTitle">📷 CAM ĐANG GẮN MẶT 3D</span>
@@ -238,16 +273,16 @@
           </button>
 
           <button id="btnUserCam" onclick="toggleUserCamera()" class="px-2.5 py-0.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded text-xs font-extrabold flex items-center gap-1 shadow">
-            📷 Bật Cam Lên Mặt 3D
+            📷 Bật Cam Mặt 3D
           </button>
         </div>
 
         <div class="flex gap-1.5">
           <button onclick="triggerSceneSpecialAction()" id="btnSpecialAction" class="flex-1 py-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 rounded-lg text-xs font-extrabold shadow">
-            👏 VỖ TAY TOÀN KHÁN PHÒNG VÒNG CUNG
+            👏 VỖ TAY TOÀN KHÁN PHÒNG
           </button>
-          <button onclick="simulateColleagueSpeak()" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg text-xs font-semibold">
-            🗣️ Mời người nói
+          <button onclick="switchTab('quiz'); document.getElementById('liveQuizFloatingBanner').classList.remove('hidden');" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-extrabold">
+            📝 Mở Đề Thi
           </button>
         </div>
       </div>
@@ -260,44 +295,104 @@
         <button onclick="raiseHand()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl text-xs font-semibold shrink-0">
           ✋ Giơ tay
         </button>
-        <input id="manualSpeechInput" type="text" placeholder="Nhập lời phát biểu (Chủ tọa & Người phát biểu có thể bật Cam lên mặt nhân vật & Share màn hình)..." class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400" onkeydown="if(event.key==='Enter') submitManualSpeech()" />
+        <input id="manualSpeechInput" type="text" placeholder="Nhập lời phát biểu (tự động đồng bộ sang máy của mọi người trong phòng)..." class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400" onkeydown="if(event.key==='Enter') submitManualSpeech()" />
         <button onclick="submitManualSpeech()" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-xl text-xs font-extrabold shrink-0">
           Phát biểu
         </button>
         <div class="flex items-center gap-1 pl-1 border-l border-slate-700">
-          <button onclick="sendReaction('👏')" class="text-lg hover:scale-125 transition">👏</button>
-          <button onclick="sendReaction('🍻')" class="text-lg hover:scale-125 transition">🍻</button>
-          <button onclick="sendReaction('🪷')" class="text-lg hover:scale-125 transition">🪷</button>
-          <button onclick="sendReaction('💯')" class="text-lg hover:scale-125 transition">💯</button>
-          <button onclick="sendReaction('🔥')" class="text-lg hover:scale-125 transition">🔥</button>
+          <button onclick="sendReaction('👏', true)" class="text-lg hover:scale-125 transition">👏</button>
+          <button onclick="sendReaction('🍻', true)" class="text-lg hover:scale-125 transition">🍻</button>
+          <button onclick="sendReaction('🪷', true)" class="text-lg hover:scale-125 transition">🪷</button>
+          <button onclick="sendReaction('💯', true)" class="text-lg hover:scale-125 transition">💯</button>
+          <button onclick="sendReaction('🔥', true)" class="text-lg hover:scale-125 transition">🔥</button>
         </div>
       </div>
     </div>
 
-    <!-- SIDEBAR PHẢI: PHÁT BIỂU, CHAT NHÓM & BIÊN BẢN AI -->
+    <!-- SIDEBAR PHẢI: 4 TAB (PHÁT BIỂU | TRẮC NGHIỆM LIVE | CHAT NHÓM | BIÊN BẢN AI) -->
     <aside class="w-80 md:w-96 bg-slate-900 border-l border-slate-800 flex flex-col z-30 shrink-0">
-      <div class="grid grid-cols-3 p-2 gap-1 border-b border-slate-800 text-xs font-bold">
-        <button onclick="switchTab('transcript')" id="tab-transcript" class="py-2 rounded-xl bg-indigo-600 text-white">🎙️ Phát Biểu</button>
-        <button onclick="switchTab('whisper')" id="tab-whisper" class="py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white">💬 Chat Nhóm</button>
-        <button onclick="switchTab('summary')" id="tab-summary" class="py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white">📝 Biên Bản AI</button>
+      <div class="grid grid-cols-4 p-1.5 gap-1 border-b border-slate-800 text-[11px] font-bold">
+        <button onclick="switchTab('transcript')" id="tab-transcript" class="py-2 rounded-xl bg-indigo-600 text-white">🎙️ Phát biểu</button>
+        <button onclick="switchTab('quiz')" id="tab-quiz" class="py-2 rounded-xl bg-slate-800 text-rose-300 hover:text-white">🎓 Trắc nghiệm</button>
+        <button onclick="switchTab('whisper')" id="tab-whisper" class="py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white">💬 Chat nhóm</button>
+        <button onclick="switchTab('summary')" id="tab-summary" class="py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white">📝 Biên bản</button>
       </div>
 
       <!-- TAB 1: GHI NHẬN PHÁT BIỂU -->
       <div id="panel-transcript" class="flex-1 flex flex-col overflow-hidden p-3">
         <div class="text-[11px] text-slate-400 mb-2 flex justify-between items-center">
-          <span>Click thẳng vào người 3D để Chọc / Dời ghế / Kick</span>
+          <span>Đồng bộ trực tiếp giữa các máy</span>
           <span id="micStatusBadge" class="text-slate-500">● Mic tắt</span>
         </div>
         <div id="transcriptList" class="flex-1 overflow-y-auto space-y-2 pr-1"></div>
         <div class="mt-2 pt-2 border-t border-slate-800 flex justify-between items-center">
-          <span class="text-[11px] text-slate-400">Ghi nhận tự động</span>
+          <span class="text-[11px] text-slate-400">Tự động lưu biên bản</span>
           <button onclick="switchTab('summary'); generateMeetingSummary();" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold px-3 py-1.5 rounded-lg text-xs">
             📄 Xuất Biên Bản
           </button>
         </div>
       </div>
 
-      <!-- TAB 2: CHAT NHÓM ĐÔNG NGƯỜI -->
+      <!-- TAB 2: THI & KIỂM TRA TRẮC NGHIỆM TRỰC TUYẾN (LIVE QUIZ) -->
+      <div id="panel-quiz" class="hidden flex-1 flex flex-col overflow-hidden p-3 space-y-3 overflow-y-auto">
+        <!-- Khu vực dành riêng cho Chủ tọa: Soạn câu hỏi & Phát đề -->
+        <div id="hostQuizBuilderBox" class="bg-slate-800/90 border border-amber-500/40 rounded-xl p-3 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-extrabold text-amber-400">👑 Chủ tọa: Quản lý Đề Trắc Nghiệm</span>
+            <span id="quizCountBadge" class="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded">3 câu hỏi</span>
+          </div>
+
+          <input id="newQuizQuestionInput" type="text" placeholder="Nhập nội dung câu hỏi mới..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white" />
+          <div class="grid grid-cols-2 gap-1.5">
+            <input id="newQuizOptA" type="text" placeholder="Đáp án A..." class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white" />
+            <input id="newQuizOptB" type="text" placeholder="Đáp án B..." class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white" />
+            <input id="newQuizOptC" type="text" placeholder="Đáp án C..." class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white" />
+            <input id="newQuizOptD" type="text" placeholder="Đáp án D..." class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white" />
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-[11px] text-slate-300">Đáp án đúng:</span>
+            <select id="newQuizCorrectIdx" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-emerald-400 font-bold">
+              <option value="0">A</option>
+              <option value="1">B</option>
+              <option value="2">C</option>
+              <option value="3">D</option>
+            </select>
+            <button onclick="addQuizQuestion()" class="ml-auto bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1 rounded-lg text-xs font-bold">+ Thêm câu</button>
+          </div>
+
+          <div class="border-t border-slate-700 pt-2 flex gap-1.5">
+            <button onclick="launchQuizToRoom()" class="flex-1 bg-gradient-to-r from-rose-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white font-extrabold py-2 rounded-xl text-xs shadow-lg">
+              🚀 PHÁT ĐỀ CHO TOÀN PHÒNG
+            </button>
+            <button onclick="endActiveQuiz()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2.5 py-2 rounded-xl text-xs font-bold">
+              Đóng đề
+            </button>
+          </div>
+        </div>
+
+        <!-- Khu vực Làm bài của Thành viên / Học viên -->
+        <div class="bg-slate-800/60 border border-slate-700 rounded-xl p-3">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-extrabold text-emerald-400">📝 Bài làm Trắc nghiệm của bạn</span>
+            <button onclick="document.getElementById('liveQuizFloatingBanner').classList.remove('hidden')" class="text-[10px] bg-indigo-600 px-2 py-0.5 rounded text-white font-semibold">Mở khung lớn</button>
+          </div>
+          <div id="sidebarQuizQuestionsList" class="space-y-2.5 max-h-56 overflow-y-auto pr-1"></div>
+          <button onclick="submitMyQuizAnswers()" class="mt-2.5 w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-2 rounded-xl text-xs shadow">
+            ✅ NỘP BÀI & CHẤM ĐIỂM NGAY
+          </button>
+        </div>
+
+        <!-- Bảng Xếp Hạng & Điểm Số Trực Tuyến (Realtime Leaderboard) -->
+        <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-3">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-extrabold text-amber-300">🏆 Bảng Kết Quả Trực Tuyến</span>
+            <span id="quizSubmissionCountBadge" class="text-[10px] text-slate-400">0 bài nộp</span>
+          </div>
+          <div id="quizLeaderboardList" class="space-y-1.5 max-h-48 overflow-y-auto"></div>
+        </div>
+      </div>
+
+      <!-- TAB 3: CHAT NHÓM ĐÔNG NGƯỜI -->
       <div id="panel-whisper" class="hidden flex-1 flex flex-col overflow-hidden p-3">
         <div class="bg-purple-950/40 border border-purple-500/30 rounded-xl p-2.5 mb-2">
           <div class="flex items-center justify-between mb-1.5">
@@ -317,10 +412,10 @@
         </div>
       </div>
 
-      <!-- TAB 3: TÓM TẮT BIÊN BẢN HỌP -->
+      <!-- TAB 4: TÓM TẮT BIÊN BẢN HỌP & KẾT QUẢ THI -->
       <div id="panel-summary" class="hidden flex-1 flex flex-col overflow-hidden p-3">
         <div class="flex gap-2 mb-2">
-          <button onclick="generateMeetingSummary()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 py-2 rounded-lg text-xs font-extrabold">⚡ Tổng Hợp Biên Bản</button>
+          <button onclick="generateMeetingSummary()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 py-2 rounded-lg text-xs font-extrabold">⚡ Tổng Hợp Biên Bản + Điểm Thi</button>
           <button onclick="downloadSummaryTxt()" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 px-3 py-2 rounded-lg text-xs font-bold">💾 Tải .TXT</button>
         </div>
         <textarea id="summaryTextarea" class="flex-1 w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-200 leading-relaxed focus:outline-none resize-none"></textarea>
@@ -334,12 +429,11 @@
       <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
         <div>
           <h3 class="text-base font-extrabold text-amber-400">🗺️ Sơ Đồ Sắp Xếp (Kéo Thả) & Chỉ Định Chỗ Ngồi Trước</h3>
-          <p class="text-xs text-slate-400">Kéo thả thẻ người dùng giữa các ghế vòng cung, hoặc gõ tên đặt chỗ trước vào ghế trống (khi người đó vào phòng sẽ ngồi đúng ghế đã chỉ định).</p>
+          <p class="text-xs text-slate-400">Khi Chủ trì kéo thả đổi ghế hoặc gõ tên đặt chỗ trước, sơ đồ chỗ ngồi sẽ đồng bộ ngay lập tức sang máy của tất cả các bạn trong phòng.</p>
         </div>
         <button onclick="closeSeatingPlannerModal()" class="bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded-lg text-xs font-bold">✕ Đóng</button>
       </div>
 
-      <!-- Thanh chỉnh tổng số ghế & Thêm trước người tham gia -->
       <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-800/70 p-3 rounded-xl mb-3">
         <div class="flex items-center gap-2">
           <span class="text-xs font-bold text-slate-300">Số ghế khán đài:</span>
@@ -354,18 +448,16 @@
         </div>
       </div>
 
-      <!-- Minh họa Bàn Chủ tọa đối diện -->
       <div class="bg-amber-500/15 border-2 border-amber-400/60 rounded-xl p-2.5 mb-3 text-center">
         <div class="text-xs font-extrabold text-amber-300">👑 BÀN CHỦ TỌA / GIẢNG VIÊN (TÂM ĐIỂM ĐỐI DIỆN TOÀN BỘ KHÁN ĐÀI VÒNG CUNG)</div>
         <div id="plannerHostSeatInfo" class="text-[11px] text-white mt-0.5">Ghế Chủ Tọa (#0): Đình Lâm</div>
       </div>
 
-      <!-- Lưới ghế ngồi Kéo - Thả -->
       <div id="seatingGridContainer" class="flex-1 overflow-y-auto grid grid-cols-2 sm:grid-cols-4 gap-2.5 pr-1"></div>
     </div>
   </div>
 
-  <!-- MODAL 2: UPLOAD LOGO NHÀ TÀI TRỢ (BỜ BAO XUNG QUANH + BANNER TRÊN BẢNG) -->
+  <!-- MODAL 2: UPLOAD LOGO NHÀ TÀI TRỢ -->
   <div id="sponsorModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
     <div class="bg-slate-900 border border-amber-500/50 rounded-2xl max-w-2xl w-full p-5 shadow-2xl max-h-[90vh] flex flex-col">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
@@ -375,7 +467,6 @@
         </div>
         <button onclick="closeSponsorLogoModal()" class="bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded-lg text-xs font-bold">✕ Đóng</button>
       </div>
-
       <div id="sponsorSlotsList" class="flex-1 overflow-y-auto space-y-2.5 pr-1"></div>
     </div>
   </div>
@@ -406,16 +497,22 @@
   </div>
 
   <script>
-    // ================= CẤU HÌNH MẶC ĐỊNH & DỮ LIỆU =================
+    // ================= CẤU HÌNH MẶC ĐỊNH & ĐỒNG BỘ MẠNG (REALTIME MULTIPLAYER) =================
     const HOST_PIN = '2020';
     let isOwnerAuthenticated = false;
-    let currentViewerId = 'p1';
+    let myClientId = 'u_' + Math.random().toString(36).substring(2, 9);
+    let currentViewerId = myClientId;
     let assignedHostId = 'p0';
     let activeSpeakerId = null;
     let selectedTargetMemberId = null;
-    let currentScene = 'vongcung'; // Mặc định mở Khán Phòng Vòng Cung Giảng Đường 3D
-    let maxSeats = 17; // Ghế #0 là bàn Chủ tọa tại tâm + 16 ghế xếp trên 3 tầng bậc thang vòng cung
+    let currentRoomChannel = 'phong_dinh_lam';
+    let currentScene = 'vongcung';
+    let maxSeats = 17;
     let is3DDragEnabled = false;
+
+    // Kết nối MQTT WebSocket miễn phí giúp các máy thấy nhau theo thời gian thực
+    let mqttClient = null;
+    let mqttTopic = '';
 
     let isScreenSharing = false;
     let screenStream = null;
@@ -426,23 +523,50 @@
     let camVideoTexture = null;
     let camOwnerId = null;
 
+    // Danh sách thành viên (Mặc định có Chủ tọa ở ghế #0)
     let participants = [
-      { id: 'p0', name: 'Đình Lâm', role: 'Chủ Tọa', seat: 0, color: 0xf59e0b, speaking: false, bubble: '', bounceUntil: 0 },
-      { id: 'p1', name: 'Bảo Ngọc', role: 'Thiết kế 3D/UX', seat: 1, color: 0xec4899, speaking: false, bubble: '', bounceUntil: 0 },
-      { id: 'p2', name: 'Hoàng Nam', role: 'CTO Kỹ thuật', seat: 2, color: 0x3b82f6, speaking: false, bubble: '', bounceUntil: 0 },
-      { id: 'p3', name: 'Thu Hà', role: 'Marketing Lead', seat: 3, color: 0xa855f7, speaking: false, bubble: '', bounceUntil: 0 },
-      { id: 'p4', name: 'Minh Tuấn', role: 'Kế toán trưởng', seat: 4, color: 0x10b981, speaking: false, bubble: '', bounceUntil: 0 },
-      { id: 'p5', name: 'Đức Thịnh', role: 'Quản lý Dự án', seat: 5, color: 0x06b6d4, speaking: false, bubble: '', bounceUntil: 0 },
-      { id: 'p6', name: 'Thầy Thanh', role: 'Cố vấn Chiến lược', seat: 6, color: 0xeab308, speaking: false, bubble: '', bounceUntil: 0 },
-      { id: 'p7', name: 'Khánh Linh', role: 'Chăm sóc KH', seat: 7, color: 0xf97316, speaking: false, bubble: '', bounceUntil: 0 },
-      { id: 'p8', name: 'Quốc Khánh', role: 'Vận hành', seat: 8, color: 0x14b8a6, speaking: false, bubble: '', bounceUntil: 0 },
-      { id: 'p9', name: 'Thanh Trúc', role: 'Tài chính', seat: 9, color: 0x8b5cf6, speaking: false, bubble: '', bounceUntil: 0 }
+      { id: 'p0', name: 'Đình Lâm', role: 'Chủ Tọa', seat: 0, color: 0xf59e0b, speaking: false, bubble: '', bounceUntil: 0, isBot: false }
     ];
 
-    let preassignedSeatNames = {
-      10: 'Văn Hùng',
-      11: 'Phương Thảo'
+    const demoBots = [
+      { id: 'bot1', name: 'Bảo Ngọc', role: 'Thiết kế 3D', seat: 1, color: 0xec4899, speaking: false, bubble: '', bounceUntil: 0, isBot: true },
+      { id: 'bot2', name: 'Hoàng Nam', role: 'Kỹ thuật', seat: 2, color: 0x3b82f6, speaking: false, bubble: '', bounceUntil: 0, isBot: true },
+      { id: 'bot3', name: 'Thu Hà', role: 'Marketing', seat: 3, color: 0xa855f7, speaking: false, bubble: '', bounceUntil: 0, isBot: true },
+      { id: 'bot4', name: 'Minh Tuấn', role: 'Tài chính', seat: 4, color: 0x10b981, speaking: false, bubble: '', bounceUntil: 0, isBot: true }
+    ];
+
+    let preassignedSeatNames = {};
+
+    // ================= DỮ LIỆU ĐỀ THI TRẮC NGHIỆM TRỰC TUYẾN (LIVE QUIZ) =================
+    let quizState = {
+      isActive: false,
+      title: 'ĐỀ KIỂM TRA TRẮC NGHIỆM TRỰC TUYẾN',
+      durationSec: 180,
+      remainSec: 180,
+      questions: [
+        {
+          id: 'q1',
+          q: 'Câu 1: Trong quản trị dự án & sản xuất, chỉ số KPI viết tắt của cụm từ nào?',
+          options: ['A. Key Performance Indicator', 'B. Knowledge Process Integration', 'C. Key Product Index', 'D. Keep Process Improving'],
+          correct: 0
+        },
+        {
+          id: 'q2',
+          q: 'Câu 2: Điểm ưu việt nhất của Khán phòng vòng cung giảng đường 3D là gì?',
+          options: ['A. Bàn ghế xếp bậc thang cao dần giúp mọi người nhìn rõ sân khấu', 'B. Mọi ánh nhìn đều hướng đối diện về phía Bàn Chủ tọa', 'C. Kết hợp họp, trình chiếu và làm bài thi trực tuyến', 'D. Tất cả các đáp án trên đều đúng'],
+          correct: 3
+        },
+        {
+          id: 'q3',
+          q: 'Câu 3: Khi nào thành viên trong phòng được phép bật Camera khuôn mặt 3D và Share màn hình?',
+          options: ['A. Bất kỳ lúc nào mà không cần xin phép', 'B. Khi đang bật Mic phát biểu hoặc được Chủ tọa mời phát biểu', 'C. Chỉ khi kết thúc cuộc họp', 'D. Không ai được bật ngoài Chủ tọa'],
+          correct: 1
+        }
+      ],
+      submissions: [] // { memberId, name, role, score, total, timeStr }
     };
+    let mySelectedAnswers = {}; // { questionIdx: optionIdx }
+    let quizTimerInterval = null;
 
     const sponsorSlots = [
       { id: 'top_banner', name: 'Banner Chính (Trên Bảng)', label: 'KHÁN PHÒNG VÒNG CUNG GIẢNG ĐƯỜNG & HỘI NGHỊ 3D', bgColor: '#1e3a8a', accent: '#fbbf24', imgUrl: null, texture: null },
@@ -458,23 +582,236 @@
     let currentEditingSponsorId = null;
 
     const slides = [
-      { title: 'KHÁN PHÒNG VÒNG CUNG GIẢNG ĐƯỜNG 3D', lines: ['1. Các hàng ghế xếp vòng cung trên bậc thang cao dần', '2. Bàn Chủ tọa đặt tại tâm sân khấu nhìn đối diện khán đài', '3. Kéo thả xếp chỗ ngồi & Đặt tên ghế trước cho đại biểu'] },
-      { title: 'TRÌNH CHIẾU & CAMERA GẮN MẶT NHÂN VẬT', lines: ['• Chủ tọa & Người phát biểu chiếu màn hình máy tính lên bảng', '• Camera thật hiển thị ngay trên mặt trước nhân vật 3D', '• Click trực tiếp vào cơ thể 3D để Chọc / Dời ghế / Kick'] },
-      { title: 'BỜ BAO LOGO TÀI TRỢ & BIÊN BẢN AI', lines: ['• 8 Slot bờ bao xung quanh + Banner trên bảng gắn Logo', '• Tự động ghi nhận lời phát biểu tiếng Việt theo thời gian thực', '• Tổng hợp biên bản cuộc họp chuẩn hành chính'] }
+      { title: 'KHÁN PHÒNG VÒNG CUNG GIẢNG ĐƯỜNG 3D', lines: ['1. Đã bật Kết Nối Realtime: Mọi người vào link nhìn thấy nhau ngay!', '2. Bàn Chủ tọa đối diện toàn bộ các bậc thang khán đài', '3. Tích hợp Hệ thống Thi Trắc Nghiệm & Chấm Điểm Trực Tuyến'] },
+      { title: 'HƯỚNG DẪN THI TRẮC NGHIỆM TRỰC TUYẾN', lines: ['• Chủ tọa soạn câu hỏi và bấm "Phát Đề Cho Toàn Phòng"', '• Đề thi tự động bật lên màn hình của tất cả thành viên', '• Bảng xếp hạng cập nhật điểm số ngay khi học viên nộp bài'] },
+      { title: 'THẢO LUẬN & GHI NHẬN BIÊN BẢN AI', lines: ['• Tự động chuyển giọng nói tiếng Việt thành văn bản', '• Xuất biên bản cuộc họp kèm Bảng điểm thi trắc nghiệm'] }
     ];
     let currentSlideIdx = 0;
 
     const transcripts = [
-      { time: '09:00:10', speaker: 'Đình Lâm', role: 'Chủ Tọa', text: 'Chào mừng anh chị em vào Khán Phòng Vòng Cung Giảng Đường 3D! Các dãy bàn ghế đã được nâng bậc thang cao dần giúp mọi người đều nhìn rõ sân khấu.' },
-      { time: '09:02:15', speaker: 'Bảo Ngọc', role: 'Thiết kế 3D/UX', text: 'Từ trên các bậc khán đài vòng cung nhìn xuống tâm sân khấu và màn hình LED rất thoáng, không bị che khuất tầm nhìn.' }
+      { time: '09:00:00', speaker: 'Hệ thống', role: 'Realtime Sync', text: 'Chào mừng vào Khán Phòng 3D! Các thành viên chọn cùng phòng sẽ tự động nhìn thấy nhau và nhận đề thi trắc nghiệm trực tiếp.' }
     ];
 
-    let whisperGroupIds = ['p2', 'p3', 'p4'];
-    const whisperLogs = [
-      { time: '09:03', from: 'Đình Lâm', toNames: 'Nhóm dự án', text: 'Anh đã xếp chỗ ngồi trên khán đài vòng cung cho các thành viên mới rồi nhé!' }
-    ];
+    let whisperGroupIds = [];
+    const whisperLogs = [];
 
-    // ================= CỔNG ĐĂNG NHẬP CHỌN CHỦ TRÌ & GHẾ CHỈ ĐỊNH TRƯỚC =================
+    // ================= HỆ THỐNG ĐỒNG BỘ MẠNG THỜI GIAN THỰC (MQTT WEBSOCKETS) =================
+    function connectRealtimeRoom(roomKey) {
+      if (mqttClient) {
+        try { mqttClient.end(true); } catch (e) {}
+      }
+      currentRoomChannel = roomKey;
+      mqttTopic = `damdao3d_live_v2/${roomKey}`;
+
+      const dot = document.getElementById('networkDot');
+      const txt = document.getElementById('networkText');
+      dot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
+      txt.innerText = 'Đang kết nối phòng...';
+
+      mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt', {
+        clientId: 'dd3d_' + myClientId + '_' + Math.floor(Math.random() * 9999),
+        clean: true,
+        connectTimeout: 5000,
+        reconnectPeriod: 2000
+      });
+
+      mqttClient.on('connect', () => {
+        dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+        txt.innerText = 'Đã kết nối Realtime';
+        mqttClient.subscribe(mqttTopic, { qos: 0 });
+
+        // Gửi tín hiệu báo có người mới vào phòng & yêu cầu Chủ tọa đồng bộ trạng thái
+        const me = participants.find(p => p.id === currentViewerId);
+        if (me) {
+          broadcastRealtime('USER_JOIN', { member: me });
+        }
+        broadcastRealtime('REQUEST_STATE', { requesterId: currentViewerId });
+      });
+
+      mqttClient.on('message', (topic, payload) => {
+        if (topic !== mqttTopic) return;
+        try {
+          const msg = JSON.parse(payload.toString());
+          if (msg.senderId === currentViewerId && msg.type !== 'FULL_STATE') return;
+          handleIncomingRealtimeMessage(msg);
+        } catch (err) {}
+      });
+    }
+
+    function broadcastRealtime(type, data) {
+      if (!mqttClient || !mqttClient.connected) return;
+      const packet = JSON.stringify({
+        type,
+        senderId: currentViewerId,
+        ts: Date.now(),
+        data
+      });
+      mqttClient.publish(mqttTopic, packet);
+    }
+
+    function handleIncomingRealtimeMessage(msg) {
+      const { type, data } = msg;
+
+      if (type === 'USER_JOIN' && data.member) {
+        const incoming = data.member;
+        const idx = participants.findIndex(p => p.id === incoming.id);
+        if (idx >= 0) {
+          participants[idx] = { ...participants[idx], ...incoming };
+        } else {
+          // Nếu ghế bị trùng với người đang ngồi (trừ ghế 0 của Chủ tọa), tự xếp ghế trống tiếp theo
+          if (incoming.seat !== 0 && participants.some(p => p.seat === incoming.seat && p.id !== incoming.id)) {
+            for (let s = 1; s < maxSeats; s++) {
+              if (!participants.some(p => p.seat === s)) {
+                incoming.seat = s;
+                break;
+              }
+            }
+          }
+          participants.push(incoming);
+        }
+        updateOnlineCountUI();
+        renderWhisperUI();
+        build3DScene();
+
+        // Nếu mình là Chủ tọa (hoặc người đang trong phòng), gửi trả toàn bộ danh sách phòng cho người mới vào thấy mình!
+        if (isCurrentUserHost() || participants.length > 1) {
+          sendFullRoomState();
+        }
+      } else if (type === 'REQUEST_STATE') {
+        sendFullRoomState();
+      } else if (type === 'FULL_STATE' && data) {
+        // Hợp nhất danh sách thành viên từ các máy khác để cả 2 bên đều nhìn thấy nhau
+        if (Array.isArray(data.participants)) {
+          data.participants.forEach(remoteP => {
+            if (remoteP.isBot && !document.getElementById('keepDemoBotsCheckbox').checked) return;
+            const localIdx = participants.findIndex(lp => lp.id === remoteP.id);
+            if (localIdx >= 0) {
+              if (remoteP.id !== currentViewerId) {
+                participants[localIdx] = { ...participants[localIdx], ...remoteP };
+              }
+            } else {
+              participants.push(remoteP);
+            }
+          });
+        }
+        if (data.currentScene && data.currentScene !== currentScene) {
+          currentScene = data.currentScene;
+          highlightSceneButton(currentScene);
+        }
+        if (typeof data.currentSlideIdx === 'number') {
+          currentSlideIdx = data.currentSlideIdx;
+        }
+        if (data.preassignedSeatNames) {
+          preassignedSeatNames = { ...preassignedSeatNames, ...data.preassignedSeatNames };
+        }
+        if (data.quizState) {
+          quizState.questions = data.quizState.questions || quizState.questions;
+          quizState.submissions = data.quizState.submissions || quizState.submissions;
+          renderQuizUI();
+        }
+        updateOnlineCountUI();
+        renderWhisperUI();
+        build3DScene();
+      } else if (type === 'SEAT_UPDATE' && data) {
+        if (Array.isArray(data.participants)) {
+          participants = data.participants;
+        }
+        if (data.preassignedSeatNames) {
+          preassignedSeatNames = data.preassignedSeatNames;
+        }
+        const me = participants.find(p => p.id === currentViewerId);
+        if (me) document.getElementById('currentUserBadge').innerText = `👤 ${me.name} (Ghế #${me.seat})`;
+        build3DScene();
+        if (!document.getElementById('seatingPlannerModal').classList.contains('hidden')) {
+          renderSeatingPlannerGrid();
+        }
+      } else if (type === 'SCENE_CHANGE' && data.sceneKey) {
+        currentScene = data.sceneKey;
+        highlightSceneButton(currentScene);
+        build3DScene();
+      } else if (type === 'SLIDE_UPDATE' && data) {
+        if (data.slides) {
+          slides.length = 0;
+          data.slides.forEach(s => slides.push(s));
+        }
+        if (typeof data.currentSlideIdx === 'number') currentSlideIdx = data.currentSlideIdx;
+        drawSlideTo3DScreen();
+      } else if (type === 'SPEECH' && data) {
+        transcripts.push(data.entry);
+        renderTranscripts();
+        const speakerP = participants.find(p => p.id === data.personId);
+        if (speakerP) {
+          speakerP.speaking = true;
+          speakerP.bubble = data.entry.text;
+          rebuildDomLabels();
+          setTimeout(() => { speakerP.speaking = false; speakerP.bubble = ''; rebuildDomLabels(); }, 6000);
+        }
+      } else if (type === 'INTERACT' && data) {
+        const target = participants.find(p => p.id === data.targetId);
+        if (target) {
+          target.bubble = data.bubble;
+          target.isPokeBubble = true;
+          target.bounceUntil = Date.now() + 2200;
+          rebuildDomLabels();
+          setTimeout(() => { target.bubble = ''; target.isPokeBubble = false; rebuildDomLabels(); }, 4000);
+        }
+        if (data.emoji) sendReaction(data.emoji, false);
+      } else if (type === 'REACTION' && data.emoji) {
+        sendReaction(data.emoji, false);
+      } else if (type === 'KICK' && data.targetId) {
+        if (data.targetId === currentViewerId) {
+          alert('⛔ Bạn đã bị Chủ tọa mời ra khỏi phòng họp!');
+          location.reload();
+          return;
+        }
+        participants = participants.filter(p => p.id !== data.targetId);
+        updateOnlineCountUI();
+        build3DScene();
+      } else if (type === 'QUIZ_LAUNCH' && data.quizState) {
+        quizState = data.quizState;
+        mySelectedAnswers = {};
+        renderQuizUI();
+        startQuizCountdown();
+        document.getElementById('liveQuizFloatingBanner').classList.remove('hidden');
+        drawQuizTo3DScreen();
+      } else if (type === 'QUIZ_END') {
+        quizState.isActive = false;
+        if (quizTimerInterval) clearInterval(quizTimerInterval);
+        document.getElementById('liveQuizFloatingBanner').classList.add('hidden');
+        drawSlideTo3DScreen();
+        renderQuizUI();
+      } else if (type === 'QUIZ_SUBMIT' && data.submission) {
+        const sub = data.submission;
+        const existIdx = quizState.submissions.findIndex(s => s.memberId === sub.memberId);
+        if (existIdx >= 0) quizState.submissions[existIdx] = sub;
+        else quizState.submissions.push(sub);
+        renderQuizUI();
+
+        const studentP = participants.find(p => p.id === sub.memberId);
+        if (studentP) {
+          studentP.bubble = `✅ Đã nộp bài Trắc nghiệm: ${sub.score}/${sub.total} câu đúng!`;
+          studentP.bounceUntil = Date.now() + 1500;
+          rebuildDomLabels();
+          setTimeout(() => { studentP.bubble = ''; rebuildDomLabels(); }, 4500);
+        }
+      }
+    }
+
+    function sendFullRoomState() {
+      broadcastRealtime('FULL_STATE', {
+        participants,
+        currentScene,
+        currentSlideIdx,
+        preassignedSeatNames,
+        quizState
+      });
+    }
+
+    function updateOnlineCountUI() {
+      document.getElementById('onlineCountLabel').innerText = participants.length;
+    }
+
+    // ================= CỔNG ĐĂNG NHẬP & KIỂM TRA QUYỀN =================
     function toggleHostPinBox() {
       const checked = document.getElementById('loginIsHostCheckbox').checked;
       const pinBox = document.getElementById('hostPinBox');
@@ -488,13 +825,20 @@
     }
 
     function enterMeetingRoom() {
-      const selectedHostRoom = document.getElementById('loginRoomHostSelect').value;
+      const roomCode = document.getElementById('loginRoomHostSelect').value;
       const rawName = document.getElementById('loginNameInput').value.trim();
       const rawRole = document.getElementById('loginRoleInput').value.trim();
       const wantsHost = document.getElementById('loginIsHostCheckbox').checked;
       const pinVal = document.getElementById('loginPinInput').value.trim();
+      const useBots = document.getElementById('keepDemoBotsCheckbox').checked;
 
-      participants[0].name = selectedHostRoom;
+      // Xóa bot nếu người dùng không tích chọn Bot mẫu
+      participants = participants.filter(p => !p.isBot);
+      if (useBots) {
+        demoBots.forEach(b => {
+          if (!participants.some(p => p.id === b.id)) participants.push({ ...b });
+        });
+      }
 
       if (wantsHost) {
         if (pinVal !== HOST_PIN) {
@@ -504,54 +848,69 @@
         isOwnerAuthenticated = true;
         currentViewerId = 'p0';
         assignedHostId = 'p0';
-        participants[0].name = rawName || selectedHostRoom;
+        participants[0].name = rawName || 'Đình Lâm';
         participants[0].role = rawRole || 'Chủ Tọa';
         participants[0].seat = 0;
       } else {
         isOwnerAuthenticated = false;
-        const memberName = rawName || 'Thành viên mới';
-        const memberRole = rawRole || 'Thành viên';
+        const memberName = rawName || ('Thành viên ' + Math.floor(Math.random() * 90 + 10));
+        const memberRole = rawRole || 'Học viên';
 
-        let existing = participants.find(p => p.id !== 'p0' && p.name.toLowerCase() === memberName.toLowerCase());
-        if (existing) {
-          currentViewerId = existing.id;
-          existing.role = memberRole;
-        } else {
-          let targetSeat = null;
-          for (const [sIdx, rName] of Object.entries(preassignedSeatNames)) {
-            if (rName && rName.toLowerCase() === memberName.toLowerCase()) {
-              targetSeat = parseInt(sIdx, 10);
-              delete preassignedSeatNames[sIdx];
+        // Kiểm tra xem Chủ trì có xếp chỗ trước theo tên không
+        let targetSeat = null;
+        for (const [sIdx, rName] of Object.entries(preassignedSeatNames)) {
+          if (rName && rName.toLowerCase() === memberName.toLowerCase()) {
+            targetSeat = parseInt(sIdx, 10);
+            delete preassignedSeatNames[sIdx];
+            break;
+          }
+        }
+        if (targetSeat === null) {
+          for (let i = 1; i < maxSeats; i++) {
+            if (!participants.some(p => p.seat === i)) {
+              targetSeat = i;
               break;
             }
           }
           if (targetSeat === null) {
-            for (let i = 1; i < maxSeats; i++) {
-              if (!participants.some(p => p.seat === i)) {
-                targetSeat = i;
-                break;
-              }
-            }
-            if (targetSeat === null) {
-              targetSeat = maxSeats;
-              maxSeats++;
-            }
+            targetSeat = maxSeats;
+            maxSeats++;
           }
-          const newId = 'p_' + Date.now();
-          participants.push({
-            id: newId, name: memberName, role: memberRole,
-            seat: targetSeat, color: 0x38bdf8, speaking: false, bubble: '', bounceUntil: 0
-          });
-          currentViewerId = newId;
         }
+
+        const palette = [0x38bdf8, 0xec4899, 0xa855f7, 0x10b981, 0xf97316, 0x06b6d4];
+        const myExisting = participants.find(p => p.id === myClientId);
+        if (myExisting) {
+          myExisting.name = memberName;
+          myExisting.role = memberRole;
+        } else {
+          participants.push({
+            id: myClientId,
+            name: memberName,
+            role: memberRole,
+            seat: targetSeat,
+            color: palette[participants.length % palette.length],
+            speaking: false,
+            bubble: '',
+            bounceUntil: 0,
+            isBot: false
+          });
+        }
+        currentViewerId = myClientId;
       }
 
       const me = participants.find(p => p.id === currentViewerId) || participants[0];
       document.getElementById('currentUserBadge').innerText = `👤 ${me.name} (Ghế #${me.seat})`;
       document.getElementById('loginOverlay').style.display = 'none';
+
       updatePermissionUI();
+      updateOnlineCountUI();
       renderWhisperUI();
+      renderQuizUI();
       build3DScene();
+
+      // Kết nối vào kênh Realtime chung của phòng
+      connectRealtimeRoom(roomCode);
     }
 
     function isCurrentUserHost() {
@@ -574,8 +933,10 @@
       const assignBtn = document.getElementById('btnAssignHost');
       const shareBtn = document.getElementById('btnShareScreen');
       const camBtn = document.getElementById('btnUserCam');
+      const quizBuilder = document.getElementById('hostQuizBuilderBox');
 
       assignBtn.style.display = isHost ? 'inline-block' : 'none';
+      if (quizBuilder) quizBuilder.style.display = isHost ? 'block' : 'none';
 
       if (isHost) {
         miniTag.className = 'text-emerald-400 font-bold';
@@ -594,6 +955,216 @@
         shareBtn.classList.add('opacity-40', 'cursor-not-allowed');
         camBtn.classList.add('opacity-40', 'cursor-not-allowed');
       }
+    }
+
+    // ================= HỆ THỐNG ĐỀ THI TRẮC NGHIỆM TRỰC TUYẾN (LIVE QUIZ) =================
+    function addQuizQuestion() {
+      if (!isCurrentUserHost()) return;
+      const q = document.getElementById('newQuizQuestionInput').value.trim();
+      const a = document.getElementById('newQuizOptA').value.trim();
+      const b = document.getElementById('newQuizOptB').value.trim();
+      const c = document.getElementById('newQuizOptC').value.trim();
+      const d = document.getElementById('newQuizOptD').value.trim();
+      const correct = parseInt(document.getElementById('newQuizCorrectIdx').value, 10);
+
+      if (!q || !a || !b) {
+        alert('Vui lòng nhập câu hỏi và ít nhất 2 đáp án A, B!');
+        return;
+      }
+      quizState.questions.push({
+        id: 'q_' + Date.now(),
+        q: `Câu ${quizState.questions.length + 1}: ${q}`,
+        options: [`A. ${a}`, `B. ${b}`, `C. ${c || 'Đáp án khác'}`, `D. ${d || 'Không có đáp án đúng'}`],
+        correct
+      });
+
+      document.getElementById('newQuizQuestionInput').value = '';
+      document.getElementById('newQuizOptA').value = '';
+      document.getElementById('newQuizOptB').value = '';
+      document.getElementById('newQuizOptC').value = '';
+      document.getElementById('newQuizOptD').value = '';
+      renderQuizUI();
+      sendFullRoomState();
+    }
+
+    function deleteQuizQuestion(idx) {
+      if (!isCurrentUserHost()) return;
+      quizState.questions.splice(idx, 1);
+      renderQuizUI();
+      sendFullRoomState();
+    }
+
+    function launchQuizToRoom() {
+      if (!isCurrentUserHost()) {
+        alert('⛔ Chỉ có Chủ tọa mới được phát đề thi trắc nghiệm cho toàn phòng!');
+        return;
+      }
+      if (quizState.questions.length === 0) {
+        alert('Chưa có câu hỏi nào trong đề!');
+        return;
+      }
+      quizState.isActive = true;
+      quizState.remainSec = quizState.durationSec || 180;
+      mySelectedAnswers = {};
+
+      renderQuizUI();
+      startQuizCountdown();
+      document.getElementById('liveQuizFloatingBanner').classList.remove('hidden');
+      drawQuizTo3DScreen();
+
+      broadcastRealtime('QUIZ_LAUNCH', { quizState });
+    }
+
+    function endActiveQuiz() {
+      if (!isCurrentUserHost()) return;
+      quizState.isActive = false;
+      if (quizTimerInterval) clearInterval(quizTimerInterval);
+      document.getElementById('liveQuizFloatingBanner').classList.add('hidden');
+      drawSlideTo3DScreen();
+      renderQuizUI();
+      broadcastRealtime('QUIZ_END', {});
+    }
+
+    function startQuizCountdown() {
+      if (quizTimerInterval) clearInterval(quizTimerInterval);
+      const timerEl = document.getElementById('floatingQuizTimer');
+      quizTimerInterval = setInterval(() => {
+        if (!quizState.isActive) {
+          clearInterval(quizTimerInterval);
+          return;
+        }
+        quizState.remainSec = Math.max(0, quizState.remainSec - 1);
+        const m = String(Math.floor(quizState.remainSec / 60)).padStart(2, '0');
+        const s = String(quizState.remainSec % 60).padStart(2, '0');
+        if (timerEl) timerEl.innerText = `⏱️ ${m}:${s}`;
+        if (quizState.remainSec <= 0) {
+          clearInterval(quizTimerInterval);
+        }
+      }, 1000);
+    }
+
+    function selectQuizOption(qIdx, optIdx) {
+      mySelectedAnswers[qIdx] = optIdx;
+      renderQuizUI();
+    }
+
+    function submitMyQuizAnswers() {
+      if (quizState.questions.length === 0) return;
+      let correctCount = 0;
+      quizState.questions.forEach((item, qIdx) => {
+        if (mySelectedAnswers[qIdx] === item.correct) correctCount++;
+      });
+
+      const me = participants.find(p => p.id === currentViewerId) || participants[0];
+      const submission = {
+        memberId: currentViewerId,
+        name: me.name,
+        role: me.role,
+        score: correctCount,
+        total: quizState.questions.length,
+        percent: Math.round((correctCount / quizState.questions.length) * 100),
+        timeStr: new Date().toTimeString().split(' ')[0]
+      };
+
+      const existIdx = quizState.submissions.findIndex(s => s.memberId === currentViewerId);
+      if (existIdx >= 0) quizState.submissions[existIdx] = submission;
+      else quizState.submissions.push(submission);
+
+      me.bubble = `✅ Đã nộp bài: ${correctCount}/${quizState.questions.length} câu đúng (${submission.percent}%)!`;
+      me.bounceUntil = Date.now() + 1600;
+      rebuildDomLabels();
+
+      document.getElementById('floatingQuizStatusText').innerHTML = `<b class="text-emerald-400">🎉 Bạn đạt ${correctCount}/${quizState.questions.length} câu đúng (${submission.percent}%)!</b>`;
+      renderQuizUI();
+      sendReaction('💯', true);
+
+      broadcastRealtime('QUIZ_SUBMIT', { submission });
+    }
+
+    function renderQuizUI() {
+      const badge = document.getElementById('quizCountBadge');
+      if (badge) badge.innerText = `${quizState.questions.length} câu hỏi`;
+
+      const renderQuestionsHtml = () => quizState.questions.map((item, qIdx) => {
+        const chosen = mySelectedAnswers[qIdx];
+        return `
+          <div class="bg-slate-900/95 border border-slate-700 rounded-xl p-2.5">
+            <div class="flex justify-between items-start gap-2 mb-1.5">
+              <div class="text-xs font-bold text-amber-300">${item.q}</div>
+              ${isCurrentUserHost() ? `<button onclick="deleteQuizQuestion(${qIdx})" class="text-[10px] text-rose-400 hover:text-rose-300 shrink-0">Xóa</button>` : ''}
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+              ${item.options.map((opt, oIdx) => {
+                const isSelected = chosen === oIdx;
+                return `
+                  <button onclick="selectQuizOption(${qIdx}, ${oIdx})"
+                          class="text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition ${isSelected ? 'bg-emerald-600 text-white border-emerald-300 shadow' : 'bg-slate-800 text-slate-200 border-slate-700 hover:border-amber-400'}">
+                    ${isSelected ? '🔘 ' : '⚪ '}${opt}
+                  </button>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      const qHtml = renderQuestionsHtml();
+      const sideList = document.getElementById('sidebarQuizQuestionsList');
+      const floatBody = document.getElementById('floatingQuizQuestionBody');
+      if (sideList) sideList.innerHTML = qHtml;
+      if (floatBody) floatBody.innerHTML = qHtml;
+
+      // Render Bảng xếp hạng điểm số
+      const subBadge = document.getElementById('quizSubmissionCountBadge');
+      if (subBadge) subBadge.innerText = `${quizState.submissions.length} bài nộp`;
+
+      const board = document.getElementById('quizLeaderboardList');
+      if (board) {
+        const sorted = [...quizState.submissions].sort((a, b) => b.score - a.score);
+        board.innerHTML = sorted.length === 0
+          ? '<div class="text-[11px] text-slate-500 text-center py-2">Chưa có học viên nào nộp bài.</div>'
+          : sorted.map((s, idx) => `
+              <div class="flex items-center justify-between bg-slate-900 border border-slate-800 px-2.5 py-1.5 rounded-lg text-xs">
+                <div>
+                  <span class="font-extrabold text-amber-400">#${idx + 1}</span>
+                  <span class="font-bold text-white ml-1">${s.name}</span>
+                  <span class="text-[10px] text-slate-400">(${s.timeStr})</span>
+                </div>
+                <span class="font-extrabold text-emerald-400">${s.score}/${s.total} (${s.percent}%)</span>
+              </div>
+            `).join('');
+      }
+    }
+
+    function drawQuizTo3DScreen() {
+      if (!screenCtx) return;
+      screenCtx.fillStyle = '#3b0764';
+      screenCtx.fillRect(0, 0, 1024, 512);
+
+      screenCtx.strokeStyle = '#f43f5e';
+      screenCtx.lineWidth = 12;
+      screenCtx.strokeRect(14, 14, 996, 484);
+
+      screenCtx.fillStyle = '#fde047';
+      screenCtx.font = 'bold 38px sans-serif';
+      screenCtx.fillText('🎓 ĐANG THI TRẮC NGHIỆM TRỰC TUYẾN TRÊN MÀN HÌNH', 50, 85);
+
+      const q1 = quizState.questions[0];
+      if (q1) {
+        screenCtx.fillStyle = '#ffffff';
+        screenCtx.font = 'bold 28px sans-serif';
+        screenCtx.fillText(q1.q.slice(0, 62), 55, 160);
+        q1.options.forEach((op, idx) => {
+          screenCtx.fillStyle = '#e2e8f0';
+          screenCtx.font = '25px sans-serif';
+          screenCtx.fillText(op, 75, 225 + idx * 52);
+        });
+      }
+
+      screenCtx.fillStyle = '#34d399';
+      screenCtx.font = 'bold 24px sans-serif';
+      screenCtx.fillText(`📊 Đã nộp: ${quizState.submissions.length} học viên  |  Tổng số: ${quizState.questions.length} câu hỏi`, 55, 465);
+      screenTexture.needsUpdate = true;
     }
 
     // ================= SHARE MÀN HÌNH & CAMERA HIỂN THỊ TRÊN MẶT TRƯỚC NHÂN VẬT 3D =================
@@ -624,9 +1195,7 @@
           btn.className = 'px-2.5 py-0.5 bg-rose-600 hover:bg-rose-500 text-white rounded text-xs font-extrabold flex items-center gap-1 shadow animate-pulse';
           screenStream.getVideoTracks()[0].onended = () => stopScreenShareCleanup();
           setCamPreset('audienceView');
-        } catch (err) {
-          console.warn('Hủy Share màn hình:', err);
-        }
+        } catch (err) {}
       } else {
         stopScreenShareCleanup();
       }
@@ -694,7 +1263,7 @@
         isCamActive = false;
         camOwnerId = null;
         pipCard.classList.add('hidden');
-        btn.innerText = '📷 Bật Cam Lên Mặt 3D';
+        btn.innerText = '📷 Bật Cam Mặt 3D';
         btn.className = 'px-2.5 py-0.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded text-xs font-extrabold flex items-center gap-1 shadow';
         build3DScene();
       }
@@ -783,7 +1352,7 @@
       if (!pFrom) return;
 
       if (!isCurrentUserHost() && pFrom.id !== currentViewerId) {
-        alert('⛔ Chỉ có Chủ trì mới được kéo thả đổi chỗ của người khác! Bạn chỉ có thể kéo thẻ tên của chính mình.');
+        alert('⛔ Chỉ có Chủ trì mới được kéo thả đổi chỗ của người khác!');
         return;
       }
 
@@ -802,6 +1371,7 @@
 
       renderSeatingPlannerGrid();
       build3DScene();
+      broadcastRealtime('SEAT_UPDATE', { participants, preassignedSeatNames });
     }
 
     function setPreassignedSeatName(seatIdx, nameVal) {
@@ -810,6 +1380,7 @@
       if (clean) preassignedSeatNames[seatIdx] = clean;
       else delete preassignedSeatNames[seatIdx];
       build3DScene();
+      broadcastRealtime('SEAT_UPDATE', { participants, preassignedSeatNames });
     }
 
     function addParticipantWithPreassignedSeat() {
@@ -827,14 +1398,16 @@
         id: 'p_' + Date.now(), name, role,
         seat: isNaN(targetSeat) ? participants.length : targetSeat,
         color: palette[participants.length % palette.length],
-        speaking: false, bubble: '', bounceUntil: 0
+        speaking: false, bubble: '', bounceUntil: 0, isBot: false
       });
       if (targetSeat >= maxSeats) maxSeats = targetSeat + 1;
       document.getElementById('newMemberName').value = '';
       document.getElementById('newMemberRole').value = '';
+      updateOnlineCountUI();
       renderSeatingPlannerGrid();
       renderWhisperUI();
       build3DScene();
+      broadcastRealtime('SEAT_UPDATE', { participants, preassignedSeatNames });
     }
 
     function applyCapacityChange(val) {
@@ -1018,10 +1591,8 @@
     function moveTargetMemberToSelectedSeat() {
       const target = participants.find(p => p.id === selectedTargetMemberId);
       if (!target) return;
-      if (!isCurrentUserHost() && target.id !== currentViewerId) {
-        alert('⛔ Bạn chỉ có thể tự dời chỗ của chính mình!');
-        return;
-      }
+      if (!isCurrentUserHost() && target.id !== currentViewerId) return;
+
       const newSeat = parseInt(document.getElementById('popupMoveSeatSelect').value, 10);
       const other = participants.find(p => p.seat === newSeat);
       if (other) {
@@ -1038,6 +1609,7 @@
 
       hideInteractionPopup();
       build3DScene();
+      broadcastRealtime('SEAT_UPDATE', { participants, preassignedSeatNames });
     }
 
     function hideInteractionPopup() {
@@ -1053,31 +1625,24 @@
       const me = participants.find(p => p.id === currentViewerId) || participants[0];
       if (!target) return;
 
+      let emojiToSend = null;
       if (actionType === 'poke') {
         target.bubble = `👉 Á! ${me.name} vừa chọc mình!`;
-        target.isPokeBubble = true;
-        target.bounceUntil = Date.now() + 1800;
-        sendReaction('👉');
+        emojiToSend = '👉';
       } else if (actionType === 'tickle') {
         target.bubble = `🪶 Hahaha! Nhột quá ${me.name} ơi!! 🤣`;
-        target.isPokeBubble = true;
-        target.bounceUntil = Date.now() + 2600;
-        sendReaction('🤣');
+        emojiToSend = '🤣';
       } else if (actionType === 'cheers') {
         target.bubble = `🍻 Dô 100% với ${me.name} nhé!`;
-        target.isPokeBubble = true;
-        target.bounceUntil = Date.now() + 1500;
-        sendReaction('🍻');
+        emojiToSend = '🍻';
       } else if (actionType === 'tea') {
         target.bubble = `🍵 Cảm ơn chén trà thơm của ${me.name}!`;
-        target.isPokeBubble = true;
-        sendReaction('🍵');
+        emojiToSend = '🍵';
       } else if (actionType === 'customChat') {
         const inp = document.getElementById('quickInteractInput');
         const msg = inp.value.trim();
         if (!msg) return;
         target.bubble = `💬 [${me.name}]: "${msg}"`;
-        target.isWhisperBubble = true;
         whisperLogs.push({ time: new Date().toTimeString().slice(0, 5), from: me.name, toNames: target.name, text: msg });
         inp.value = '';
         renderWhisperUI();
@@ -1091,10 +1656,11 @@
         activeSpeakerId = target.id;
         participants.forEach(p => p.speaking = false);
         target.speaking = true;
-        target.bubble = `🎙️ Chủ tọa mời ${target.name} phát biểu (Đã mở Cam mặt 3D & Share)!`;
+        target.bubble = `🎙️ Chủ tọa mời ${target.name} phát biểu!`;
         updatePermissionUI();
         rebuildDomLabels();
         hideInteractionPopup();
+        broadcastRealtime('INTERACT', { targetId: target.id, bubble: target.bubble, emoji: '🎙️' });
         return;
       } else if (actionType === 'kick') {
         kickMemberById(target.id);
@@ -1102,27 +1668,30 @@
         return;
       }
 
+      target.isPokeBubble = true;
+      target.bounceUntil = Date.now() + 2200;
+      if (emojiToSend) sendReaction(emojiToSend, false);
+      broadcastRealtime('INTERACT', { targetId: target.id, bubble: target.bubble, emoji: emojiToSend });
+
       rebuildDomLabels();
       hideInteractionPopup();
       setTimeout(() => {
         target.bubble = '';
         target.isPokeBubble = false;
-        target.isWhisperBubble = false;
         rebuildDomLabels();
       }, 4200);
     }
 
     function kickMemberById(targetId) {
-      if (!isCurrentUserHost()) {
-        alert('⛔ Chỉ có Chủ tọa mới có quyền Kick thành viên!');
-        return;
-      }
+      if (!isCurrentUserHost()) return;
       if (targetId === assignedHostId) return;
       participants = participants.filter(p => p.id !== targetId);
       whisperGroupIds = whisperGroupIds.filter(id => id !== targetId);
-      sendReaction('🥾');
+      sendReaction('🥾', true);
+      updateOnlineCountUI();
       renderWhisperUI();
       build3DScene();
+      broadcastRealtime('KICK', { targetId });
       if (!document.getElementById('hostModal').classList.contains('hidden')) openHostAssignModal();
     }
 
@@ -1159,6 +1728,7 @@
         participants.forEach(p => p.speaking = false);
         target.speaking = true;
         target.bubble = `🎙️ Được Chủ tọa mời phát biểu & bật Cam mặt 3D!`;
+        broadcastRealtime('INTERACT', { targetId: target.id, bubble: target.bubble, emoji: '🎙️' });
       }
       updatePermissionUI();
       openHostAssignModal();
@@ -1177,7 +1747,7 @@
       build3DScene();
     }
 
-    // ================= ĐỒ HỌA THREE.JS 3D (KHÁN PHÒNG VÒNG CUNG GIẢNG ĐƯỜNG + BỜ BAO LOGO) =================
+    // ================= ĐỒ HỌA THREE.JS 3D (KHÁN PHÒNG VÒNG CUNG GIẢNG ĐƯỜNG) =================
     let scene, camera, renderer, controls, raycaster, mouseVec, floorPlane;
     let sceneObjectsGroup, screenMesh, screenCanvas, screenCtx, screenTexture;
     let seatPositions = [];
@@ -1319,6 +1889,7 @@
           draggingAvatarId = null;
           controls.enabled = true;
           build3DScene();
+          broadcastRealtime('SEAT_UPDATE', { participants, preassignedSeatNames });
           return;
         }
 
@@ -1377,6 +1948,10 @@
 
     function drawSlideTo3DScreen() {
       if (!screenCtx) return;
+      if (quizState.isActive) {
+        drawQuizTo3DScreen();
+        return;
+      }
       const slide = slides[currentSlideIdx] || slides[0];
       screenCtx.fillStyle = currentScene === 'lop' ? '#064e3b' : '#0f172a';
       screenCtx.fillRect(0, 0, 1024, 512);
@@ -1422,7 +1997,7 @@
       floor.position.set(0, -0.25, 1);
       sceneObjectsGroup.add(floor);
 
-      // ================= 1. BỜ BAO XUNG QUANH PHÒNG + 8 SLOT LOGO NHÀ TÀI TRỢ =================
+      // 1. Bờ bao xung quanh + 8 Slot Logo
       const wallMat = new THREE.MeshLambertMaterial({ color: currentScene === 'vongcung' ? 0x1e293b : 0xfef3c7 });
       const backStageWall = new THREE.Mesh(new THREE.BoxGeometry(38, 12, 0.5), wallMat);
       backStageWall.position.set(0, 6.0, -14.5);
@@ -1465,7 +2040,7 @@
         clickableSponsorMeshes.push(board);
       });
 
-      // ================= 2. BẢNG THUYẾT TRÌNH + BANNER LOGO PHÍA TRÊN BẢNG =================
+      // 2. Bảng thuyết trình + Banner trên bảng
       const topBannerSlot = sponsorSlots.find(s => s.id === 'top_banner');
       if (topBannerSlot) {
         const topBannerMesh = new THREE.Mesh(
@@ -1494,7 +2069,7 @@
       sceneObjectsGroup.add(screenMesh);
       if (!isScreenSharing) drawSlideTo3DScreen();
 
-      // ================= 3. BÀN CHỦ TỌA (#0) ĐẶT TẠI TÂM SÂN KHẤU QUAY ĐỐI DIỆN KHÁN ĐÀI =================
+      // 3. Bàn Chủ tọa (#0) đặt tại tâm sân khấu quay đối diện khán đài
       const stageRadius = currentScene === 'vongcung' ? 5.2 : 4.5;
       const podiumStage = new THREE.Mesh(
         new THREE.CylinderGeometry(stageRadius, stageRadius + 0.4, 0.35, 36),
@@ -1503,7 +2078,6 @@
       podiumStage.position.set(0, 0.18, -8.8);
       sceneObjectsGroup.add(podiumStage);
 
-      // Viền LED vàng quanh thảm sân khấu Chủ tọa
       const stageRing = new THREE.Mesh(
         new THREE.RingGeometry(stageRadius - 0.15, stageRadius + 0.05, 40),
         new THREE.MeshBasicMaterial({ color: 0xfbbf24, side: THREE.DoubleSide })
@@ -1526,14 +2100,12 @@
       hostSign.position.set(0, 1.55, -7.05);
       sceneObjectsGroup.add(hostSign);
 
-      // Ghế #0 của Chủ tọa (baseY = 0.35 trên bục sân khấu, quay mặt thẳng về phía khán đài vòng cung)
       seatPositions.push({ x: 0, baseY: 0.35, z: -9.3, rotY: 0, isHostSeat: true });
 
-      // ================= 4. DỰNG KHÁN PHÒNG VÒNG CUNG BẬC THANG (AMPHITHEATER) HOẶC CÁC MẪU KHÁC =================
+      // 4. Dựng Khán phòng vòng cung bậc thang (Amphitheater) hoặc các mẫu khác
       const belowCount = maxSeats - 1;
 
       if (currentScene === 'vongcung') {
-        // Chia ghế cử tọa thành các tầng vòng cung đồng tâm quanh tâm sân khấu (0, -8.2)
         const focalX = 0;
         const focalZ = -8.2;
         const rowConfigs = [
@@ -1543,7 +2115,6 @@
           { radius: 21.8, tierY: 2.55, maxInRow: 12, spreadAngle: Math.PI * 0.74 }
         ];
 
-        // Vẽ các thềm bậc thang vòng cung (Tiered Risers)
         rowConfigs.forEach((rc, rIdx) => {
           if (rIdx > 0 && belowCount > (rIdx === 1 ? 5 : (rIdx === 2 ? 11 : 18))) {
             const riser = new THREE.Mesh(
@@ -1554,7 +2125,6 @@
             riser.position.set(focalX, rc.tierY, focalZ);
             sceneObjectsGroup.add(riser);
 
-            // Thành bậc thang phát sáng nhẹ giúp phân biệt rõ từng tầng khán đài
             const stepRim = new THREE.Mesh(
               new THREE.RingGeometry(rc.radius - 2.15, rc.radius - 2.02, 48, 1, Math.PI * 0.12, Math.PI * 0.76),
               new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide })
@@ -1573,13 +2143,12 @@
 
           for (let k = 0; k < countThisRow; k++) {
             const ratio = countThisRow === 1 ? 0 : (k / (countThisRow - 1)) - 0.5;
-            const angle = ratio * cfg.spreadAngle; // Góc mở hình quạt hướng về tâm sân khấu
+            const angle = ratio * cfg.spreadAngle;
 
             const sx = focalX + Math.sin(angle) * cfg.radius;
             const sz = focalZ + Math.cos(angle) * cfg.radius;
-            const lookRotY = Math.atan2(focalX - sx, focalZ - sz); // Quay mặt trực diện về phía Chủ tọa
+            const lookRotY = Math.atan2(focalX - sx, focalZ - sz);
 
-            // Bục đỡ dưới chân mỗi bàn ghế trên tầng bậc thang
             if (cfg.tierY > 0) {
               const stepBlock = new THREE.Mesh(
                 new THREE.CylinderGeometry(1.7, 1.8, cfg.tierY, 20),
@@ -1589,7 +2158,6 @@
               sceneObjectsGroup.add(stepBlock);
             }
 
-            // Bàn giảng đường vòng cung đặt ngay phía trước từng ghế, xoay vuông góc hướng về Chủ tọa
             const deskGroup = new THREE.Group();
             deskGroup.position.set(sx, cfg.tierY, sz);
             deskGroup.rotation.y = lookRotY;
@@ -1608,7 +2176,6 @@
             curvedDeskFront.position.set(0, 0.62, 1.52);
             deskGroup.add(curvedDeskFront);
 
-            // Laptop / Tài liệu học tập đặt trên bàn vòng cung
             const laptop = new THREE.Mesh(
               new THREE.BoxGeometry(0.65, 0.05, 0.45),
               new THREE.MeshLambertMaterial({ color: 0xe2e8f0 })
@@ -1688,7 +2255,7 @@
         }
       }
 
-      // ================= 5. DỰNG NHÂN VẬT 3D + CAMERA TRÊN MẶT TRƯỚC NHÂN VẬT =================
+      // 5. Dựng nhân vật 3D + Camera trên mặt trước nhân vật
       seatPositions.forEach((pos, idx) => {
         const bY = pos.baseY || 0;
         const stool = new THREE.Mesh(
@@ -1798,12 +2365,13 @@
 
         if (p) {
           const isHost = p.id === assignedHostId;
+          const isMe = p.id === currentViewerId;
           const isSpeaker = activeSpeakerId === p.id || p.speaking;
           const bubbleClass = p.isPokeBubble ? 'poke' : (p.isWhisperBubble ? 'whisper' : '');
           el.innerHTML = `
             ${p.bubble ? `<div class="speech-bubble-3d ${bubbleClass}">${p.bubble}</div>` : ''}
-            <div onclick="openMemberInteractionMenu(event.clientX, event.clientY, '${p.id}')" title="Click để tương tác, dời chỗ hoặc Kick" class="cursor-pointer px-2.5 py-0.5 rounded-xl text-[11px] font-bold shadow-lg flex items-center gap-1 border ${isHost ? 'bg-amber-500 text-slate-950 border-amber-200' : (isSpeaker ? 'bg-emerald-600 text-white border-emerald-300' : 'bg-slate-900/90 text-white border-slate-600 hover:border-amber-400')}">
-              <span>${isHost ? '👑' : (isSpeaker ? '🎙️' : '👤')} ${p.name}</span>
+            <div onclick="openMemberInteractionMenu(event.clientX, event.clientY, '${p.id}')" title="Click để tương tác, dời chỗ hoặc Kick" class="cursor-pointer px-2.5 py-0.5 rounded-xl text-[11px] font-bold shadow-lg flex items-center gap-1 border ${isHost ? 'bg-amber-500 text-slate-950 border-amber-200' : (isMe ? 'bg-indigo-600 text-white border-indigo-300' : (isSpeaker ? 'bg-emerald-600 text-white border-emerald-300' : 'bg-slate-900/90 text-white border-slate-600 hover:border-amber-400'))}">
+              <span>${isHost ? '👑' : (isSpeaker ? '🎙️' : '👤')} ${p.name}${isMe ? ' (Bạn)' : ''}</span>
             </div>
           `;
         } else {
@@ -1835,6 +2403,7 @@
       delete me.customZ;
       document.getElementById('currentUserBadge').innerText = `👤 ${me.name} (Ghế #${me.seat})`;
       build3DScene();
+      broadcastRealtime('SEAT_UPDATE', { participants, preassignedSeatNames });
     }
 
     function updateLabelsProjection() {
@@ -1886,6 +2455,14 @@
     }
 
     // ================= ĐIỀU KHIỂN BỐI CẢNH & GÓC NHÌN =================
+    function highlightSceneButton(sceneKey) {
+      document.querySelectorAll('.scene-btn').forEach(b => {
+        b.className = 'scene-btn px-2.5 py-1 rounded-lg text-xs font-bold text-slate-300 hover:bg-slate-700 transition whitespace-nowrap';
+      });
+      const activeBtn = document.getElementById(`btn-scene-${sceneKey}`);
+      if (activeBtn) activeBtn.className = 'scene-btn px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500 text-slate-950 transition whitespace-nowrap';
+    }
+
     function changeScene(sceneKey) {
       if (!isCurrentUserHost()) {
         const hostObj = participants.find(p => p.id === assignedHostId) || participants[0];
@@ -1893,12 +2470,9 @@
         return;
       }
       currentScene = sceneKey;
-      document.querySelectorAll('.scene-btn').forEach(b => {
-        b.className = 'scene-btn px-2.5 py-1 rounded-lg text-xs font-bold text-slate-300 hover:bg-slate-700 transition whitespace-nowrap';
-      });
-      const activeBtn = document.getElementById(`btn-scene-${sceneKey}`);
-      if (activeBtn) activeBtn.className = 'scene-btn px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500 text-slate-950 transition whitespace-nowrap';
+      highlightSceneButton(sceneKey);
       build3DScene();
+      broadcastRealtime('SCENE_CHANGE', { sceneKey });
     }
 
     function setCamPreset(type) {
@@ -1906,11 +2480,9 @@
         camera.position.set(0, 17, 25);
         controls.target.set(0, 2.5, -2);
       } else if (type === 'hostView') {
-        // Góc nhìn từ Bàn Chủ tọa nhìn lên toàn bộ các tầng khán đài vòng cung
         camera.position.set(0, 4.8, -10.8);
         controls.target.set(0, 2.5, 6);
       } else if (type === 'audienceView') {
-        // Góc nhìn từ tầng cao nhất của Khán đài vòng cung nhìn xuống tâm sân khấu & Bảng lớn
         camera.position.set(0, 7.5, 14.5);
         controls.target.set(0, 3.8, -10);
       }
@@ -1921,11 +2493,13 @@
       if (isScreenSharing) stopScreenShareCleanup();
       currentSlideIdx = (currentSlideIdx - 1 + slides.length) % slides.length;
       drawSlideTo3DScreen();
+      broadcastRealtime('SLIDE_UPDATE', { currentSlideIdx });
     }
     function nextSlide() {
       if (isScreenSharing) stopScreenShareCleanup();
       currentSlideIdx = (currentSlideIdx + 1) % slides.length;
       drawSlideTo3DScreen();
+      broadcastRealtime('SLIDE_UPDATE', { currentSlideIdx });
     }
     function openAddSlideModal() {
       document.getElementById('slideModal').classList.remove('hidden');
@@ -1939,6 +2513,7 @@
       currentSlideIdx = slides.length - 1;
       drawSlideTo3DScreen();
       document.getElementById('slideModal').classList.add('hidden');
+      broadcastRealtime('SLIDE_UPDATE', { slides, currentSlideIdx });
     }
 
     function renderTranscripts() {
@@ -1958,7 +2533,8 @@
     function recordSpeech(personId, text) {
       const p = participants.find(x => x.id === personId) || participants[0];
       const now = new Date().toTimeString().split(' ')[0];
-      transcripts.push({ time: now, speaker: p.name, role: p.role, text });
+      const entry = { time: now, speaker: p.name, role: p.role, text };
+      transcripts.push(entry);
       renderTranscripts();
 
       activeSpeakerId = personId;
@@ -1967,6 +2543,8 @@
       p.bubble = text;
       updatePermissionUI();
       rebuildDomLabels();
+
+      broadcastRealtime('SPEECH', { personId, entry });
 
       setTimeout(() => {
         p.speaking = false;
@@ -1984,22 +2562,11 @@
 
     function raiseHand() {
       const me = participants.find(p => p.id === currentViewerId) || participants[0];
-      me.bubble = '✋ Xin phép Chủ trì cho tôi phát biểu & bật Cam!';
+      me.bubble = '✋ Xin phép Chủ trì cho tôi phát biểu!';
       me.bounceUntil = Date.now() + 1500;
       rebuildDomLabels();
-      sendReaction('✋');
-    }
-
-    function simulateColleagueSpeak() {
-      const others = participants.filter(p => p.id !== currentViewerId);
-      const pick = others[Math.floor(Math.random() * others.length)];
-      if (!pick) return;
-      const sampleLines = [
-        'Từ trên tầng bậc thang khán phòng vòng cung nhìn xuống tâm sân khấu và bảng LED cực kỳ rõ nét!',
-        'Tôi xin phép bật Camera lên khuôn mặt 3D và Share màn hình báo cáo.',
-        'Khán đài chúng tôi hoàn toàn nhất trí với phương án của Chủ trì!'
-      ];
-      recordSpeech(pick.id, sampleLines[Math.floor(Math.random() * sampleLines.length)]);
+      sendReaction('✋', true);
+      broadcastRealtime('INTERACT', { targetId: me.id, bubble: me.bubble, emoji: '✋' });
     }
 
     let recognition = null;
@@ -2110,25 +2677,31 @@
       switchTab('transcript');
     }
 
-    // ================= TÓM TẮT BIÊN BẢN HỌP =================
+    // ================= TÓM TẮT BIÊN BẢN HỌP & ĐIỂM THI TRẮC NGHIỆM =================
     function generateMeetingSummary() {
       const hostObj = participants.find(p => p.id === assignedHostId) || participants[0];
       const speakerSummary = transcripts.map((t, i) => `   ${i + 1}. [${t.time}] ${t.speaker} (${t.role}): "${t.text}"`).join('\n');
       const seatingSummary = participants.map(p => `   - Ghế #${p.seat}: ${p.name} (${p.role})`).join('\n');
+      const quizSummary = quizState.submissions.length === 0
+        ? '   - Chưa có bài nộp trắc nghiệm.'
+        : quizState.submissions.map((s, i) => `   ${i + 1}. ${s.name} (${s.role}): ${s.score}/${s.total} câu đúng (${s.percent}%) - Nộp lúc ${s.timeStr}`).join('\n');
 
       document.getElementById('summaryTextarea').value = `CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
 Độc lập - Tự do - Hạnh phúc
 ----------------------------------------
-BIÊN BẢN TỔNG HỢP HỘI NGHỊ KHÁN PHÒNG VÒNG CUNG 3D
+BIÊN BẢN TỔNG HỢP HỘI NGHỊ & KẾT QUẢ THI TRẮC NGHIỆM 3D
 
-1. CHỦ TRÌ & SƠ ĐỒ KHÁN ĐÀI VÒNG CUNG:
+1. CHỦ TRÌ & DANH SÁCH THAM DỰ (${participants.length} thành viên):
 - Chủ trì điều hành: ${hostObj ? hostObj.name : 'Đình Lâm'}
 ${seatingSummary}
 
-2. GHI NHẬN CÁC Ý KIẾN PHÁT BIỂU:
+2. KẾT QUẢ KIỂM TRA TRẮC NGHIỆM TRỰC TUYẾN:
+${quizSummary}
+
+3. GHI NHẬN CÁC Ý KIẾN PHÁT BIỂU:
 ${speakerSummary}
 
-3. KẾT LUẬN CỦA CHỦ TRÌ:
+4. KẾT LUẬN CỦA CHỦ TRÌ:
 - Các thành viên triển khai công việc theo đúng nội dung đã thống nhất.`;
     }
 
@@ -2137,7 +2710,7 @@ ${speakerSummary}
       const blob = new Blob([document.getElementById('summaryTextarea').value], { type: 'text/plain;charset=utf-8' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = 'Bien-Ban-Khan-Phong-3D.txt';
+      a.download = 'Bien-Ban-Va-Diem-Thi-3D.txt';
       a.click();
     }
 
@@ -2146,12 +2719,12 @@ ${speakerSummary}
         p.bubble = currentScene === 'nhau' ? '🍻 1, 2, 3 DÔ 100%!' : '👏 Nhất trí cao với Chủ trì!';
         p.bounceUntil = Date.now() + 1400;
       });
-      sendReaction('👏');
+      sendReaction('👏', true);
       rebuildDomLabels();
       setTimeout(() => { participants.forEach(p => p.bubble = ''); rebuildDomLabels(); }, 3200);
     }
 
-    function sendReaction(emoji) {
+    function sendReaction(emoji, shouldBroadcast = false) {
       const layer = document.getElementById('floatingReactionsLayer');
       for (let i = 0; i < 4; i++) {
         const el = document.createElement('div');
@@ -2161,22 +2734,25 @@ ${speakerSummary}
         layer.appendChild(el);
         setTimeout(() => el.remove(), 2600);
       }
+      if (shouldBroadcast) broadcastRealtime('REACTION', { emoji });
     }
 
     function switchTab(tab) {
-      ['transcript', 'whisper', 'summary'].forEach(t => {
+      ['transcript', 'quiz', 'whisper', 'summary'].forEach(t => {
         document.getElementById(`panel-${t}`).classList.add('hidden');
         document.getElementById(`tab-${t}`).className = 'py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white';
       });
       document.getElementById(`panel-${tab}`).classList.remove('hidden');
       document.getElementById(`tab-${tab}`).className = 'py-2 rounded-xl bg-indigo-600 text-white';
       if (tab === 'summary' && !document.getElementById('summaryTextarea').value) generateMeetingSummary();
+      if (tab === 'quiz') renderQuizUI();
     }
 
     window.addEventListener('DOMContentLoaded', () => {
       updatePermissionUI();
       renderTranscripts();
       renderWhisperUI();
+      renderQuizUI();
       init3D();
     });
   </script>
