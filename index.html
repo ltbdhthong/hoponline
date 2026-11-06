@@ -3,75 +3,85 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Phòng Họp & Đàm Đạo Trực Tuyến 3D</title>
+  <title>Không Gian Họp & Giảng Đường 3D Chuyên Nghiệp</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; background: #0b1120; color: #f8fafc; font-family: 'Be Vietnam Pro', sans-serif; }
+    html, body { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; background: #090d16; color: #f8fafc; font-family: 'Be Vietnam Pro', sans-serif; }
     #viewport3d { position: relative; width: 100%; height: 100%; min-height: 400px; background: radial-gradient(circle at center, #1e293b 0%, #090d16 100%); }
     #canvas3d { position: absolute; top: 0; left: 0; width: 100% !important; height: 100% !important; display: block; z-index: 1; }
     .label-3d {
       position: absolute; transform: translate(-50%, -100%);
       pointer-events: auto; user-select: none; z-index: 15;
-      transition: transform 0.15s;
+      transition: transform 0.12s;
     }
-    .label-3d:hover { transform: translate(-50%, -105%) scale(1.05); z-index: 30; }
+    .label-3d:hover { transform: translate(-50%, -106%) scale(1.06); z-index: 30; }
     .speech-bubble-3d {
-      position: absolute; bottom: 36px; left: 50%; transform: translateX(-50%);
+      position: absolute; bottom: 34px; left: 50%; transform: translateX(-50%);
       background: #ffffff; color: #0f172a;
       padding: 6px 12px; border-radius: 12px; font-size: 12px; font-weight: 700;
       width: max-content; max-width: 250px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
       border: 2px solid #10b981; pointer-events: none; z-index: 25;
     }
-    .speech-bubble-3d.whisper {
-      background: #581c87; color: #f3e8ff; border-color: #c084fc;
-    }
-    .speech-bubble-3d.poke {
-      background: #fef08a; color: #713f12; border-color: #f59e0b;
-    }
+    .speech-bubble-3d.whisper { background: #581c87; color: #f3e8ff; border-color: #c084fc; }
+    .speech-bubble-3d.poke { background: #fef08a; color: #713f12; border-color: #f59e0b; }
     @keyframes floatUp {
       0% { transform: translateY(0) scale(0.8); opacity: 1; }
       100% { transform: translateY(-180px) scale(1.4); opacity: 0; }
     }
     .floating-emoji { position: absolute; bottom: 85px; animation: floatUp 2.6s ease-out forwards; pointer-events: none; z-index: 40; font-size: 28px; }
+    .seat-slot-card { transition: all 0.15s; }
+    .seat-slot-card.drag-over { border-color: #fbbf24 !important; background: rgba(245, 158, 11, 0.2) !important; transform: scale(1.03); }
     ::-webkit-scrollbar { width: 5px; height: 5px; }
     ::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
   </style>
 </head>
 <body class="h-screen w-screen flex flex-col select-none">
 
-  <!-- VIDEO ẨN PHỤC VỤ STREAM LÊN MÀN HÌNH 3D & CAMERA NGƯỜI NÓI / CHỦ TỌA -->
+  <!-- VIDEO & INPUT FILE ẨN -->
   <video id="screenShareVideo" autoplay playsinline muted class="hidden"></video>
   <video id="activeCamVideo" autoplay playsinline muted class="hidden"></video>
+  <input id="logoFileInput" type="file" accept="image/*" class="hidden" onchange="handleLogoFileSelected(event)" />
 
-  <!-- MÀN HÌNH ĐĂNG NHẬP VÀO PHÒNG HỌP (MẶC ĐỊNH ẨN Ô PIN, BỎ GHI SẴN PIN) -->
+  <!-- MÀN HÌNH ĐĂNG NHẬP: CHỌN CHỦ TRÌ ĐỂ VÀO ĐÚNG PHÒNG -->
   <div id="loginOverlay" style="display: flex;" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md items-center justify-center z-50 p-4">
     <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl">
-      <div class="flex items-center gap-2 mb-2">
+      <div class="flex items-center gap-2 mb-1">
         <span class="w-3 h-3 rounded-full bg-emerald-400 animate-ping"></span>
-        <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">Không Gian Họp Trực Tuyến 3D</span>
+        <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">Hệ Thống Phòng Họp & Giảng Đường 3D</span>
       </div>
-      <h1 class="text-xl font-extrabold text-white mb-1">Chào mừng vào Phòng Đàm Đạo</h1>
-      <p class="text-xs text-slate-400 mb-4">Nhập tên của bạn để chọn ghế ngồi trong không gian 3D và tham gia phát biểu.</p>
+      <h1 class="text-xl font-extrabold text-white mb-1">Chọn Phòng & Chủ Trì</h1>
+      <p class="text-xs text-slate-400 mb-4">Chọn đúng Chủ trì phòng họp và nhập họ tên của bạn (nếu Chủ trì đã xếp chỗ trước, bạn sẽ tự động ngồi đúng ghế).</p>
 
       <div class="space-y-3">
         <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1">Họ và tên hiển thị trên đầu nhân vật 3D *</label>
-          <input id="loginNameInput" type="text" placeholder="Nhập họ và tên của bạn..." class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400" onkeydown="if(event.key==='Enter') enterMeetingRoom()" />
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1">Chức vụ / Đơn vị</label>
-          <input id="loginRoleInput" type="text" placeholder="VD: Trưởng phòng / Thành viên..." class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-amber-400" onkeydown="if(event.key==='Enter') enterMeetingRoom()" />
+          <label class="block text-xs font-semibold text-amber-300 mb-1">🏛️ Chọn Chủ trì / Phòng họp đang mở *</label>
+          <select id="loginRoomHostSelect" class="w-full bg-slate-800 border border-amber-500/50 rounded-xl px-3.5 py-2.5 text-sm font-bold text-white focus:outline-none">
+            <option value="Đình Lâm">👑 Phòng Chủ trì: Đình Lâm (Họp Chiến Lược & Lớp Học 3D)</option>
+            <option value="Hội Đồng Khoa">🎓 Phòng Chủ trì: Hội Đồng Khoa (Báo cáo & Thảo luận)</option>
+            <option value="Ban Dự Án">🚀 Phòng Chủ trì: Ban Dự Án (Review Tiến Độ)</option>
+          </select>
         </div>
 
-        <!-- Tùy chọn xác thực Chủ tọa: Mặc định KHÔNG tích, chỉ khi click vào mới hiện ô nhập PIN trống -->
+        <div class="grid grid-cols-3 gap-2">
+          <div class="col-span-2">
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Họ và tên của bạn *</label>
+            <input id="loginNameInput" type="text" placeholder="Nhập họ tên..." class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400" onkeydown="if(event.key==='Enter') enterMeetingRoom()" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Chức vụ</label>
+            <input id="loginRoleInput" type="text" placeholder="Thành viên" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400" onkeydown="if(event.key==='Enter') enterMeetingRoom()" />
+          </div>
+        </div>
+
+        <!-- Tùy chọn xác thực Chủ tọa: Mặc định ẩn ô PIN, click vào mới hiện -->
         <div class="bg-slate-800/70 border border-amber-500/30 rounded-xl p-3">
           <label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-amber-300">
             <input id="loginIsHostCheckbox" type="checkbox" onchange="toggleHostPinBox()" class="accent-amber-500 w-4 h-4" />
-            <span>👑 Đăng nhập với tư cách Chủ tọa điều hành</span>
+            <span>👑 Tôi là Chủ tọa điều hành phòng này</span>
           </label>
           <div id="hostPinBox" style="display: none;" class="mt-2.5">
             <input id="loginPinInput" type="password" value="" placeholder="Nhập mã PIN Chủ tọa..." class="w-full bg-slate-900 border border-amber-500/40 rounded-lg px-3 py-2 text-xs text-amber-200 focus:outline-none" onkeydown="if(event.key==='Enter') enterMeetingRoom()" />
@@ -79,48 +89,46 @@
         </div>
 
         <button type="button" onclick="enterMeetingRoom()" class="w-full bg-gradient-to-r from-amber-500 to-emerald-500 hover:from-amber-400 hover:to-emerald-400 text-slate-950 font-extrabold py-3 rounded-xl text-sm shadow-lg transition cursor-pointer">
-          🚀 VÀO PHÒNG HỌP 3D NGAY
+          🚀 VÀO ĐÚNG PHÒNG HỌP NGAY
         </button>
       </div>
     </div>
   </div>
 
-  <!-- HEADER CHÍNH -->
-  <header class="h-14 bg-slate-900/95 border-b border-slate-800 px-4 flex items-center justify-between z-30 shrink-0">
-    <div class="flex items-center gap-3">
-      <div class="flex items-center gap-1.5 bg-red-500/15 border border-red-500/40 px-2.5 py-1 rounded-full">
+  <!-- HEADER ĐIỀU KHIỂN CHÍNH -->
+  <header class="h-14 bg-slate-900/95 border-b border-slate-800 px-3 flex items-center justify-between z-30 shrink-0 gap-2">
+    <div class="flex items-center gap-2">
+      <div class="flex items-center gap-1.5 bg-red-500/15 border border-red-500/40 px-2 py-1 rounded-full">
         <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
-        <span class="text-[11px] font-extrabold text-red-400">LIVE 3D</span>
+        <span class="text-[10px] font-extrabold text-red-400">LIVE 3D</span>
       </div>
-      <div class="font-extrabold text-sm md:text-base tracking-tight text-white">
-        Họp Chiến Lược & Đàm Đạo 3D
-      </div>
-
-      <!-- Huy hiệu Chủ tọa -->
       <div class="flex items-center gap-1.5 bg-slate-800 border border-amber-500/40 rounded-lg px-2.5 py-1 text-xs">
-        <span>👑 Chủ tọa: <b id="hostNameBadge" class="text-amber-400">Đình Lâm</b></span>
+        <span>👑 Chủ trì: <b id="hostNameBadge" class="text-amber-400">Đình Lâm</b></span>
         <button id="btnAssignHost" onclick="openHostAssignModal()" class="ml-1 bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded font-semibold transition">
-          Quản lý & Kick
+          Quản trị & Kick
         </button>
       </div>
     </div>
 
-    <!-- CHỌN BỐI CẢNH 3D (CHỈ CHỦ TỌA MỚI ĐƯỢC BẤM) -->
-    <div class="flex items-center gap-1 bg-slate-800/90 p-1 rounded-xl border border-slate-700">
-      <button onclick="changeScene('nhau')" id="btn-scene-nhau" class="scene-btn px-3 py-1 rounded-lg text-xs font-bold bg-amber-500 text-slate-950 transition">🍺 Quán Nhậu 3D</button>
-      <button onclick="changeScene('chua')" id="btn-scene-chua" class="scene-btn px-3 py-1 rounded-lg text-xs font-bold text-slate-300 hover:bg-slate-700 transition">🪷 Chùa Online 3D</button>
-      <button onclick="changeScene('lop')" id="btn-scene-lop" class="scene-btn px-3 py-1 rounded-lg text-xs font-bold text-slate-300 hover:bg-slate-700 transition">🏫 Lớp Học 3D</button>
-      <button onclick="changeScene('hoitruong')" id="btn-scene-hoitruong" class="scene-btn px-3 py-1 rounded-lg text-xs font-bold text-slate-300 hover:bg-slate-700 transition">🏛️ Hội Trường 3D</button>
+    <!-- CHỌN MẪU BỐI CẢNH 3D (CHỈ CHỦ TỌA MỚI ĐƯỢC ĐỔI) -->
+    <div class="flex items-center gap-1 bg-slate-800/90 p-1 rounded-xl border border-slate-700 overflow-x-auto">
+      <button onclick="changeScene('lop')" id="btn-scene-lop" class="scene-btn px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500 text-slate-950 transition whitespace-nowrap">🏫 Mẫu Phòng Học & Họp</button>
+      <button onclick="changeScene('hoitruong')" id="btn-scene-hoitruong" class="scene-btn px-2.5 py-1 rounded-lg text-xs font-bold text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">🏛️ Mẫu Hội Trường Đối Diện</button>
+      <button onclick="changeScene('nhau')" id="btn-scene-nhau" class="scene-btn px-2.5 py-1 rounded-lg text-xs font-bold text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">🍺 Quán Nhậu 3D</button>
+      <button onclick="changeScene('chua')" id="btn-scene-chua" class="scene-btn px-2.5 py-1 rounded-lg text-xs font-bold text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">🪷 Thiền Đường 3D</button>
     </div>
 
-    <!-- CẤU HÌNH QUY MÔ & THÔNG TIN NGƯỜI DÙNG -->
-    <div class="flex items-center gap-2.5">
-      <button onclick="openCapacityModal()" id="btnCapacityConfig" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1">
-        👥 Quy Mô Phòng (<span id="seatCountLabel">12</span> chỗ)
+    <!-- SẮP XẾP CHỖ NGỒI (KÉO THẢ), UP LOGO TÀI TRỢ & ĐỔI TÀI KHOẢN -->
+    <div class="flex items-center gap-1.5">
+      <button onclick="openSeatingPlannerModal()" id="btnSeatingPlanner" class="bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 shadow">
+        🗺️ Xếp Chỗ (Kéo Thả)
       </button>
-      <div onclick="reopenLoginModal()" class="cursor-pointer flex items-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1 rounded-xl text-xs" title="Bấm để đổi tài khoản hoặc đăng nhập quyền Chủ tọa">
+      <button onclick="openSponsorLogoModal()" id="btnSponsorConfig" class="bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 text-amber-300 px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1">
+        🖼️ Logo Tài Trợ
+      </button>
+      <div onclick="reopenLoginModal()" class="cursor-pointer flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 px-2.5 py-1 rounded-xl text-xs" title="Đổi người dùng hoặc vào lại quyền Chủ tọa">
         <span id="currentUserBadge" class="font-bold text-emerald-400">👤 Khách</span>
-        <span class="text-[10px] text-slate-400">✎ Đổi</span>
+        <span class="text-[10px] text-slate-400">✎</span>
       </div>
     </div>
   </header>
@@ -133,8 +141,8 @@
       <div id="labelsContainer" class="absolute inset-0 pointer-events-none overflow-hidden z-10"></div>
       <div id="floatingReactionsLayer" class="absolute inset-0 pointer-events-none overflow-hidden z-20"></div>
 
-      <!-- MENU TƯƠNG TÁC NHANH KHI CLICK VÀO NHÂN VẬT 3D (CHỌC, THỌC LÉT, CHAT, KICK...) -->
-      <div id="interactionPopup" class="hidden absolute z-40 bg-slate-900/95 border-2 border-amber-400/80 rounded-2xl p-3 shadow-2xl w-64 backdrop-blur-md" onclick="event.stopPropagation()">
+      <!-- MENU TƯƠNG TÁC KHI CLICK VÀO NGƯỜI CỦA NHÂN VẬT 3D -->
+      <div id="interactionPopup" class="hidden absolute z-40 bg-slate-900/95 border-2 border-amber-400 rounded-2xl p-3 shadow-2xl w-68 backdrop-blur-md" onclick="event.stopPropagation()">
         <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
           <div>
             <div id="popupTargetName" class="text-xs font-extrabold text-amber-300">Tên thành viên</div>
@@ -158,20 +166,27 @@
           </button>
         </div>
 
-        <!-- Gửi câu nhắn/trêu trực tiếp cho người này -->
         <div class="flex gap-1 mb-2">
-          <input id="quickInteractInput" type="text" placeholder="Nhắn/trêu nhanh..." class="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-amber-400" onkeydown="if(event.key==='Enter') interactWithMember('customChat')" />
+          <input id="quickInteractInput" type="text" placeholder="Nhắn/trêu trực tiếp..." class="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-amber-400" onkeydown="if(event.key==='Enter') interactWithMember('customChat')" />
           <button onclick="interactWithMember('customChat')" class="bg-indigo-600 hover:bg-indigo-500 px-2.5 py-1 rounded-lg text-xs font-bold">Gửi</button>
+        </div>
+
+        <!-- Dời chỗ nhanh cho bản thân hoặc do Chủ trì điều chuyển -->
+        <div id="moveSeatBoxInPopup" class="mb-2 bg-slate-800/80 p-2 rounded-xl border border-slate-700">
+          <div class="text-[10px] font-bold text-slate-300 mb-1">🪑 Chuyển người này sang ghế số:</div>
+          <div class="flex gap-1">
+            <select id="popupMoveSeatSelect" class="flex-1 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-amber-300"></select>
+            <button onclick="moveTargetMemberToSelectedSeat()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1 rounded text-xs font-bold">Dời chỗ</button>
+          </div>
         </div>
 
         <div class="space-y-1 border-t border-slate-800 pt-2">
           <button onclick="interactWithMember('addWhisper')" class="w-full bg-purple-900/60 hover:bg-purple-700 text-purple-200 rounded-lg py-1 text-xs font-semibold">
-            💬 Đưa vào Nhóm Chat Riêng
+            💬 Thêm vào Nhóm Chat
           </button>
-          <!-- Cụm nút chỉ Chủ tọa mới thấy -->
           <div id="hostOnlyActionsOnMember" class="hidden space-y-1 pt-1">
             <button onclick="interactWithMember('grantSpeak')" class="w-full bg-emerald-700/80 hover:bg-emerald-600 text-white rounded-lg py-1 text-xs font-bold">
-              🎙️ Mời phát biểu (Cấp Cam & Share)
+              🎙️ Mời phát biểu (Cấp Cam Mặt & Share)
             </button>
             <button onclick="interactWithMember('kick')" class="w-full bg-rose-700/90 hover:bg-rose-600 text-white rounded-lg py-1 text-xs font-extrabold">
               🥾 Kick khỏi phòng họp
@@ -180,55 +195,55 @@
         </div>
       </div>
 
-      <!-- Góc máy 3D bên trái -->
+      <!-- Góc máy 3D & Chế độ Kéo thả trực tiếp trên 3D -->
       <div class="absolute top-3 left-3 bg-slate-900/90 border border-slate-700/80 backdrop-blur px-3 py-2 rounded-xl z-20 flex flex-col gap-1.5 shadow-lg">
         <div class="text-[11px] font-bold text-amber-400 flex items-center justify-between gap-3">
-          <span>🎥 GÓC MÁY 3D (CLICK NHÂN VẬT ĐỂ TƯƠNG TÁC)</span>
+          <span>🎥 CLICK NGƯỜI 3D ĐỂ TƯƠNG TÁC / KÉO THẢ</span>
           <span id="permissionMiniTag" class="text-emerald-400">👑 Chủ tọa</span>
         </div>
-        <div class="flex gap-1.5">
-          <button onclick="setCamPreset('overview')" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 px-2.5 py-1 rounded-lg text-xs font-semibold">🌌 Toàn cảnh</button>
-          <button onclick="setCamPreset('board')" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 px-2.5 py-1 rounded-lg text-xs font-semibold">🖥️ Nhìn Bảng Slide</button>
-          <button onclick="setCamPreset('myseat')" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 px-2.5 py-1 rounded-lg text-xs font-semibold">🪑 Chỗ Của Tôi</button>
-          <button onclick="toggleAutoRotate()" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 px-2.5 py-1 rounded-lg text-xs font-semibold">🔄 Xoay 360°</button>
+        <div class="flex flex-wrap gap-1.5">
+          <button onclick="setCamPreset('overview')" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 px-2 py-1 rounded-lg text-xs font-semibold">🌌 Toàn cảnh</button>
+          <button onclick="setCamPreset('hostView')" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 px-2 py-1 rounded-lg text-xs font-semibold">👑 Góc Chủ Tọa</button>
+          <button onclick="setCamPreset('audienceView')" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 px-2 py-1 rounded-lg text-xs font-semibold">🧑‍🎓 Nhìn Lên Bảng</button>
+          <button onclick="toggle3DDragMode()" id="btn3DDragMode" class="bg-slate-800 hover:bg-amber-500 hover:text-slate-950 border border-amber-500/50 text-amber-300 px-2.5 py-1 rounded-lg text-xs font-bold transition">
+            ✋ Kéo Thả 3D: Tắt
+          </button>
         </div>
       </div>
 
-      <!-- KHUNG CAMERA NỔI (DÀNH CHO CHỦ TỌA HOẶC NGƯỜI ĐANG PHÁT BIỂU) -->
-      <div id="activeCamFloatingCard" class="hidden absolute top-24 left-3 w-60 bg-slate-900/95 border-2 border-amber-400 rounded-2xl overflow-hidden shadow-2xl z-30">
-        <div class="bg-gradient-to-r from-amber-500 to-emerald-500 text-slate-950 px-2.5 py-1 text-[11px] font-extrabold flex items-center justify-between">
-          <span id="camCardHeaderTitle">📷 CAMERA TRỰC TIẾP</span>
+      <!-- KHUNG PREVIEW CAMERA NHỎ GÓC TRÁI (ĐỒNG THỜI HIỂN THỊ TRÊN MẶT TRƯỚC NHÂN VẬT 3D) -->
+      <div id="activeCamFloatingCard" class="hidden absolute top-24 left-3 w-52 bg-slate-900/95 border-2 border-emerald-400 rounded-2xl overflow-hidden shadow-2xl z-30">
+        <div class="bg-gradient-to-r from-emerald-500 to-amber-500 text-slate-950 px-2.5 py-1 text-[10px] font-extrabold flex items-center justify-between">
+          <span id="camCardHeaderTitle">📷 CAM ĐANG GẮN MẶT 3D</span>
           <button onclick="toggleUserCamera()" class="text-slate-900 hover:text-red-900 font-black">✕</button>
         </div>
-        <video id="activeCamPreviewUI" autoplay playsinline muted class="w-full h-36 object-cover bg-black transform scale-x-[-1]"></video>
-        <div id="activeCamLabelName" class="px-2.5 py-1 text-[11px] font-bold text-amber-300 bg-slate-950/90 text-center">
-          Đình Lâm (Chủ Tọa)
+        <video id="activeCamPreviewUI" autoplay playsinline muted class="w-full h-32 object-cover bg-black transform scale-x-[-1]"></video>
+        <div id="activeCamLabelName" class="px-2 py-1 text-[10px] font-bold text-emerald-300 bg-slate-950/90 text-center">
+          Đang truyền lên khuôn mặt 3D
         </div>
       </div>
 
-      <!-- Điều khiển màn chiếu 3D, Share Màn Hình & Camera (Chủ tọa + Người phát biểu đều dùng được) -->
+      <!-- Điều khiển màn chiếu 3D, Share Màn Hình & Camera -->
       <div class="absolute top-3 right-3 bg-slate-900/90 border border-slate-700/80 backdrop-blur px-3 py-2 rounded-xl z-20 flex flex-col gap-1.5 shadow-lg">
         <div class="flex items-center gap-1.5 flex-wrap">
-          <span class="text-[11px] font-bold text-slate-300">🖥️ TRÌNH CHIẾU 3D:</span>
+          <span class="text-[11px] font-bold text-slate-300">🖥️ BẢNG 3D:</span>
           <button onclick="prevSlide()" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 rounded text-xs font-bold">◀</button>
           <span id="slideIndicator" class="text-xs font-bold text-amber-300">1/3</span>
           <button onclick="nextSlide()" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 rounded text-xs font-bold">▶</button>
           <button onclick="openAddSlideModal()" class="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-500 rounded text-xs font-bold">+ Slide</button>
 
-          <!-- NÚT SHARE MÀN HÌNH (CHỦ TỌA HOẶC NGƯỜI PHÁT BIỂU) -->
           <button id="btnShareScreen" onclick="toggleScreenShare()" class="px-2.5 py-0.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded text-xs font-extrabold flex items-center gap-1 shadow">
             🖥️ Share Màn Hình
           </button>
 
-          <!-- NÚT BẬT CAMERA (CHỦ TỌA HOẶC NGƯỜI PHÁT BIỂU) -->
           <button id="btnUserCam" onclick="toggleUserCamera()" class="px-2.5 py-0.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded text-xs font-extrabold flex items-center gap-1 shadow">
-            📷 Bật Camera
+            📷 Bật Cam Lên Mặt 3D
           </button>
         </div>
 
         <div class="flex gap-1.5">
           <button onclick="triggerSceneSpecialAction()" id="btnSpecialAction" class="flex-1 py-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 rounded-lg text-xs font-extrabold shadow">
-            🍻 HÔ "1, 2, 3 DÔ!" TOÀN QUÁN
+            👏 VỖ TAY / TƯƠNG TÁC TOÀN PHÒNG
           </button>
           <button onclick="simulateColleagueSpeak()" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg text-xs font-semibold">
             🗣️ Mời người nói
@@ -244,13 +259,13 @@
         <button onclick="raiseHand()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl text-xs font-semibold shrink-0">
           ✋ Giơ tay
         </button>
-        <input id="manualSpeechInput" type="text" placeholder="Nhập lời phát biểu (khi phát biểu bạn có thể bật Camera & Share màn hình)..." class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400" onkeydown="if(event.key==='Enter') submitManualSpeech()" />
+        <input id="manualSpeechInput" type="text" placeholder="Nhập lời phát biểu (Chủ tọa & Người phát biểu có thể bật Cam lên mặt nhân vật & Share màn hình)..." class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400" onkeydown="if(event.key==='Enter') submitManualSpeech()" />
         <button onclick="submitManualSpeech()" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-xl text-xs font-extrabold shrink-0">
           Phát biểu
         </button>
         <div class="flex items-center gap-1 pl-1 border-l border-slate-700">
-          <button onclick="sendReaction('🍻')" class="text-lg hover:scale-125 transition">🍻</button>
           <button onclick="sendReaction('👏')" class="text-lg hover:scale-125 transition">👏</button>
+          <button onclick="sendReaction('🍻')" class="text-lg hover:scale-125 transition">🍻</button>
           <button onclick="sendReaction('🪷')" class="text-lg hover:scale-125 transition">🪷</button>
           <button onclick="sendReaction('💯')" class="text-lg hover:scale-125 transition">💯</button>
           <button onclick="sendReaction('🔥')" class="text-lg hover:scale-125 transition">🔥</button>
@@ -258,7 +273,7 @@
       </div>
     </div>
 
-    <!-- SIDEBAR PHẢI: PHÁT BIỂU, CHAT NHÓM ĐÔNG NGƯỜI & BIÊN BẢN AI -->
+    <!-- SIDEBAR PHẢI: PHÁT BIỂU, CHAT NHÓM & BIÊN BẢN AI -->
     <aside class="w-80 md:w-96 bg-slate-900 border-l border-slate-800 flex flex-col z-30 shrink-0">
       <div class="grid grid-cols-3 p-2 gap-1 border-b border-slate-800 text-xs font-bold">
         <button onclick="switchTab('transcript')" id="tab-transcript" class="py-2 rounded-xl bg-indigo-600 text-white">🎙️ Phát Biểu</button>
@@ -266,33 +281,33 @@
         <button onclick="switchTab('summary')" id="tab-summary" class="py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white">📝 Biên Bản AI</button>
       </div>
 
-      <!-- TAB 1: GHI NHẬN PHÁT BIỂU & TƯƠNG TÁC -->
+      <!-- TAB 1: GHI NHẬN PHÁT BIỂU -->
       <div id="panel-transcript" class="flex-1 flex flex-col overflow-hidden p-3">
         <div class="text-[11px] text-slate-400 mb-2 flex justify-between items-center">
-          <span>Click vào bất kỳ ai trên 3D để Chọc / Thọc lét / Chat</span>
+          <span>Click thẳng vào người 3D để Chọc / Dời ghế / Kick</span>
           <span id="micStatusBadge" class="text-slate-500">● Mic tắt</span>
         </div>
         <div id="transcriptList" class="flex-1 overflow-y-auto space-y-2 pr-1"></div>
         <div class="mt-2 pt-2 border-t border-slate-800 flex justify-between items-center">
-          <span class="text-[11px] text-slate-400">Tự động lưu phát biểu</span>
+          <span class="text-[11px] text-slate-400">Ghi nhận tự động</span>
           <button onclick="switchTab('summary'); generateMeetingSummary();" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold px-3 py-1.5 rounded-lg text-xs">
-            📄 Xuất Biên Bản Tóm Tắt
+            📄 Xuất Biên Bản
           </button>
         </div>
       </div>
 
-      <!-- TAB 2: CHAT NHÓM NHIỀU NGƯỜI (ĐÃ BỎ GIỚI HẠN & BỎ DÂY NỐI 3D) -->
+      <!-- TAB 2: CHAT NHÓM ĐÔNG NGƯỜI -->
       <div id="panel-whisper" class="hidden flex-1 flex flex-col overflow-hidden p-3">
         <div class="bg-purple-950/40 border border-purple-500/30 rounded-xl p-2.5 mb-2">
           <div class="flex items-center justify-between mb-1.5">
             <span class="text-xs font-bold text-purple-300">💬 Chọn thành viên vào nhóm chat:</span>
             <div class="flex gap-1">
-              <button onclick="selectAllWhisperMembers()" class="text-[10px] bg-purple-700 hover:bg-purple-600 text-white px-2 py-0.5 rounded font-semibold">Chọn tất cả</button>
+              <button onclick="selectAllWhisperMembers()" class="text-[10px] bg-purple-700 hover:bg-purple-600 text-white px-2 py-0.5 rounded font-semibold">Tất cả</button>
               <button onclick="clearAllWhisperMembers()" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-0.5 rounded">Bỏ chọn</button>
             </div>
           </div>
           <div id="whisperMemberCheckboxes" class="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto"></div>
-          <div id="whisperCountInfo" class="mt-1.5 text-[11px] text-purple-200/80">Đang chọn 0 thành viên cùng nhóm.</div>
+          <div id="whisperCountInfo" class="mt-1.5 text-[11px] text-purple-200/80">Đang chọn 0 thành viên.</div>
         </div>
         <div id="whisperList" class="flex-1 overflow-y-auto space-y-2 pr-1"></div>
         <div class="mt-2 pt-2 border-t border-slate-800 flex gap-1.5">
@@ -304,19 +319,71 @@
       <!-- TAB 3: TÓM TẮT BIÊN BẢN HỌP -->
       <div id="panel-summary" class="hidden flex-1 flex flex-col overflow-hidden p-3">
         <div class="flex gap-2 mb-2">
-          <button onclick="generateMeetingSummary()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 py-2 rounded-lg text-xs font-extrabold">⚡ Tổng Hợp Lại Biên Bản</button>
-          <button onclick="downloadSummaryTxt()" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 px-3 py-2 rounded-lg text-xs font-bold">💾 Tải File .TXT</button>
+          <button onclick="generateMeetingSummary()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 py-2 rounded-lg text-xs font-extrabold">⚡ Tổng Hợp Biên Bản</button>
+          <button onclick="downloadSummaryTxt()" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 px-3 py-2 rounded-lg text-xs font-bold">💾 Tải .TXT</button>
         </div>
         <textarea id="summaryTextarea" class="flex-1 w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-200 leading-relaxed focus:outline-none resize-none"></textarea>
       </div>
     </aside>
   </div>
 
-  <!-- MODAL QUẢN LÝ CHỦ TỌA, CẤP QUYỀN PHÁT BIỂU & KICK THÀNH VIÊN -->
+  <!-- MODAL 1: SƠ ĐỒ KÉO THẢ & CHỈ ĐỊNH CHỖ NGỒI TỪ TRƯỚC -->
+  <div id="seatingPlannerModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div class="bg-slate-900 border border-indigo-500/50 rounded-2xl max-w-3xl w-full p-5 shadow-2xl max-h-[90vh] flex flex-col">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
+        <div>
+          <h3 class="text-base font-extrabold text-amber-400">🗺️ Sơ Đồ Sắp Xếp (Kéo Thả) & Chỉ Định Chỗ Ngồi Trước</h3>
+          <p class="text-xs text-slate-400">Kéo thả thẻ người dùng giữa các ghế, hoặc gõ tên đặt chỗ trước vào ghế trống (khi người đó vào phòng sẽ ngồi đúng ghế đã chỉ định).</p>
+        </div>
+        <button onclick="closeSeatingPlannerModal()" class="bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded-lg text-xs font-bold">✕ Đóng</button>
+      </div>
+
+      <!-- Thanh chỉnh tổng số ghế & Thêm trước người tham gia -->
+      <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-800/70 p-3 rounded-xl mb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-bold text-slate-300">Quy mô ghế dưới:</span>
+          <input id="seatRangeSlider" type="range" min="6" max="24" step="2" value="12" onchange="applyCapacityChange(this.value)" class="w-28 accent-emerald-500" />
+          <span id="sliderSeatVal" class="text-xs font-extrabold text-amber-300">12 chỗ</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <input id="newMemberName" type="text" placeholder="Tên người tham gia..." class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white" />
+          <input id="newMemberRole" type="text" placeholder="Chức vụ..." class="w-28 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white" />
+          <select id="newMemberSeatSelect" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-amber-300"></select>
+          <button onclick="addParticipantWithPreassignedSeat()" class="bg-emerald-600 hover:bg-emerald-500 px-3 py-1 rounded-lg text-xs font-bold">+ Chỉ định vào ghế</button>
+        </div>
+      </div>
+
+      <!-- Minh họa Bàn Chủ tọa đối diện -->
+      <div class="bg-amber-500/15 border-2 border-amber-400/60 rounded-xl p-2.5 mb-3 text-center">
+        <div class="text-xs font-extrabold text-amber-300">👑 BÀN CHỦ TỌA (QUAY ĐỐI DIỆN NHÌN XUỐNG CÁC DÃY BÀN BÊN DƯỚI)</div>
+        <div id="plannerHostSeatInfo" class="text-[11px] text-white mt-0.5">Ghế Chủ Tọa (#0): Đình Lâm</div>
+      </div>
+
+      <!-- Lưới ghế ngồi Kéo - Thả -->
+      <div id="seatingGridContainer" class="flex-1 overflow-y-auto grid grid-cols-2 sm:grid-cols-4 gap-2.5 pr-1"></div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: UPLOAD LOGO NHÀ TÀI TRỢ (BỜ BAO XUNG QUANH + BANNER TRÊN BẢNG) -->
+  <div id="sponsorModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div class="bg-slate-900 border border-amber-500/50 rounded-2xl max-w-2xl w-full p-5 shadow-2xl max-h-[90vh] flex flex-col">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
+        <div>
+          <h3 class="text-base font-extrabold text-amber-400">🖼️ Quản Lý Logo Ban Tổ Chức & Nhà Tài Trợ 3D</h3>
+          <p class="text-xs text-slate-400">Upload ảnh Logo từ máy tính hoặc nhập tên đơn vị cho Banner phía trên bảng chính và 8 Slot bờ bao xung quanh phòng.</p>
+        </div>
+        <button onclick="closeSponsorLogoModal()" class="bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded-lg text-xs font-bold">✕ Đóng</button>
+      </div>
+
+      <div id="sponsorSlotsList" class="flex-1 overflow-y-auto space-y-2.5 pr-1"></div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: QUẢN TRỊ CHỦ TỌA & KICK -->
   <div id="hostModal" class="hidden fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4">
     <div class="bg-slate-900 border border-amber-500/40 rounded-2xl max-w-lg w-full p-5 shadow-2xl">
       <h3 class="text-base font-extrabold text-amber-400 mb-1">👑 Quản Trị Phòng Họp (Chủ Tọa)</h3>
-      <p class="text-xs text-slate-400 mb-3">Chủ tọa có thể gán quyền Chủ tọa, cấp quyền Phát biểu (mở Camera/Share màn hình) hoặc Kick thành viên ra khỏi phòng.</p>
+      <p class="text-xs text-slate-400 mb-3">Gán quyền Chủ tọa, mời phát biểu (mở Camera mặt 3D & Share màn hình) hoặc Kick thành viên.</p>
       <div id="hostCandidateList" class="space-y-2 max-h-72 overflow-y-auto mb-4"></div>
       <div class="flex justify-end">
         <button onclick="closeHostAssignModal()" class="bg-slate-800 hover:bg-slate-700 px-4 py-1.5 rounded-lg text-xs font-bold">Đóng</button>
@@ -324,30 +391,7 @@
     </div>
   </div>
 
-  <!-- MODAL CẤU HÌNH SỐ LƯỢNG NGƯỜI HỌP -->
-  <div id="capacityModal" class="hidden fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-5 shadow-2xl">
-      <h3 class="text-base font-extrabold text-emerald-400 mb-2">⚙️ Cấu Hình Sức Chứa Phòng Họp 3D</h3>
-      <label class="block text-xs text-slate-300 mb-1">Tổng số chỗ ngồi 3D: <b id="sliderSeatVal" class="text-amber-300">12</b> chỗ</label>
-      <input id="seatRangeSlider" type="range" min="4" max="32" step="2" value="12" oninput="document.getElementById('sliderSeatVal').innerText=this.value" class="w-full accent-emerald-500 mb-4" />
-
-      <div class="border-t border-slate-800 pt-3 mb-4">
-        <div class="text-xs font-bold text-slate-300 mb-2">➕ Thêm thành viên vào ghế trống:</div>
-        <div class="flex gap-1.5">
-          <input id="newMemberName" type="text" placeholder="Họ tên thành viên..." class="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white" />
-          <input id="newMemberRole" type="text" placeholder="Chức vụ..." class="w-28 bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white" />
-          <button onclick="addParticipant()" class="bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 rounded-lg text-xs font-bold">Thêm</button>
-        </div>
-      </div>
-
-      <div class="flex justify-end gap-2">
-        <button onclick="closeCapacityModal()" class="bg-slate-800 px-3 py-1.5 rounded-lg text-xs">Đóng</button>
-        <button onclick="applyCapacityChange()" class="bg-emerald-600 hover:bg-emerald-500 px-4 py-1.5 rounded-lg text-xs font-bold">Áp dụng 3D</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL THÊM SLIDE -->
+  <!-- MODAL 4: THÊM SLIDE -->
   <div id="slideModal" class="hidden fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4">
     <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-5">
       <h3 class="text-sm font-extrabold text-indigo-300 mb-3">🖥️ Chiếu Nội Dung Lên Màn Hình 3D</h3>
@@ -361,17 +405,18 @@
   </div>
 
   <script>
-    // ================= MÃ PIN CHỦ TỌA MẶC ĐỊNH LÀ 2020 (ẨN KHỎI GIAO DIỆN) =================
+    // ================= CẤU HÌNH MẶC ĐỊNH & DỮ LIỆU =================
     const HOST_PIN = '2020';
     let isOwnerAuthenticated = false;
     let currentViewerId = 'p1';
     let assignedHostId = 'p0';
-    let activeSpeakerId = null; // Người đang phát biểu (được quyền bật Cam & Share màn hình như Chủ tọa)
-    let selectedTargetMemberId = null; // Thành viên đang được click để tương tác
-    let currentScene = 'nhau';
-    let maxSeats = 12;
+    let activeSpeakerId = null;
+    let selectedTargetMemberId = null;
+    let currentScene = 'lop'; // Mặc định mở Mẫu Phòng Học & Họp có bàn Chủ tọa đối diện
+    let maxSeats = 13; // Ghế #0 là bàn Chủ tọa đối diện + 12 ghế bên dưới
+    let is3DDragEnabled = false;
 
-    // Trạng thái Share Màn Hình & Camera
+    // Share màn hình & Camera gắn lên mặt trước nhân vật 3D
     let isScreenSharing = false;
     let screenStream = null;
     let screenVideoTexture = null;
@@ -379,9 +424,9 @@
     let isCamActive = false;
     let camStream = null;
     let camVideoTexture = null;
-    let camPlaneMesh = null;
     let camOwnerId = null;
 
+    // Danh sách thành viên (seat = 0 là ghế Bàn Chủ tọa quay xuống dưới)
     let participants = [
       { id: 'p0', name: 'Đình Lâm', role: 'Chủ Tọa', seat: 0, color: 0xf59e0b, speaking: false, bubble: '', bounceUntil: 0 },
       { id: 'p1', name: 'Bảo Ngọc', role: 'Thiết kế 3D/UX', seat: 1, color: 0xec4899, speaking: false, bubble: '', bounceUntil: 0 },
@@ -393,31 +438,49 @@
       { id: 'p7', name: 'Khánh Linh', role: 'Chăm sóc KH', seat: 7, color: 0xf97316, speaking: false, bubble: '', bounceUntil: 0 }
     ];
 
+    // Lưu tên người được Chủ trì chỉ định trước vào từng ghế trống (seatIndex -> reservedName)
+    let preassignedSeatNames = {
+      8: 'Văn Hùng',
+      9: 'Phương Thảo'
+    };
+
+    // Hệ thống Logo: Slot 'top_banner' (Phía trên bảng chính) + 8 Slot bờ bao xung quanh ('wall_0' -> 'wall_7')
+    const sponsorSlots = [
+      { id: 'top_banner', name: 'Banner Chính (Trên Bảng)', label: 'ĐÀM ĐẠO LIVE 3D - KHÔNG GIAN HỘI NGHỊ & ĐÀO TẠO SỐ', bgColor: '#1e3a8a', accent: '#fbbf24', imgUrl: null, texture: null },
+      { id: 'wall_0', name: 'Bờ bao Trái #1', label: 'NHÀ TÀI TRỢ KIM CƯƠNG', bgColor: '#0f172a', accent: '#38bdf8', imgUrl: null, texture: null },
+      { id: 'wall_1', name: 'Bờ bao Trái #2', label: 'ĐỐI TÁC CÔNG NGHỆ AI', bgColor: '#064e3b', accent: '#34d399', imgUrl: null, texture: null },
+      { id: 'wall_2', name: 'Bờ bao Trái #3', label: 'ĐỒNG HÀNH KHỞI NGHIỆP', bgColor: '#3b0764', accent: '#c084fc', imgUrl: null, texture: null },
+      { id: 'wall_3', name: 'Bờ bao Phải #1', label: 'NHÀ TÀI TRỢ VÀNG', bgColor: '#451a03', accent: '#fbbf24', imgUrl: null, texture: null },
+      { id: 'wall_4', name: 'Bờ bao Phải #2', label: 'ĐỐI TÁC CHIẾN LƯỢC', bgColor: '#1e1b4b', accent: '#818cf8', imgUrl: null, texture: null },
+      { id: 'wall_5', name: 'Bờ bao Phải #3', label: 'HỆ SINH THÁI SỐ 3D', bgColor: '#0f172a', accent: '#22d3ee', imgUrl: null, texture: null },
+      { id: 'wall_6', name: 'Bờ bao Sau #1', label: 'CLICK ĐỂ UP LOGO TÀI TRỢ', bgColor: '#334155', accent: '#f8fafc', imgUrl: null, texture: null },
+      { id: 'wall_7', name: 'Bờ bao Sau #2', label: 'CLICK ĐỂ UP LOGO TÀI TRỢ', bgColor: '#334155', accent: '#f8fafc', imgUrl: null, texture: null }
+    ];
+    let currentEditingSponsorId = null;
+
     const slides = [
-      { title: 'CHIẾN LƯỢC TRIỂN KHAI QUÝ TỚI', lines: ['1. Tối ưu hóa quy trình vận hành tự động', '2. Ra mắt không gian họp & đàm đạo 3D', '3. Phân công KPI rõ ràng cho từng bộ phận'] },
-      { title: 'BÁO CÁO TIẾN ĐỘ & NGÂN SÁCH', lines: ['• Hoàn thành 95% mục tiêu giai đoạn 1', '• Tiết kiệm 25% chi phí vận hành', '• Đề xuất mở rộng quy mô nhóm dự án'] },
-      { title: 'THẢO LUẬN & CHỐT QUYẾT ĐỊNH', lines: ['• Lắng nghe ý kiến đóng góp từ các bàn', '• Tổng hợp tự động vào biên bản AI', '• Biểu quyết thông qua kế hoạch hành động'] }
+      { title: 'CHIẾN LƯỢC & ĐÀO TẠO TRỰC TUYẾN 3D', lines: ['1. Bàn Chủ tọa đối diện trực tiếp cử tọa bên dưới', '2. Kéo thả sắp xếp chỗ ngồi & chỉ định ghế trước', '3. Bờ bao 8 Slot Logo Nhà Tài Trợ xung quanh'] },
+      { title: 'TƯƠNG TÁC TRỰC TIẾP TRÊN MÔ HÌNH 3D', lines: ['• Click vào người nhân vật để Chọc / Dời chỗ / Kick', '• Camera hiển thị trực tiếp lên mặt trước nhân vật', '• Share màn hình máy tính lên bảng lớn 3D'] },
+      { title: 'THẢO LUẬN & GHI NHẬN BIÊN BẢN AI', lines: ['• Tự động chuyển giọng nói tiếng Việt thành văn bản', '• Chat nhóm nhiều người không giới hạn', '• Xuất biên bản cuộc họp chỉ với 1 cú click'] }
     ];
     let currentSlideIdx = 0;
 
     const transcripts = [
-      { time: '16:05:12', speaker: 'Đình Lâm', role: 'Chủ Tọa', text: 'Chào mừng anh chị em! Mọi người có thể click trực tiếp vào nhau để chọc ghẹo, mời bia/trà, chat riêng và bật Mic/Camera phát biểu nhé.' },
-      { time: '16:07:30', speaker: 'Bảo Ngọc', role: 'Thiết kế 3D/UX', text: 'Khi thành viên bật Mic phát biểu hoặc được Chủ tọa mời nói thì cũng có thể bật Camera và Share màn hình lên bảng 3D.' }
+      { time: '09:00:10', speaker: 'Đình Lâm', role: 'Chủ Tọa', text: 'Chào mừng mọi người! Bàn Chủ tọa của tôi đang quay đối diện trực tiếp với anh chị em bên dưới để chúng ta nhìn mặt nhau trao đổi nhé.' },
+      { time: '09:02:15', speaker: 'Bảo Ngọc', role: 'Thiết kế 3D/UX', text: 'Xung quanh bờ bao không gian đã chia sẵn các Slot để gắn Logo nhà tài trợ và phía trên bảng chính cũng có Banner thương hiệu.' }
     ];
 
-    let whisperGroupIds = ['p2', 'p3', 'p4', 'p5'];
+    let whisperGroupIds = ['p2', 'p3', 'p4'];
     const whisperLogs = [
-      { time: '16:10', from: 'Đình Lâm', toNames: 'Nhóm dự án (4 người)', text: 'Anh em chuẩn bị số liệu để lát nữa từng người bật Camera và Share màn hình báo cáo nhé!' }
+      { time: '09:03', from: 'Đình Lâm', toNames: 'Nhóm dự án', text: 'Anh đã xếp chỗ ngồi trước cho các thành viên mới trong mục Sơ đồ Kéo Thả nhé!' }
     ];
 
-    // ================= CỔNG ĐĂNG NHẬP & KIỂM TRA QUYỀN =================
+    // ================= CỔNG ĐĂNG NHẬP CHỌN CHỦ TRÌ & GHẾ CHỈ ĐỊNH TRƯỚC =================
     function toggleHostPinBox() {
       const checked = document.getElementById('loginIsHostCheckbox').checked;
       const pinBox = document.getElementById('hostPinBox');
       pinBox.style.display = checked ? 'block' : 'none';
-      if (checked) {
-        document.getElementById('loginPinInput').focus();
-      }
+      if (checked) document.getElementById('loginPinInput').focus();
     }
 
     function reopenLoginModal() {
@@ -426,10 +489,13 @@
     }
 
     function enterMeetingRoom() {
+      const selectedHostRoom = document.getElementById('loginRoomHostSelect').value;
       const rawName = document.getElementById('loginNameInput').value.trim();
       const rawRole = document.getElementById('loginRoleInput').value.trim();
       const wantsHost = document.getElementById('loginIsHostCheckbox').checked;
       const pinVal = document.getElementById('loginPinInput').value.trim();
+
+      participants[0].name = selectedHostRoom;
 
       if (wantsHost) {
         if (pinVal !== HOST_PIN) {
@@ -439,17 +505,53 @@
         isOwnerAuthenticated = true;
         currentViewerId = 'p0';
         assignedHostId = 'p0';
-        participants[0].name = rawName || 'Đình Lâm';
+        participants[0].name = rawName || selectedHostRoom;
         participants[0].role = rawRole || 'Chủ Tọa';
+        participants[0].seat = 0;
       } else {
         isOwnerAuthenticated = false;
-        currentViewerId = 'p1';
-        participants[1].name = rawName || 'Thành viên';
-        participants[1].role = rawRole || 'Thành viên';
+        const memberName = rawName || 'Thành viên mới';
+        const memberRole = rawRole || 'Thành viên';
+
+        // Kiểm tra xem tên người này đã có trong danh sách hoặc được Chủ trì chỉ định ghế trước chưa
+        let existing = participants.find(p => p.id !== 'p0' && p.name.toLowerCase() === memberName.toLowerCase());
+        if (existing) {
+          currentViewerId = existing.id;
+          existing.role = memberRole;
+        } else {
+          // Kiểm tra ghế đặt trước (preassignedSeatNames)
+          let targetSeat = null;
+          for (const [sIdx, rName] of Object.entries(preassignedSeatNames)) {
+            if (rName && rName.toLowerCase() === memberName.toLowerCase()) {
+              targetSeat = parseInt(sIdx, 10);
+              delete preassignedSeatNames[sIdx];
+              break;
+            }
+          }
+          if (targetSeat === null) {
+            // Tìm ghế trống đầu tiên từ 1 trở đi
+            for (let i = 1; i < maxSeats; i++) {
+              if (!participants.some(p => p.seat === i)) {
+                targetSeat = i;
+                break;
+              }
+            }
+            if (targetSeat === null) {
+              targetSeat = maxSeats;
+              maxSeats++;
+            }
+          }
+          const newId = 'p_' + Date.now();
+          participants.push({
+            id: newId, name: memberName, role: memberRole,
+            seat: targetSeat, color: 0x38bdf8, speaking: false, bubble: '', bounceUntil: 0
+          });
+          currentViewerId = newId;
+        }
       }
 
       const me = participants.find(p => p.id === currentViewerId) || participants[0];
-      document.getElementById('currentUserBadge').innerText = `👤 ${me.name}`;
+      document.getElementById('currentUserBadge').innerText = `👤 ${me.name} (Ghế #${me.seat})`;
       document.getElementById('loginOverlay').style.display = 'none';
       updatePermissionUI();
       renderWhisperUI();
@@ -460,7 +562,6 @@
       return currentViewerId === assignedHostId;
     }
 
-    // Kiểm tra người dùng hiện tại có được phép bật Cam & Share màn hình không (Chủ tọa HOẶC Người đang phát biểu)
     function canCurrentUserPresentOrCam() {
       const me = participants.find(p => p.id === currentViewerId);
       return isCurrentUserHost() || activeSpeakerId === currentViewerId || (me && me.speaking) || micActive;
@@ -468,13 +569,12 @@
 
     function updatePermissionUI() {
       const hostObj = participants.find(p => p.id === assignedHostId) || participants[0];
-      document.getElementById('hostNameBadge').innerText = hostObj.name;
+      document.getElementById('hostNameBadge').innerText = hostObj ? hostObj.name : 'Đình Lâm';
 
       const isHost = isCurrentUserHost();
       const canPresent = canCurrentUserPresentOrCam();
       const miniTag = document.getElementById('permissionMiniTag');
       const sceneButtons = document.querySelectorAll('.scene-btn');
-      const capBtn = document.getElementById('btnCapacityConfig');
       const assignBtn = document.getElementById('btnAssignHost');
       const shareBtn = document.getElementById('btnShareScreen');
       const camBtn = document.getElementById('btnUserCam');
@@ -483,14 +583,12 @@
 
       if (isHost) {
         miniTag.className = 'text-emerald-400 font-bold';
-        miniTag.innerText = '👑 Bạn là Chủ tọa';
+        miniTag.innerText = '👑 Chủ tọa (Toàn quyền)';
         sceneButtons.forEach(b => b.classList.remove('opacity-40', 'cursor-not-allowed'));
-        capBtn.classList.remove('opacity-40', 'cursor-not-allowed');
       } else {
         miniTag.className = 'text-amber-300 font-semibold';
-        miniTag.innerText = activeSpeakerId === currentViewerId ? '🎙️ Người phát biểu' : `🔒 Thành viên`;
+        miniTag.innerText = activeSpeakerId === currentViewerId ? '🎙️ Người phát biểu' : '🔒 Thành viên';
         sceneButtons.forEach(b => b.classList.add('opacity-40', 'cursor-not-allowed'));
-        capBtn.classList.add('opacity-40', 'cursor-not-allowed');
       }
 
       if (canPresent) {
@@ -502,13 +600,12 @@
       }
     }
 
-    // ================= SHARE MÀN HÌNH & BẬT CAMERA (CHỦ TỌA + NGƯỜI PHÁT BIỂU) =================
+    // ================= SHARE MÀN HÌNH & CAMERA HIỂN THỊ TRÊN MẶT TRƯỚC NHÂN VẬT 3D =================
     async function toggleScreenShare() {
       if (!canCurrentUserPresentOrCam()) {
-        alert('💡 Vui lòng bấm "🎙️ Bật Mic Phát Biểu" (hoặc nhờ Chủ tọa mời phát biểu) để mở khóa tính năng Share Màn Hình!');
+        alert('💡 Vui lòng bấm "🎙️ Bật Mic Phát Biểu" (hoặc được Chủ tọa mời phát biểu) để Share Màn Hình!');
         return;
       }
-
       const videoEl = document.getElementById('screenShareVideo');
       const btn = document.getElementById('btnShareScreen');
 
@@ -527,14 +624,12 @@
             screenMesh.material.map = screenVideoTexture;
             screenMesh.material.needsUpdate = true;
           }
-
           btn.innerText = '🛑 Dừng Share';
           btn.className = 'px-2.5 py-0.5 bg-rose-600 hover:bg-rose-500 text-white rounded text-xs font-extrabold flex items-center gap-1 shadow animate-pulse';
-
           screenStream.getVideoTracks()[0].onended = () => stopScreenShareCleanup();
-          setCamPreset('board');
+          setCamPreset('audienceView');
         } catch (err) {
-          console.warn('Đã hủy Share màn hình:', err);
+          console.warn('Hủy Share màn hình:', err);
         }
       } else {
         stopScreenShareCleanup();
@@ -544,7 +639,7 @@
     function stopScreenShareCleanup() {
       const btn = document.getElementById('btnShareScreen');
       if (screenStream) {
-        screenStream.getTracks().forEach(track => track.stop());
+        screenStream.getTracks().forEach(t => t.stop());
         screenStream = null;
       }
       isScreenSharing = false;
@@ -559,10 +654,9 @@
 
     async function toggleUserCamera() {
       if (!canCurrentUserPresentOrCam()) {
-        alert('💡 Vui lòng bấm "🎙️ Bật Mic Phát Biểu" (hoặc được Chủ tọa mời phát biểu) để bật Camera khuôn mặt!');
+        alert('💡 Vui lòng bấm "🎙️ Bật Mic Phát Biểu" (hoặc được Chủ tọa mời phát biểu) để bật Camera lên mặt trước nhân vật 3D!');
         return;
       }
-
       const camVideoEl = document.getElementById('activeCamVideo');
       const pipVideoEl = document.getElementById('activeCamPreviewUI');
       const pipCard = document.getElementById('activeCamFloatingCard');
@@ -572,7 +666,7 @@
       if (!isCamActive) {
         try {
           camStream = await navigator.mediaDevices.getUserMedia({
-            video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' },
+            video: { width: { ideal: 512 }, height: { ideal: 512 }, facingMode: 'user' },
             audio: false
           });
           camVideoEl.srcObject = camStream;
@@ -586,11 +680,10 @@
 
           isCamActive = true;
           camOwnerId = currentViewerId;
-          document.getElementById('camCardHeaderTitle').innerText = isCurrentUserHost() ? '👑 CAMERA CHỦ TỌA' : '🎙️ CAMERA NGƯỜI PHÁT BIỂU';
-          document.getElementById('activeCamLabelName').innerText = `${me.name} (${me.role})`;
+          document.getElementById('activeCamLabelName').innerText = `${me.name} (Đang hiện trên mặt 3D)`;
           pipCard.classList.remove('hidden');
 
-          btn.innerText = '🛑 Tắt Camera';
+          btn.innerText = '🛑 Tắt Cam Mặt 3D';
           btn.className = 'px-2.5 py-0.5 bg-rose-600 hover:bg-rose-500 text-white rounded text-xs font-extrabold flex items-center gap-1 shadow animate-pulse';
 
           build3DScene();
@@ -605,24 +698,305 @@
         isCamActive = false;
         camOwnerId = null;
         pipCard.classList.add('hidden');
-        btn.innerText = '📷 Bật Camera';
+        btn.innerText = '📷 Bật Cam Lên Mặt 3D';
         btn.className = 'px-2.5 py-0.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded text-xs font-extrabold flex items-center gap-1 shadow';
         build3DScene();
       }
     }
 
-    // ================= CLICK TƯƠNG TÁC LẪN NHAU (CHỌC, THỌC LÉT, CHAT, KICK) =================
-    function openMemberInteractionMenu(event, memberId) {
-      event.stopPropagation();
+    // ================= SẮP XẾP KÉO THẢ (2D & 3D) VÀ CHỈ ĐỊNH CHỖ NGỒI =================
+    function openSeatingPlannerModal() {
+      renderSeatingPlannerGrid();
+      document.getElementById('seatingPlannerModal').classList.remove('hidden');
+    }
+
+    function closeSeatingPlannerModal() {
+      document.getElementById('seatingPlannerModal').classList.add('hidden');
+    }
+
+    let draggedSeatIndex = null;
+
+    function renderSeatingPlannerGrid() {
+      const hostP = participants.find(p => p.seat === 0);
+      document.getElementById('plannerHostSeatInfo').innerText = hostP
+        ? `Ghế Chủ Tọa (#0 - Quay đối diện xuống dưới): ${hostP.name} (${hostP.role})`
+        : `Ghế Chủ Tọa (#0): Đang trống`;
+
+      // Cập nhật dropdown chọn ghế khi thêm người mới
+      const seatSel = document.getElementById('newMemberSeatSelect');
+      let seatOpts = '';
+      for (let i = 1; i < maxSeats; i++) {
+        const occ = participants.find(p => p.seat === i);
+        if (!occ) seatOpts += `<option value="${i}">Ghế #${i}</option>`;
+      }
+      seatSel.innerHTML = seatOpts || `<option value="${maxSeats}">Ghế #${maxSeats} (Mới)</option>`;
+
+      const grid = document.getElementById('seatingGridContainer');
+      let html = '';
+      for (let i = 1; i < maxSeats; i++) {
+        const p = participants.find(item => item.seat === i);
+        const reserved = preassignedSeatNames[i] || '';
+        const canDrag = isCurrentUserHost() || (p && p.id === currentViewerId);
+
+        html += `
+          <div class="seat-slot-card bg-slate-800/90 border-2 ${p ? 'border-indigo-500/60' : (reserved ? 'border-amber-500/60' : 'border-slate-700 border-dashed')} rounded-xl p-2.5 flex flex-col justify-between"
+               ondragover="event.preventDefault(); this.classList.add('drag-over');"
+               ondragleave="this.classList.remove('drag-over');"
+               ondrop="handleSeatDrop(event, ${i}); this.classList.remove('drag-over');">
+            <div class="flex items-center justify-between text-[11px] text-slate-400 mb-1">
+              <span class="font-extrabold text-amber-300">🪑 Ghế #${i}</span>
+              ${p ? `<span class="text-[10px] bg-indigo-950 text-indigo-300 px-1.5 py-0.5 rounded">Đã ngồi</span>` : `<span class="text-[10px] text-emerald-400">Trống</span>`}
+            </div>
+
+            ${p ? `
+              <div draggable="${canDrag}" ondragstart="handleSeatDragStart(event, ${i})"
+                   class="cursor-grab active:cursor-grabbing bg-slate-900 border border-slate-700 rounded-lg p-2 my-1">
+                <div class="text-xs font-extrabold text-white truncate">👤 ${p.name}</div>
+                <div class="text-[10px] text-slate-400 truncate">${p.role}</div>
+                <div class="text-[9px] text-amber-300 mt-1">✋ Giữ chuột kéo sang ghế khác</div>
+              </div>
+            ` : `
+              <div class="my-1">
+                <input type="text" value="${reserved}" placeholder="Chỉ định tên trước..."
+                       ${!isCurrentUserHost() ? 'disabled' : ''}
+                       onchange="setPreassignedSeatName(${i}, this.value)"
+                       class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-[11px] text-amber-200 focus:outline-none focus:border-amber-400" />
+                <button onclick="moveMySeatTo(${i}); renderSeatingPlannerGrid();" class="mt-1.5 w-full bg-emerald-600/30 hover:bg-emerald-600 text-emerald-200 hover:text-white rounded py-1 text-[10px] font-bold transition">
+                  Chuyển tôi vào ghế #${i}
+                </button>
+              </div>
+            `}
+          </div>
+        `;
+      }
+      grid.innerHTML = html;
+    }
+
+    function handleSeatDragStart(e, fromSeatIdx) {
+      draggedSeatIndex = fromSeatIdx;
+      e.dataTransfer.setData('text/plain', String(fromSeatIdx));
+    }
+
+    function handleSeatDrop(e, toSeatIdx) {
+      e.preventDefault();
+      const fromIdx = draggedSeatIndex !== null ? draggedSeatIndex : parseInt(e.dataTransfer.getData('text/plain'), 10);
+      if (isNaN(fromIdx) || fromIdx === toSeatIdx) return;
+
+      const pFrom = participants.find(p => p.seat === fromIdx);
+      const pTo = participants.find(p => p.seat === toSeatIdx);
+      if (!pFrom) return;
+
+      if (!isCurrentUserHost() && pFrom.id !== currentViewerId) {
+        alert('⛔ Chỉ có Chủ trì mới được kéo thả đổi chỗ của người khác! Bạn chỉ có thể kéo thẻ tên của chính mình.');
+        return;
+      }
+
+      if (pTo) {
+        pTo.seat = fromIdx;
+      }
+      pFrom.seat = toSeatIdx;
+      draggedSeatIndex = null;
+
+      const me = participants.find(p => p.id === currentViewerId);
+      if (me) document.getElementById('currentUserBadge').innerText = `👤 ${me.name} (Ghế #${me.seat})`;
+
+      renderSeatingPlannerGrid();
+      build3DScene();
+    }
+
+    function setPreassignedSeatName(seatIdx, nameVal) {
+      if (!isCurrentUserHost()) return;
+      const clean = nameVal.trim();
+      if (clean) preassignedSeatNames[seatIdx] = clean;
+      else delete preassignedSeatNames[seatIdx];
+      build3DScene();
+    }
+
+    function addParticipantWithPreassignedSeat() {
+      if (!isCurrentUserHost()) {
+        alert('⛔ Chỉ có Chủ trì mới được thêm và chỉ định ghế trước!');
+        return;
+      }
+      const name = document.getElementById('newMemberName').value.trim();
+      const role = document.getElementById('newMemberRole').value.trim() || 'Thành viên';
+      const targetSeat = parseInt(document.getElementById('newMemberSeatSelect').value, 10);
+      if (!name) return;
+
+      const palette = [0x38bdf8, 0xf43f5e, 0xa855f7, 0x10b981, 0xeab308];
+      participants.push({
+        id: 'p_' + Date.now(), name, role,
+        seat: isNaN(targetSeat) ? participants.length : targetSeat,
+        color: palette[participants.length % palette.length],
+        speaking: false, bubble: '', bounceUntil: 0
+      });
+      if (targetSeat >= maxSeats) maxSeats = targetSeat + 1;
+      document.getElementById('newMemberName').value = '';
+      document.getElementById('newMemberRole').value = '';
+      renderSeatingPlannerGrid();
+      renderWhisperUI();
+      build3DScene();
+    }
+
+    function applyCapacityChange(val) {
+      if (!isCurrentUserHost()) {
+        alert('⛔ Chỉ có Chủ trì mới được thay đổi quy mô ghế!');
+        return;
+      }
+      const belowSeats = parseInt(val, 10);
+      maxSeats = belowSeats + 1; // +1 cho ghế Chủ tọa #0
+      document.getElementById('sliderSeatVal').innerText = `${belowSeats} chỗ`;
+      renderSeatingPlannerGrid();
+      build3DScene();
+    }
+
+    // ================= QUẢN LÝ & UPLOAD LOGO NHÀ TÀI TRỢ (BỜ BAO + PHÍA TRÊN BẢNG) =================
+    function openSponsorLogoModal() {
+      renderSponsorSlotsModal();
+      document.getElementById('sponsorModal').classList.remove('hidden');
+    }
+
+    function closeSponsorLogoModal() {
+      document.getElementById('sponsorModal').classList.add('hidden');
+    }
+
+    function renderSponsorSlotsModal() {
+      const list = document.getElementById('sponsorSlotsList');
+      list.innerHTML = sponsorSlots.map(slot => `
+        <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-800 border border-slate-700 rounded-xl p-3">
+          <div class="flex-1 min-w-[200px]">
+            <div class="text-xs font-extrabold text-amber-300">${slot.name}</div>
+            <input type="text" value="${slot.label}" onchange="updateSponsorText('${slot.id}', this.value)"
+                   placeholder="Nhập khẩu hiệu / tên Nhà tài trợ..."
+                   class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white" />
+          </div>
+          <div class="flex items-center gap-2">
+            ${slot.imgUrl ? `<img src="${slot.imgUrl}" class="h-10 w-16 object-contain bg-white rounded p-0.5 border border-amber-400" />` : `<span class="text-[10px] text-slate-400">Chưa có ảnh Logo</span>`}
+            <button onclick="triggerUploadSponsorLogo('${slot.id}')" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold px-3 py-1.5 rounded-lg text-xs">
+              📤 Upload Logo
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function updateSponsorText(slotId, newLabel) {
+      const slot = sponsorSlots.find(s => s.id === slotId);
+      if (!slot) return;
+      slot.label = newLabel.trim() || slot.name;
+      refreshSponsorSlotTexture(slot);
+    }
+
+    function triggerUploadSponsorLogo(slotId) {
+      if (!isCurrentUserHost()) {
+        alert('⛔ Chỉ có Chủ trì mới được phép thay đổi Logo Nhà tài trợ!');
+        return;
+      }
+      currentEditingSponsorId = slotId;
+      document.getElementById('logoFileInput').click();
+    }
+
+    function handleLogoFileSelected(event) {
+      const file = event.target.files[0];
+      if (!file || !currentEditingSponsorId) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const slot = sponsorSlots.find(s => s.id === currentEditingSponsorId);
+        if (slot) {
+          slot.imgUrl = e.target.result;
+          refreshSponsorSlotTexture(slot);
+          if (!document.getElementById('sponsorModal').classList.contains('hidden')) {
+            renderSponsorSlotsModal();
+          }
+        }
+      };
+      reader.readAsDataURL(file);
+      event.target.value = '';
+    }
+
+    function createOrUpdateSponsorCanvasTexture(slot) {
+      if (!slot.canvas) {
+        slot.canvas = document.createElement('canvas');
+        slot.canvas.width = slot.id === 'top_banner' ? 1024 : 512;
+        slot.canvas.height = slot.id === 'top_banner' ? 180 : 256;
+        slot.ctx = slot.canvas.getContext('2d');
+        slot.texture = new THREE.CanvasTexture(slot.canvas);
+      }
+      const ctx = slot.ctx;
+      const w = slot.canvas.width;
+      const h = slot.canvas.height;
+
+      ctx.fillStyle = slot.bgColor;
+      ctx.fillRect(0, 0, w, h);
+
+      ctx.strokeStyle = slot.accent;
+      ctx.lineWidth = 8;
+      ctx.strokeRect(6, 6, w - 12, h - 12);
+
+      if (slot.imgUrl) {
+        const img = new Image();
+        img.onload = () => {
+          ctx.fillStyle = slot.bgColor;
+          ctx.fillRect(10, 10, w - 20, h - 20);
+          // Vẽ ảnh logo căn giữa hoặc bên trái kèm chữ
+          if (slot.id === 'top_banner') {
+            ctx.drawImage(img, 30, 20, 220, h - 40);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 34px sans-serif';
+            ctx.fillText(slot.label, 275, h / 2 + 12);
+          } else {
+            ctx.drawImage(img, 24, 20, w - 48, h - 75);
+            ctx.fillStyle = slot.accent;
+            ctx.font = 'bold 22px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(slot.label, w / 2, h - 22);
+            ctx.textAlign = 'left';
+          }
+          slot.texture.needsUpdate = true;
+        };
+        img.src = slot.imgUrl;
+      } else {
+        ctx.fillStyle = slot.accent;
+        ctx.font = slot.id === 'top_banner' ? 'bold 34px sans-serif' : 'bold 26px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(slot.label, w / 2, h / 2 + 8);
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '18px sans-serif';
+        ctx.fillText(slot.name + ' (Click để đổi Logo)', w / 2, h - 22);
+        ctx.textAlign = 'left';
+        slot.texture.needsUpdate = true;
+      }
+      return slot.texture;
+    }
+
+    function refreshSponsorSlotTexture(slot) {
+      createOrUpdateSponsorCanvasTexture(slot);
+    }
+
+    // ================= TƯƠNG TÁC KHI CLICK VÀO NGƯỜI CỦA NHÂN VẬT 3D =================
+    function openMemberInteractionMenu(clientX, clientY, memberId) {
       const target = participants.find(p => p.id === memberId);
       if (!target) return;
 
       selectedTargetMemberId = memberId;
       const popup = document.getElementById('interactionPopup');
-      document.getElementById('popupTargetName').innerText = `${target.id === assignedHostId ? '👑 ' : '👤 '}${target.name}`;
+      document.getElementById('popupTargetName').innerText = `${target.id === assignedHostId ? '👑 ' : '👤 '}${target.name} (Ghế #${target.seat})`;
       document.getElementById('popupTargetRole').innerText = target.role;
 
-      // Chỉ Chủ tọa mới thấy nút Cấp quyền phát biểu & nút Kick (và không tự kick chính mình)
+      // Điền danh sách ghế để dời chỗ (cho chính mình hoặc do Chủ trì điều chuyển)
+      const moveBox = document.getElementById('moveSeatBoxInPopup');
+      const canMoveThisPerson = isCurrentUserHost() || target.id === currentViewerId;
+      moveBox.style.display = canMoveThisPerson ? 'block' : 'none';
+      if (canMoveThisPerson) {
+        const sel = document.getElementById('popupMoveSeatSelect');
+        let opts = '';
+        for (let i = 0; i < maxSeats; i++) {
+          if (i === 0 && !isCurrentUserHost()) continue;
+          const occ = participants.find(p => p.seat === i);
+          opts += `<option value="${i}" ${target.seat === i ? 'selected' : ''}>Ghế #${i} ${i === 0 ? '(Bàn Chủ tọa)' : (occ ? `- Đổi với ${occ.name}` : '(Trống)')}</option>`;
+        }
+        sel.innerHTML = opts;
+      }
+
       const hostActions = document.getElementById('hostOnlyActionsOnMember');
       if (isCurrentUserHost() && target.id !== currentViewerId) {
         hostActions.classList.remove('hidden');
@@ -632,15 +1006,36 @@
 
       const container = document.getElementById('viewport3d');
       const rect = container.getBoundingClientRect();
-      let leftPos = event.clientX - rect.left + 12;
-      let topPos = event.clientY - rect.top - 40;
-      if (leftPos + 265 > rect.width) leftPos = rect.width - 275;
+      let leftPos = clientX - rect.left + 12;
+      let topPos = clientY - rect.top - 40;
+      if (leftPos + 275 > rect.width) leftPos = rect.width - 285;
       if (topPos < 15) topPos = 15;
-      if (topPos + 250 > rect.height) topPos = rect.height - 260;
+      if (topPos + 290 > rect.height) topPos = rect.height - 300;
 
       popup.style.left = `${leftPos}px`;
       popup.style.top = `${topPos}px`;
       popup.classList.remove('hidden');
+    }
+
+    function moveTargetMemberToSelectedSeat() {
+      const target = participants.find(p => p.id === selectedTargetMemberId);
+      if (!target) return;
+      if (!isCurrentUserHost() && target.id !== currentViewerId) {
+        alert('⛔ Bạn chỉ có thể tự dời chỗ của chính mình!');
+        return;
+      }
+      const newSeat = parseInt(document.getElementById('popupMoveSeatSelect').value, 10);
+      const other = participants.find(p => p.seat === newSeat);
+      if (other) other.seat = target.seat;
+      target.seat = newSeat;
+      delete target.customX;
+      delete target.customZ;
+
+      const me = participants.find(p => p.id === currentViewerId);
+      if (me) document.getElementById('currentUserBadge').innerText = `👤 ${me.name} (Ghế #${me.seat})`;
+
+      hideInteractionPopup();
+      build3DScene();
     }
 
     function hideInteractionPopup() {
@@ -679,7 +1074,7 @@
         const inp = document.getElementById('quickInteractInput');
         const msg = inp.value.trim();
         if (!msg) return;
-        target.bubble = `💬 [${me.name} nhắn]: "${msg}"`;
+        target.bubble = `💬 [${me.name}]: "${msg}"`;
         target.isWhisperBubble = true;
         whisperLogs.push({ time: new Date().toTimeString().slice(0, 5), from: me.name, toNames: target.name, text: msg });
         inp.value = '';
@@ -694,7 +1089,7 @@
         activeSpeakerId = target.id;
         participants.forEach(p => p.speaking = false);
         target.speaking = true;
-        target.bubble = `🎙️ Chủ tọa vừa mời ${target.name} phát biểu (Đã mở Cam & Share)!`;
+        target.bubble = `🎙️ Chủ tọa mời ${target.name} phát biểu (Đã mở Cam mặt 3D & Share)!`;
         updatePermissionUI();
         rebuildDomLabels();
         hideInteractionPopup();
@@ -720,32 +1115,25 @@
         alert('⛔ Chỉ có Chủ tọa mới có quyền Kick thành viên!');
         return;
       }
-      if (targetId === assignedHostId) {
-        alert('Không thể tự Kick Chủ tọa!');
-        return;
-      }
-      const target = participants.find(p => p.id === targetId);
-      if (!target) return;
+      if (targetId === assignedHostId) return;
       participants = participants.filter(p => p.id !== targetId);
       whisperGroupIds = whisperGroupIds.filter(id => id !== targetId);
       sendReaction('🥾');
       renderWhisperUI();
       build3DScene();
-      if (!document.getElementById('hostModal').classList.contains('hidden')) {
-        openHostAssignModal();
-      }
+      if (!document.getElementById('hostModal').classList.contains('hidden')) openHostAssignModal();
     }
 
     function openHostAssignModal() {
       if (!isCurrentUserHost()) {
-        alert('⛔ Chỉ có Chủ tọa mới được mở bảng Quản trị & Kick thành viên!');
+        alert('⛔ Chỉ có Chủ tọa mới được mở bảng Quản trị & Kick!');
         return;
       }
       const list = document.getElementById('hostCandidateList');
       list.innerHTML = participants.map(p => `
         <div class="flex items-center justify-between bg-slate-800 px-3 py-2 rounded-xl border ${p.id === assignedHostId ? 'border-amber-400' : 'border-slate-700'}">
           <div>
-            <div class="text-xs font-bold text-white">${p.name} ${activeSpeakerId === p.id ? '<span class="text-emerald-400">(🎙️ Đang phát biểu)</span>' : ''}</div>
+            <div class="text-xs font-bold text-white">${p.name} (Ghế #${p.seat})</div>
             <div class="text-[11px] text-slate-400">${p.role}</div>
           </div>
           <div class="flex items-center gap-1.5">
@@ -768,7 +1156,7 @@
       if (target) {
         participants.forEach(p => p.speaking = false);
         target.speaking = true;
-        target.bubble = `🎙️ Được Chủ tọa mời phát biểu & trình chiếu!`;
+        target.bubble = `🎙️ Được Chủ tọa mời phát biểu & bật Cam mặt 3D!`;
       }
       updatePermissionUI();
       openHostAssignModal();
@@ -787,12 +1175,15 @@
       build3DScene();
     }
 
-    // ================= ĐỒ HỌA THREE.JS 3D =================
-    let scene, camera, renderer, controls;
+    // ================= ĐỒ HỌA THREE.JS 3D (BÀN CHỦ TỌA ĐỐI DIỆN + BỜ BAO LOGO + CLICK/DRAG 3D) =================
+    let scene, camera, renderer, controls, raycaster, mouseVec, floorPlane;
     let sceneObjectsGroup, screenMesh, screenCanvas, screenCtx, screenTexture;
     let seatPositions = [];
     let avatarMeshes = {};
-    let steamParticles = [];
+    let clickableAvatarMeshes = [];
+    let clickableSponsorMeshes = [];
+    let draggingAvatarId = null;
+    let pointerDownPos = { x: 0, y: 0 };
 
     function init3D() {
       const container = document.getElementById('viewport3d');
@@ -800,10 +1191,10 @@
       const h = container.clientHeight || window.innerHeight - 56;
 
       scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x111827);
+      scene.background = new THREE.Color(0x0f172a);
 
-      camera = new THREE.PerspectiveCamera(48, w / h, 0.1, 250);
-      camera.position.set(0, 14, 21);
+      camera = new THREE.PerspectiveCamera(46, w / h, 0.1, 260);
+      camera.position.set(0, 15, 22);
 
       renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas3d'), antialias: true, powerPreference: 'high-performance' });
       renderer.setSize(w, h);
@@ -814,20 +1205,20 @@
       controls.dampingFactor = 0.06;
       controls.maxPolarAngle = Math.PI / 2 - 0.03;
       controls.minDistance = 5;
-      controls.maxDistance = 42;
+      controls.maxDistance = 46;
       controls.target.set(0, 2, -1);
 
-      const hemiLight = new THREE.HemisphereLight(0xffffff, 0x334155, 1.2);
-      hemiLight.position.set(0, 30, 0);
+      raycaster = new THREE.Raycaster();
+      mouseVec = new THREE.Vector2();
+      floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+
+      const hemiLight = new THREE.HemisphereLight(0xffffff, 0x334155, 1.25);
+      hemiLight.position.set(0, 32, 0);
       scene.add(hemiLight);
 
-      const dirLight = new THREE.DirectionalLight(0xfffbeb, 1.25);
-      dirLight.position.set(15, 28, 18);
+      const dirLight = new THREE.DirectionalLight(0xfffbeb, 1.2);
+      dirLight.position.set(14, 28, 18);
       scene.add(dirLight);
-
-      const frontLight = new THREE.PointLight(0x38bdf8, 0.75, 50);
-      frontLight.position.set(0, 10, 10);
-      scene.add(frontLight);
 
       sceneObjectsGroup = new THREE.Group();
       scene.add(sceneObjectsGroup);
@@ -838,11 +1229,15 @@
       screenCtx = screenCanvas.getContext('2d');
       screenTexture = new THREE.CanvasTexture(screenCanvas);
 
+      // Khởi tạo Texture cho các bảng tài trợ
+      sponsorSlots.forEach(s => createOrUpdateSponsorCanvasTexture(s));
+
+      setup3DPointerEvents();
       build3DScene();
       animate3D();
 
       if (window.ResizeObserver) {
-        const resizeObserver = new ResizeObserver(() => {
+        const ro = new ResizeObserver(() => {
           const nw = container.clientWidth;
           const nh = container.clientHeight;
           if (nw > 0 && nh > 0) {
@@ -851,36 +1246,162 @@
             renderer.setSize(nw, nh);
           }
         });
-        resizeObserver.observe(container);
+        ro.observe(container);
+      }
+    }
+
+    // Bắt sự kiện Click vào người nhân vật 3D, Click vào Bảng tài trợ & Kéo thả nhân vật trên sàn 3D
+    function setup3DPointerEvents() {
+      const canvas = document.getElementById('canvas3d');
+
+      canvas.addEventListener('pointerdown', (e) => {
+        pointerDownPos = { x: e.clientX, y: e.clientY };
+        updateMouseVector(e);
+        raycaster.setFromCamera(mouseVec, camera);
+
+        if (is3DDragEnabled) {
+          const hits = raycaster.intersectObjects(clickableAvatarMeshes, true);
+          if (hits.length > 0) {
+            const pid = findMemberIdFromObject(hits[0].object);
+            if (pid && (isCurrentUserHost() || pid === currentViewerId)) {
+              draggingAvatarId = pid;
+              controls.enabled = false;
+            }
+          }
+        }
+      });
+
+      canvas.addEventListener('pointermove', (e) => {
+        if (!draggingAvatarId) return;
+        updateMouseVector(e);
+        raycaster.setFromCamera(mouseVec, camera);
+        const intersectPt = new THREE.Vector3();
+        if (raycaster.ray.intersectPlane(floorPlane, intersectPt)) {
+          const item = avatarMeshes[draggingAvatarId];
+          if (item) {
+            item.group.position.x = Math.max(-14, Math.min(14, intersectPt.x));
+            item.group.position.z = Math.max(-9, Math.min(13, intersectPt.z));
+            item.pos.x = item.group.position.x;
+            item.pos.z = item.group.position.z;
+          }
+        }
+      });
+
+      canvas.addEventListener('pointerup', (e) => {
+        if (draggingAvatarId) {
+          // Tự động hút (snap) vào ghế gần nhất nếu thả gần ghế
+          const item = avatarMeshes[draggingAvatarId];
+          const p = participants.find(x => x.id === draggingAvatarId);
+          if (item && p) {
+            let bestSeat = p.seat;
+            let bestDist = 3.2;
+            seatPositions.forEach((sp, sIdx) => {
+              const d = Math.hypot(item.pos.x - sp.x, item.pos.z - sp.z);
+              if (d < bestDist) {
+                bestDist = d;
+                bestSeat = sIdx;
+              }
+            });
+            if (bestSeat !== p.seat) {
+              const other = participants.find(x => x.seat === bestSeat);
+              if (other) other.seat = p.seat;
+              p.seat = bestSeat;
+              delete p.customX;
+              delete p.customZ;
+            } else {
+              p.customX = item.pos.x;
+              p.customZ = item.pos.z;
+            }
+          }
+          draggingAvatarId = null;
+          controls.enabled = true;
+          build3DScene();
+          return;
+        }
+
+        // Kiểm tra nếu là Click chuột (không phải xoay camera)
+        const moveDist = Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y);
+        if (moveDist > 6) return;
+
+        updateMouseVector(e);
+        raycaster.setFromCamera(mouseVec, camera);
+
+        // 1. Ưu tiên kiểm tra click trực tiếp vào cơ thể / đầu của nhân vật 3D
+        const avatarHits = raycaster.intersectObjects(clickableAvatarMeshes, true);
+        if (avatarHits.length > 0) {
+          const pid = findMemberIdFromObject(avatarHits[0].object);
+          if (pid) {
+            openMemberInteractionMenu(e.clientX, e.clientY, pid);
+            return;
+          }
+        }
+
+        // 2. Kiểm tra click vào các Slot Bảng Tài Trợ xung quanh bờ bao hoặc Banner trên bảng
+        const sponsorHits = raycaster.intersectObjects(clickableSponsorMeshes, false);
+        if (sponsorHits.length > 0) {
+          const slotId = sponsorHits[0].object.userData.sponsorSlotId;
+          if (slotId) {
+            if (isCurrentUserHost()) {
+              triggerUploadSponsorLogo(slotId);
+            } else {
+              openSponsorLogoModal();
+            }
+          }
+        }
+      });
+    }
+
+    function updateMouseVector(e) {
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouseVec.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouseVec.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    }
+
+    function findMemberIdFromObject(obj) {
+      let curr = obj;
+      while (curr) {
+        if (curr.userData && curr.userData.memberId) return curr.userData.memberId;
+        curr = curr.parent;
+      }
+      return null;
+    }
+
+    function toggle3DDragMode() {
+      is3DDragEnabled = !is3DDragEnabled;
+      const btn = document.getElementById('btn3DDragMode');
+      if (is3DDragEnabled) {
+        btn.innerText = '✋ Kéo Thả 3D: BẬT';
+        btn.className = 'bg-amber-500 text-slate-950 px-2.5 py-1 rounded-lg text-xs font-extrabold shadow animate-pulse';
+      } else {
+        btn.innerText = '✋ Kéo Thả 3D: Tắt';
+        btn.className = 'bg-slate-800 hover:bg-amber-500 hover:text-slate-950 border border-amber-500/50 text-amber-300 px-2.5 py-1 rounded-lg text-xs font-bold transition';
       }
     }
 
     function drawSlideTo3DScreen() {
       if (!screenCtx) return;
       const slide = slides[currentSlideIdx] || slides[0];
-      if (currentScene === 'lop') screenCtx.fillStyle = '#065f46';
-      else if (currentScene === 'chua') screenCtx.fillStyle = '#451a03';
-      else screenCtx.fillStyle = '#0f172a';
+      screenCtx.fillStyle = currentScene === 'lop' ? '#064e3b' : '#0f172a';
       screenCtx.fillRect(0, 0, 1024, 512);
 
-      screenCtx.strokeStyle = currentScene === 'chua' ? '#f59e0b' : '#38bdf8';
+      screenCtx.strokeStyle = '#fbbf24';
       screenCtx.lineWidth = 12;
-      screenCtx.strokeRect(16, 16, 992, 480);
+      screenCtx.strokeRect(14, 14, 996, 484);
 
-      screenCtx.fillStyle = '#fbbf24';
+      screenCtx.fillStyle = '#fde047';
       screenCtx.font = 'bold 40px sans-serif';
-      screenCtx.fillText(slide.title, 55, 100);
+      screenCtx.fillText(slide.title, 55, 95);
 
       screenCtx.fillStyle = '#ffffff';
       screenCtx.font = '32px sans-serif';
       slide.lines.forEach((line, idx) => {
-        screenCtx.fillText(line, 65, 190 + idx * 72);
+        screenCtx.fillText(line, 65, 185 + idx * 72);
       });
 
       const hostObj = participants.find(p => p.id === assignedHostId) || participants[0];
       screenCtx.fillStyle = '#34d399';
-      screenCtx.font = 'bold 25px sans-serif';
-      screenCtx.fillText(`👑 Chủ tọa: ${hostObj ? hostObj.name : 'Đình Lâm'}  |  Slide ${currentSlideIdx + 1}/${slides.length}`, 55, 455);
+      screenCtx.font = 'bold 24px sans-serif';
+      screenCtx.fillText(`👑 Chủ trì: ${hostObj ? hostObj.name : 'Đình Lâm'}  |  Slide ${currentSlideIdx + 1}/${slides.length}`, 55, 455);
 
       screenTexture.needsUpdate = true;
       document.getElementById('slideIndicator').innerText = `${currentSlideIdx + 1}/${slides.length}`;
@@ -893,209 +1414,300 @@
       }
       seatPositions = [];
       avatarMeshes = {};
-      steamParticles = [];
-      camPlaneMesh = null;
+      clickableAvatarMeshes = [];
+      clickableSponsorMeshes = [];
 
-      const floorColors = { nhau: 0x1e293b, chua: 0x3b2314, lop: 0x334155, hoitruong: 0x1e3a8a };
-      const bgColors = { nhau: 0x0f172a, chua: 0x1c120c, lop: 0x0f172a, hoitruong: 0x0b132b };
-      scene.background = new THREE.Color(bgColors[currentScene]);
-
+      // Sàn gỗ ấm áp giống mẫu lớp học / phòng họp trong ảnh minh họa
+      const floorColors = { lop: 0x78350f, hoitruong: 0x1e3a8a, nhau: 0x334155, chua: 0x451a03 };
       const floor = new THREE.Mesh(
-        new THREE.CylinderGeometry(26, 26, 0.5, 48),
-        new THREE.MeshLambertMaterial({ color: floorColors[currentScene] })
+        new THREE.BoxGeometry(36, 0.5, 32),
+        new THREE.MeshLambertMaterial({ color: floorColors[currentScene] || 0x78350f })
       );
-      floor.position.y = -0.25;
+      floor.position.set(0, -0.25, 1);
       sceneObjectsGroup.add(floor);
 
-      const grid = new THREE.GridHelper(44, 22, 0x475569, 0x1e293b);
-      grid.position.y = 0.02;
+      const grid = new THREE.GridHelper(36, 18, 0x92400e, 0x451a03);
+      grid.position.set(0, 0.01, 1);
       sceneObjectsGroup.add(grid);
 
-      const stage = new THREE.Mesh(
-        new THREE.BoxGeometry(16, 0.4, 4.5),
-        new THREE.MeshLambertMaterial({ color: 0x475569 })
-      );
-      stage.position.set(0, 0.2, -10.5);
-      sceneObjectsGroup.add(stage);
+      // ================= 1. BỜ BAO XUNG QUANH PHÒNG + 8 SLOT LOGO NHÀ TÀI TRỢ =================
+      const wallMat = new THREE.MeshLambertMaterial({ color: 0xfef3c7 }); // Tường màu kem sáng như mẫu
+      const backStageWall = new THREE.Mesh(new THREE.BoxGeometry(36, 11, 0.5), wallMat);
+      backStageWall.position.set(0, 5.5, -14.5);
+      sceneObjectsGroup.add(backStageWall);
+
+      const leftPerimeterWall = new THREE.Mesh(new THREE.BoxGeometry(0.5, 4.2, 32), new THREE.MeshLambertMaterial({ color: 0x334155 }));
+      leftPerimeterWall.position.set(-17.8, 2.1, 1);
+      sceneObjectsGroup.add(leftPerimeterWall);
+
+      const rightPerimeterWall = new THREE.Mesh(new THREE.BoxGeometry(0.5, 4.2, 32), new THREE.MeshLambertMaterial({ color: 0x334155 }));
+      rightPerimeterWall.position.set(17.8, 2.1, 1);
+      sceneObjectsGroup.add(rightPerimeterWall);
+
+      const rearPerimeterWall = new THREE.Mesh(new THREE.BoxGeometry(36, 3.2, 0.5), new THREE.MeshLambertMaterial({ color: 0x334155 }));
+      rearPerimeterWall.position.set(0, 1.6, 16.8);
+      sceneObjectsGroup.add(rearPerimeterWall);
+
+      // Gắn 8 Bảng Slot Logo Nhà Tài Trợ dọc theo bờ bao trái, phải và sau
+      const wallSlotTransforms = [
+        { id: 'wall_0', x: -17.4, y: 2.3, z: -7.5, ry: Math.PI / 2 },
+        { id: 'wall_1', x: -17.4, y: 2.3, z: 0.5, ry: Math.PI / 2 },
+        { id: 'wall_2', x: -17.4, y: 2.3, z: 8.5, ry: Math.PI / 2 },
+        { id: 'wall_3', x: 17.4, y: 2.3, z: -7.5, ry: -Math.PI / 2 },
+        { id: 'wall_4', x: 17.4, y: 2.3, z: 0.5, ry: -Math.PI / 2 },
+        { id: 'wall_5', x: 17.4, y: 2.3, z: 8.5, ry: -Math.PI / 2 },
+        { id: 'wall_6', x: -6.5, y: 1.8, z: 16.4, ry: Math.PI },
+        { id: 'wall_7', x: 6.5, y: 1.8, z: 16.4, ry: Math.PI }
+      ];
+
+      wallSlotTransforms.forEach(cfg => {
+        const slot = sponsorSlots.find(s => s.id === cfg.id);
+        if (!slot) return;
+        const board = new THREE.Mesh(
+          new THREE.PlaneGeometry(6.2, 2.6),
+          new THREE.MeshBasicMaterial({ map: slot.texture })
+        );
+        board.position.set(cfg.x, cfg.y, cfg.z);
+        board.rotation.y = cfg.ry;
+        board.userData = { sponsorSlotId: slot.id };
+        sceneObjectsGroup.add(board);
+        clickableSponsorMeshes.push(board);
+      });
+
+      // ================= 2. BẢNG THUYẾT TRÌNH + BANNER LOGO PHÍA TRÊN BẢNG =================
+      const topBannerSlot = sponsorSlots.find(s => s.id === 'top_banner');
+      if (topBannerSlot) {
+        const topBannerMesh = new THREE.Mesh(
+          new THREE.PlaneGeometry(15.2, 2.3),
+          new THREE.MeshBasicMaterial({ map: topBannerSlot.texture })
+        );
+        topBannerMesh.position.set(0, 9.2, -14.1);
+        topBannerMesh.userData = { sponsorSlotId: 'top_banner' };
+        sceneObjectsGroup.add(topBannerMesh);
+        clickableSponsorMeshes.push(topBannerMesh);
+      }
 
       const boardFrame = new THREE.Mesh(
-        new THREE.BoxGeometry(14.2, 7.1, 0.4),
-        new THREE.MeshLambertMaterial({ color: currentScene === 'lop' ? 0x92400e : 0x64748b })
+        new THREE.BoxGeometry(15.4, 6.2, 0.3),
+        new THREE.MeshLambertMaterial({ color: 0x92400e })
       );
-      boardFrame.position.set(0, 4.8, -11.4);
+      boardFrame.position.set(0, 4.7, -14.2);
       sceneObjectsGroup.add(boardFrame);
 
       const activeBoardTexture = (isScreenSharing && screenVideoTexture) ? screenVideoTexture : screenTexture;
       screenMesh = new THREE.Mesh(
-        new THREE.PlaneGeometry(13.5, 6.5),
+        new THREE.PlaneGeometry(14.8, 5.7),
         new THREE.MeshBasicMaterial({ map: activeBoardTexture })
       );
-      screenMesh.position.set(0, 4.8, -11.15);
+      screenMesh.position.set(0, 4.7, -14.0);
       sceneObjectsGroup.add(screenMesh);
       if (!isScreenSharing) drawSlideTo3DScreen();
 
-      if (currentScene === 'nhau') {
-        const numTables = Math.ceil(maxSeats / 4);
+      // ================= 3. BÀN CHỦ TỌA (#0) LUÔN QUAY ĐỐI DIỆN NHÌN XUỐNG NGƯỜI BÊN DƯỚI =================
+      // Đặt bục & bàn Chủ tọa ở Z = -8.2, nhân vật Chủ tọa ngồi ở Z = -9.4 quay mặt về phía +Z (rotationY = 0)
+      const podiumStage = new THREE.Mesh(
+        new THREE.BoxGeometry(10, 0.3, 4.2),
+        new THREE.MeshLambertMaterial({ color: 0xb45309 })
+      );
+      podiumStage.position.set(0, 0.15, -8.8);
+      sceneObjectsGroup.add(podiumStage);
+
+      const hostDesk = new THREE.Mesh(
+        new THREE.BoxGeometry(4.4, 1.15, 1.5),
+        new THREE.MeshLambertMaterial({ color: 0xd97706 })
+      );
+      hostDesk.position.set(0, 0.85, -8.0);
+      sceneObjectsGroup.add(hostDesk);
+
+      // Bảng tên CHỦ TỌA gắn mặt trước bàn Chủ tọa
+      const hostSign = new THREE.Mesh(
+        new THREE.BoxGeometry(1.8, 0.45, 0.1),
+        new THREE.MeshLambertMaterial({ color: 0xfbbf24 })
+      );
+      hostSign.position.set(0, 1.55, -7.3);
+      sceneObjectsGroup.add(hostSign);
+
+      // Ghế #0 dành riêng cho Chủ tọa (rotationY = 0 -> nhìn thẳng xuống cử tọa bên dưới)
+      seatPositions.push({ x: 0, z: -9.4, rotY: 0, isHostSeat: true });
+
+      // ================= 4. CÁC DÃY BÀN HỌC / BÀN HỌP BÊN DƯỚI QUAY LÊN NHÌN MẶT CHỦ TỌA =================
+      const belowCount = maxSeats - 1;
+      if (currentScene === 'lop' || currentScene === 'hoitruong') {
+        const cols = 4; // 4 cột bàn hướng lên bục Chủ tọa giống hệt ảnh mẫu
+        for (let i = 0; i < belowCount; i++) {
+          const r = Math.floor(i / cols);
+          const c = i % cols;
+          const sx = (c - (cols - 1) / 2) * 5.2;
+          const sz = -2.2 + r * 4.4;
+
+          // Bàn gỗ đặt phía trước người ngồi (về phía Chủ tọa)
+          const deskTop = new THREE.Mesh(
+            new THREE.BoxGeometry(3.2, 0.18, 1.35),
+            new THREE.MeshLambertMaterial({ color: currentScene === 'lop' ? 0xf59e0b : 0x64748b })
+          );
+          deskTop.position.set(sx, 1.25, sz - 0.85);
+          sceneObjectsGroup.add(deskTop);
+
+          const deskFront = new THREE.Mesh(
+            new THREE.BoxGeometry(3.1, 1.1, 0.12),
+            new THREE.MeshLambertMaterial({ color: currentScene === 'lop' ? 0xb45309 : 0x475569 })
+          );
+          deskFront.position.set(sx, 0.65, sz - 1.45);
+          sceneObjectsGroup.add(deskFront);
+
+          // Tài liệu / Laptop nhỏ trên bàn
+          const book = new THREE.Mesh(
+            new THREE.BoxGeometry(0.75, 0.05, 0.55),
+            new THREE.MeshLambertMaterial({ color: 0xffffff })
+          );
+          book.position.set(sx, 1.36, sz - 0.85);
+          sceneObjectsGroup.add(book);
+
+          // rotY = Math.PI -> Quay mặt hướng thẳng lên Bàn Chủ tọa (nhìn mặt nhau)
+          seatPositions.push({ x: sx, z: sz, rotY: Math.PI, isHostSeat: false });
+        }
+      } else if (currentScene === 'nhau') {
+        const numTables = Math.ceil(belowCount / 4);
         const cols = Math.min(3, numTables);
         for (let t = 0; t < numTables; t++) {
           const r = Math.floor(t / cols);
           const c = t % cols;
-          const tx = (c - (cols - 1) / 2) * 8.2;
-          const tz = -1.5 + r * 7.2;
+          const tx = (c - (cols - 1) / 2) * 8.4;
+          const tz = -1.0 + r * 7.2;
 
           const table = new THREE.Mesh(
-            new THREE.CylinderGeometry(2.2, 2.2, 0.28, 24),
+            new THREE.CylinderGeometry(2.1, 2.1, 0.25, 24),
             new THREE.MeshLambertMaterial({ color: 0xb45309 })
           );
-          table.position.set(tx, 1.35, tz);
+          table.position.set(tx, 1.3, tz);
           sceneObjectsGroup.add(table);
 
-          const leg = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.35, 0.5, 1.35, 16),
-            new THREE.MeshLambertMaterial({ color: 0x78350f })
-          );
-          leg.position.set(tx, 0.67, tz);
-          sceneObjectsGroup.add(leg);
-
           const pot = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.7, 0.55, 0.45, 20),
+            new THREE.CylinderGeometry(0.65, 0.5, 0.45, 20),
             new THREE.MeshLambertMaterial({ color: 0xef4444 })
           );
-          pot.position.set(tx, 1.65, tz);
+          pot.position.set(tx, 1.6, tz);
           sceneObjectsGroup.add(pot);
-
-          const beer = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.24, 0.3, 1.25, 16),
-            new THREE.MeshLambertMaterial({ color: 0xfbbf24 })
-          );
-          beer.position.set(tx + 0.9, 1.95, tz - 0.3);
-          sceneObjectsGroup.add(beer);
-
-          for (let s = 0; s < 3; s++) {
-            const sp = new THREE.Mesh(
-              new THREE.SphereGeometry(0.2, 8, 8),
-              new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.45 })
-            );
-            sp.position.set(tx + (Math.random() - 0.5) * 0.4, 2.0 + s * 0.4, tz + (Math.random() - 0.5) * 0.4);
-            sp.userData = { baseY: 2.0, speed: 0.018 + Math.random() * 0.01 };
-            sceneObjectsGroup.add(sp);
-            steamParticles.push(sp);
-          }
 
           for (let k = 0; k < 4; k++) {
             if (seatPositions.length >= maxSeats) break;
             const ang = (k * Math.PI) / 2 + Math.PI / 4;
-            seatPositions.push({ x: tx + Math.cos(ang) * 3.1, z: tz + Math.sin(ang) * 3.1 });
+            const px = tx + Math.cos(ang) * 3.0;
+            const pz = tz + Math.sin(ang) * 3.0;
+            seatPositions.push({ x: px, z: pz, rotY: Math.atan2(tx - px, tz - pz), isHostSeat: false });
           }
         }
-      } else if (currentScene === 'chua') {
-        const burner = new THREE.Mesh(
-          new THREE.CylinderGeometry(1.0, 0.75, 1.2, 20),
-          new THREE.MeshLambertMaterial({ color: 0xf59e0b })
-        );
-        burner.position.set(0, 0.6, -6.2);
-        sceneObjectsGroup.add(burner);
-
-        const cols = 4;
-        for (let i = 0; i < maxSeats; i++) {
-          const r = Math.floor(i / cols);
-          const c = i % cols;
-          const sx = (c - (cols - 1) / 2) * 4.2;
-          const sz = -2.0 + r * 3.8;
-          seatPositions.push({ x: sx, z: sz });
-        }
-      } else if (currentScene === 'lop') {
-        const cols = 4;
-        for (let i = 0; i < maxSeats; i++) {
-          const r = Math.floor(i / cols);
-          const c = i % cols;
-          const sx = (c - (cols - 1) / 2) * 4.4;
-          const sz = -2.2 + r * 4.0;
-
-          const desk = new THREE.Mesh(
-            new THREE.BoxGeometry(2.7, 0.22, 1.3),
-            new THREE.MeshLambertMaterial({ color: 0xd97706 })
-          );
-          desk.position.set(sx, 1.3, sz - 0.85);
-          sceneObjectsGroup.add(desk);
-          seatPositions.push({ x: sx, z: sz });
-        }
       } else {
-        const oval = new THREE.Mesh(
-          new THREE.CylinderGeometry(5.5, 5.5, 0.35, 36),
-          new THREE.MeshLambertMaterial({ color: 0x64748b })
-        );
-        oval.scale.set(1.3, 1, 0.82);
-        oval.position.set(0, 1.3, 0.5);
-        sceneObjectsGroup.add(oval);
-
-        for (let i = 0; i < maxSeats; i++) {
-          const ang = (i / maxSeats) * Math.PI * 2;
-          seatPositions.push({ x: Math.cos(ang) * 8.6, z: 0.5 + Math.sin(ang) * 6.0 });
+        // Thiền đường: tất cả bồ đoàn quay hướng lên Bàn Chủ tọa
+        const cols = 4;
+        for (let i = 0; i < belowCount; i++) {
+          const r = Math.floor(i / cols);
+          const c = i % cols;
+          const sx = (c - (cols - 1) / 2) * 4.6;
+          const sz = -2.0 + r * 4.0;
+          seatPositions.push({ x: sx, z: sz, rotY: Math.PI, isHostSeat: false });
         }
       }
 
+      // ================= 5. DỰNG NHÂN VẬT 3D + CAMERA TRÊN MẶT TRƯỚC NHÂN VẬT =================
       seatPositions.forEach((pos, idx) => {
-        const seatStool = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.85, 0.95, 0.35, 20),
-          new THREE.MeshLambertMaterial({ color: currentScene === 'chua' ? 0xeab308 : 0x475569 })
+        const stool = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.75, 0.85, 0.35, 20),
+          new THREE.MeshLambertMaterial({ color: pos.isHostSeat ? 0xd97706 : 0x475569 })
         );
-        seatStool.position.set(pos.x, 0.2, pos.z);
-        sceneObjectsGroup.add(seatStool);
+        stool.position.set(pos.x, 0.2, pos.z);
+        sceneObjectsGroup.add(stool);
 
         const p = participants.find(item => item.seat === idx);
         if (!p) return;
 
-        const group = new THREE.Group();
-        group.position.set(pos.x, 0, pos.z);
+        const actualX = typeof p.customX === 'number' ? p.customX : pos.x;
+        const actualZ = typeof p.customZ === 'number' ? p.customZ : pos.z;
 
-        const body = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.58, 0.72, 1.5, 18),
+        const group = new THREE.Group();
+        group.position.set(actualX, 0, actualZ);
+        group.rotation.y = pos.rotY;
+        group.userData = { memberId: p.id };
+
+        // Thân áo vest / sơ mi lịch sự
+        const torso = new THREE.Mesh(
+          new THREE.BoxGeometry(1.25, 1.45, 0.72),
           new THREE.MeshLambertMaterial({ color: p.color })
         );
-        body.position.y = 0.95;
-        group.add(body);
+        torso.position.y = 0.95;
+        torso.userData = { memberId: p.id };
+        group.add(torso);
 
-        const head = new THREE.Mesh(
-          new THREE.SphereGeometry(0.5, 18, 18),
+        // Cà vạt / cổ áo phía mặt trước (+Z của nhân vật)
+        const tie = new THREE.Mesh(
+          new THREE.BoxGeometry(0.22, 0.65, 0.06),
+          new THREE.MeshLambertMaterial({ color: 0xfef08a })
+        );
+        tie.position.set(0, 1.05, 0.36);
+        tie.userData = { memberId: p.id };
+        group.add(tie);
+
+        // Đầu nhân vật (Khối vuông bo/hộp để mặt trước phẳng hiển thị rõ Khuôn mặt & Camera)
+        const headBox = new THREE.Mesh(
+          new THREE.BoxGeometry(1.05, 1.05, 0.95),
           new THREE.MeshLambertMaterial({ color: 0xfde68a })
         );
-        head.position.y = 2.05;
-        group.add(head);
+        headBox.position.y = 2.25;
+        headBox.userData = { memberId: p.id };
+        group.add(headBox);
 
+        // Tóc phía trên đầu
+        const hair = new THREE.Mesh(
+          new THREE.BoxGeometry(1.1, 0.28, 1.0),
+          new THREE.MeshLambertMaterial({ color: 0x1e293b })
+        );
+        hair.position.y = 2.82;
+        hair.userData = { memberId: p.id };
+        group.add(hair);
+
+        // MẶT TRƯỚC CỦA NHÂN VẬT (+Z = +0.49): Nếu đang bật Camera thì chiếu thẳng Video khuôn mặt lên mặt trước nhân vật!
+        const hasLiveFaceCam = (isCamActive && camVideoTexture && camOwnerId === p.id);
+        if (hasLiveFaceCam) {
+          const camFacePlane = new THREE.Mesh(
+            new THREE.PlaneGeometry(1.02, 1.02),
+            new THREE.MeshBasicMaterial({ map: camVideoTexture, side: THREE.DoubleSide })
+          );
+          camFacePlane.position.set(0, 2.25, 0.49);
+          camFacePlane.userData = { memberId: p.id };
+          group.add(camFacePlane);
+
+          // Viền phát sáng quanh khuôn mặt đang bật Camera
+          const camFrame = new THREE.Mesh(
+            new THREE.BoxGeometry(1.12, 1.12, 0.04),
+            new THREE.MeshBasicMaterial({ color: 0x10b981 })
+          );
+          camFrame.position.set(0, 2.25, 0.46);
+          group.add(camFrame);
+        } else {
+          // Vẽ mắt & nụ cười mặc định trên mặt trước nhân vật
+          const eyeL = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.14, 0.05), new THREE.MeshBasicMaterial({ color: 0x0f172a }));
+          eyeL.position.set(-0.22, 2.32, 0.48);
+          const eyeR = eyeL.clone();
+          eyeR.position.set(0.22, 2.32, 0.48);
+          const smile = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.08, 0.05), new THREE.MeshBasicMaterial({ color: 0xdc2626 }));
+          smile.position.set(0, 2.05, 0.48);
+          group.add(eyeL, eyeR, smile);
+        }
+
+        // Vương miện vàng cho Chủ tọa
         if (p.id === assignedHostId) {
           const crown = new THREE.Mesh(
-            new THREE.ConeGeometry(0.45, 0.5, 6),
+            new THREE.ConeGeometry(0.45, 0.48, 6),
             new THREE.MeshBasicMaterial({ color: 0xfbbf24 })
           );
-          crown.position.y = 2.75;
+          crown.position.y = 3.2;
+          crown.userData = { memberId: p.id };
           group.add(crown);
         }
 
-        // Hiển thị bảng Video Camera 3D trên đầu người đang bật Camera (Chủ tọa hoặc Người phát biểu)
-        if (isCamActive && camVideoTexture && camOwnerId === p.id) {
-          const camHolder = new THREE.Group();
-          camHolder.position.set(0, 4.1, 0);
-
-          const frameBorder = new THREE.Mesh(
-            new THREE.BoxGeometry(2.5, 1.9, 0.08),
-            new THREE.MeshBasicMaterial({ color: p.id === assignedHostId ? 0xfbbf24 : 0x10b981 })
-          );
-          camHolder.add(frameBorder);
-
-          const facePlane = new THREE.Mesh(
-            new THREE.PlaneGeometry(2.35, 1.75),
-            new THREE.MeshBasicMaterial({ map: camVideoTexture, side: THREE.DoubleSide })
-          );
-          facePlane.position.z = 0.05;
-          camHolder.add(facePlane);
-
-          group.add(camHolder);
-          camPlaneMesh = camHolder;
-        }
-
         sceneObjectsGroup.add(group);
-        avatarMeshes[p.id] = { group, pos };
+        avatarMeshes[p.id] = { group, pos: { x: actualX, z: actualZ } };
+        clickableAvatarMeshes.push(group);
       });
 
       rebuildDomLabels();
@@ -1107,6 +1719,7 @@
 
       seatPositions.forEach((pos, idx) => {
         const p = participants.find(item => item.seat === idx);
+        const reservedName = preassignedSeatNames[idx];
         const el = document.createElement('div');
         el.id = `seat-label-${idx}`;
         el.className = 'label-3d';
@@ -1117,15 +1730,14 @@
           const bubbleClass = p.isPokeBubble ? 'poke' : (p.isWhisperBubble ? 'whisper' : '');
           el.innerHTML = `
             ${p.bubble ? `<div class="speech-bubble-3d ${bubbleClass}">${p.bubble}</div>` : ''}
-            <div onclick="openMemberInteractionMenu(event, '${p.id}')" title="Click để Chọc, Thọc lét, Cụm ly, Chat hoặc Kick" class="cursor-pointer px-2.5 py-1 rounded-xl text-xs font-bold shadow-lg flex items-center gap-1.5 border ${isHost ? 'bg-amber-500 text-slate-950 border-amber-200' : (isSpeaker ? 'bg-emerald-600 text-white border-emerald-300' : 'bg-slate-900/95 text-white border-slate-600 hover:border-amber-400')}">
+            <div onclick="openMemberInteractionMenu(event.clientX, event.clientY, '${p.id}')" title="Click để tương tác, dời chỗ hoặc Kick" class="cursor-pointer px-2.5 py-0.5 rounded-xl text-[11px] font-bold shadow-lg flex items-center gap-1 border ${isHost ? 'bg-amber-500 text-slate-950 border-amber-200' : (isSpeaker ? 'bg-emerald-600 text-white border-emerald-300' : 'bg-slate-900/90 text-white border-slate-600 hover:border-amber-400')}">
               <span>${isHost ? '👑' : (isSpeaker ? '🎙️' : '👤')} ${p.name}</span>
-              <span class="text-[10px] opacity-75">(${p.role})</span>
             </div>
           `;
         } else {
           el.innerHTML = `
-            <button onclick="moveMySeatTo(${idx})" class="bg-slate-800/80 hover:bg-emerald-600 text-slate-300 hover:text-white border border-slate-600 px-2 py-0.5 rounded-lg text-[11px] font-semibold shadow">
-              🪑 Ngồi #${idx + 1}
+            <button onclick="moveMySeatTo(${idx})" class="bg-slate-900/85 hover:bg-emerald-600 text-slate-300 hover:text-white border ${reservedName ? 'border-amber-400 text-amber-300' : 'border-slate-600'} px-2 py-0.5 rounded-lg text-[10px] font-semibold shadow">
+              🪑 #${idx} ${reservedName ? `(Đã xếp: ${reservedName})` : 'Ngồi đây'}
             </button>
           `;
         }
@@ -1134,9 +1746,22 @@
     }
 
     function moveMySeatTo(seatIdx) {
+      if (seatIdx === 0 && !isCurrentUserHost()) {
+        alert('⛔ Ghế #0 là Bàn Chủ Tọa! Thành viên vui lòng chọn các ghế từ #1 trở đi.');
+        return;
+      }
       const me = participants.find(p => p.id === currentViewerId);
       if (!me) return;
+      const other = participants.find(p => p.seat === seatIdx);
+      if (other && !isCurrentUserHost()) {
+        alert('Ghế này đang có người ngồi!');
+        return;
+      }
+      if (other) other.seat = me.seat;
       me.seat = seatIdx;
+      delete me.customX;
+      delete me.customZ;
+      document.getElementById('currentUserBadge').innerText = `👤 ${me.name} (Ghế #${me.seat})`;
       build3DScene();
     }
 
@@ -1149,10 +1774,13 @@
         const el = document.getElementById(`seat-label-${idx}`);
         if (!el) return;
         const p = participants.find(item => item.seat === idx);
-        const hasCam = p && isCamActive && camOwnerId === p.id;
-        const bounceOffset = (p && avatarMeshes[p.id]) ? avatarMeshes[p.id].group.position.y : 0;
-        const yHeight = p ? ((hasCam ? 5.3 : 2.9) + bounceOffset) : 0.9;
-        const vec = new THREE.Vector3(pos.x, yHeight, pos.z);
+        const meshData = p ? avatarMeshes[p.id] : null;
+        const px = meshData ? meshData.pos.x : pos.x;
+        const pz = meshData ? meshData.pos.z : pos.z;
+        const bounceOffset = meshData ? meshData.group.position.y : 0;
+        const yHeight = p ? (3.35 + bounceOffset) : 0.85;
+
+        const vec = new THREE.Vector3(px, yHeight, pz);
         vec.project(camera);
         if (vec.z > 1) {
           el.style.display = 'none';
@@ -1174,66 +1802,44 @@
         if (!meshObj) return;
         if (p.bounceUntil && now < p.bounceUntil) {
           meshObj.group.position.y = Math.abs(Math.sin(now * 0.025)) * 0.85;
-          meshObj.group.rotation.y = Math.sin(now * 0.04) * 0.35;
         } else {
           meshObj.group.position.y = 0;
-          meshObj.group.rotation.y = 0;
         }
       });
 
-      steamParticles.forEach(sp => {
-        sp.position.y += sp.userData.speed;
-        if (sp.position.y > sp.userData.baseY + 1.4) sp.position.y = sp.userData.baseY;
-      });
-      if (camPlaneMesh && camera) {
-        camPlaneMesh.lookAt(camera.position);
-      }
       updateLabelsProjection();
       renderer.render(scene, camera);
     }
 
-    // ================= ĐIỀU KHIỂN BỐI CẢNH & CAMERA =================
+    // ================= ĐIỀU KHIỂN BỐI CẢNH & GÓC NHÌN ĐỐI DIỆN =================
     function changeScene(sceneKey) {
       if (!isCurrentUserHost()) {
         const hostObj = participants.find(p => p.id === assignedHostId) || participants[0];
-        alert(`⛔ Chỉ có Chủ tọa (${hostObj.name}) mới được quyền thay đổi giao diện bối cảnh 3D!`);
+        alert(`⛔ Chỉ có Chủ trì (${hostObj.name}) mới được quyền đổi mẫu bối cảnh 3D!`);
         return;
       }
       currentScene = sceneKey;
       document.querySelectorAll('.scene-btn').forEach(b => {
-        b.className = 'scene-btn px-3 py-1 rounded-lg text-xs font-bold text-slate-300 hover:bg-slate-700 transition';
+        b.className = 'scene-btn px-2.5 py-1 rounded-lg text-xs font-bold text-slate-300 hover:bg-slate-700 transition whitespace-nowrap';
       });
       const activeBtn = document.getElementById(`btn-scene-${sceneKey}`);
-      if (activeBtn) activeBtn.className = 'scene-btn px-3 py-1 rounded-lg text-xs font-bold bg-amber-500 text-slate-950 transition';
-
-      const specialBtn = document.getElementById('btnSpecialAction');
-      if (sceneKey === 'nhau') specialBtn.innerText = '🍻 HÔ "1, 2, 3 DÔ!" TOÀN QUÁN';
-      else if (sceneKey === 'chua') specialBtn.innerText = '🔔 THỈNH CHUÔNG TỊNH TÂM';
-      else if (sceneKey === 'lop') specialBtn.innerText = '🙋 GỌI NGẪU NHIÊN LÊN BẢNG';
-      else specialBtn.innerText = '👏 VỖ TAY TOÀN HỘI TRƯỜNG';
-
+      if (activeBtn) activeBtn.className = 'scene-btn px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500 text-slate-950 transition whitespace-nowrap';
       build3DScene();
     }
 
     function setCamPreset(type) {
       if (type === 'overview') {
-        camera.position.set(0, 14, 21);
+        camera.position.set(0, 15, 22);
         controls.target.set(0, 2, -1);
-      } else if (type === 'board') {
-        camera.position.set(0, 5, 0);
-        controls.target.set(0, 4.8, -11.2);
-      } else if (type === 'myseat') {
-        const me = avatarMeshes[currentViewerId];
-        if (me) {
-          camera.position.set(me.pos.x, 4.2, me.pos.z + 4.5);
-          controls.target.set(0, 4.2, -11);
-        }
+      } else if (type === 'hostView') {
+        // Góc nhìn từ Bàn Chủ tọa nhìn thẳng xuống mặt các thành viên bên dưới
+        camera.position.set(0, 4.5, -10.5);
+        controls.target.set(0, 2.0, 4);
+      } else if (type === 'audienceView') {
+        // Góc nhìn từ ghế cử tọa nhìn thẳng vào mặt Chủ tọa và Bảng thuyết trình
+        camera.position.set(0, 4.2, 8.5);
+        controls.target.set(0, 3.8, -10);
       }
-    }
-
-    function toggleAutoRotate() {
-      controls.autoRotate = !controls.autoRotate;
-      controls.autoRotateSpeed = 2.0;
     }
 
     // ================= SLIDE, PHÁT BIỂU & BIÊN BẢN =================
@@ -1304,25 +1910,22 @@
 
     function raiseHand() {
       const me = participants.find(p => p.id === currentViewerId) || participants[0];
-      me.bubble = '✋ Xin phép Chủ tọa cho tôi phát biểu & chiếu màn hình!';
+      me.bubble = '✋ Xin phép Chủ trì cho tôi phát biểu & bật Cam!';
       me.bounceUntil = Date.now() + 1500;
       rebuildDomLabels();
       sendReaction('✋');
     }
 
-    function triggerPersonSpeak(pid) {
-      const sampleLines = [
-        'Tôi hoàn toàn nhất trí với định hướng Chủ tọa vừa chiếu trên bảng 3D!',
-        'Để tôi bật Camera và Share màn hình báo cáo số liệu chi tiết của bộ phận.',
-        'Bàn của chúng tôi cam kết hoàn thành vượt chỉ tiêu Quý này!'
-      ];
-      recordSpeech(pid, sampleLines[Math.floor(Math.random() * sampleLines.length)]);
-    }
-
     function simulateColleagueSpeak() {
       const others = participants.filter(p => p.id !== currentViewerId);
       const pick = others[Math.floor(Math.random() * others.length)];
-      if (pick) triggerPersonSpeak(pick.id);
+      if (!pick) return;
+      const sampleLines = [
+        'Báo cáo Chủ trì, góc nhìn đối diện giúp chúng tôi theo dõi bài giảng và trao đổi rất rõ ràng!',
+        'Tôi xin phép bật Camera lên khuôn mặt 3D và Share màn hình báo cáo.',
+        'Nhóm chúng tôi hoàn toàn nhất trí với phương án trên bảng!'
+      ];
+      recordSpeech(pick.id, sampleLines[Math.floor(Math.random() * sampleLines.length)]);
     }
 
     let recognition = null;
@@ -1367,7 +1970,7 @@
       }
     }
 
-    // ================= CHAT NHÓM NHIỀU NGƯỜI (KHÔNG GIỚI HẠN SỐ LƯỢNG, KHÔNG VẼ DÂY 3D) =================
+    // ================= CHAT NHÓM NHIỀI NGƯỜI =================
     function renderWhisperUI() {
       const box = document.getElementById('whisperMemberCheckboxes');
       box.innerHTML = participants.filter(p => p.id !== currentViewerId).map(p => {
@@ -1379,7 +1982,7 @@
         `;
       }).join('');
 
-      document.getElementById('whisperCountInfo').innerText = `Đang chọn ${whisperGroupIds.length} thành viên cùng nhóm thảo luận.`;
+      document.getElementById('whisperCountInfo').innerText = `Đang chọn ${whisperGroupIds.length} thành viên cùng nhóm.`;
 
       const list = document.getElementById('whisperList');
       list.innerHTML = whisperLogs.map(w => `
@@ -1390,18 +1993,15 @@
           </div>
           <div class="text-purple-100 mb-1.5">${w.text}</div>
           <button onclick="promoteWhisperToPublic('${w.text.replace(/'/g, "\\'")}')" class="text-[10px] bg-purple-800/70 hover:bg-purple-700 text-purple-200 px-2 py-0.5 rounded">
-            📢 Đưa ý kiến này lên Biên bản chung
+            📢 Đưa lên Biên bản chung
           </button>
         </div>
       `).join('');
     }
 
     function toggleWhisperMember(pid) {
-      if (whisperGroupIds.includes(pid)) {
-        whisperGroupIds = whisperGroupIds.filter(id => id !== pid);
-      } else {
-        whisperGroupIds.push(pid);
-      }
+      if (whisperGroupIds.includes(pid)) whisperGroupIds = whisperGroupIds.filter(id => id !== pid);
+      else whisperGroupIds.push(pid);
       renderWhisperUI();
     }
 
@@ -1417,10 +2017,7 @@
 
     function sendWhisperMessage() {
       const inp = document.getElementById('whisperInput');
-      if (!inp.value.trim() || whisperGroupIds.length === 0) {
-        if (whisperGroupIds.length === 0) alert('Vui lòng chọn ít nhất 1 thành viên để nhắn nhóm!');
-        return;
-      }
+      if (!inp.value.trim() || whisperGroupIds.length === 0) return;
       const me = participants.find(p => p.id === currentViewerId) || participants[0];
       const toNames = whisperGroupIds.map(id => participants.find(p => p.id === id)?.name).filter(Boolean).join(', ');
       const text = inp.value.trim();
@@ -1442,28 +2039,23 @@
     // ================= TÓM TẮT BIÊN BẢN HỌP =================
     function generateMeetingSummary() {
       const hostObj = participants.find(p => p.id === assignedHostId) || participants[0];
-      const sceneNames = { nhau: 'Quán Nhậu Đàm Đạo 3D', chua: 'Thiền Đường Chùa Online 3D', lop: 'Giảng Đường Lớp Học 3D', hoitruong: 'Hội Trường Cấp Cao 3D' };
       const speakerSummary = transcripts.map((t, i) => `   ${i + 1}. [${t.time}] ${t.speaker} (${t.role}): "${t.text}"`).join('\n');
-      const slideSummary = slides.map((s, i) => `   - Slide ${i + 1}: ${s.title} (${s.lines.join(' | ')})`).join('\n');
+      const seatingSummary = participants.map(p => `   - Ghế #${p.seat}: ${p.name} (${p.role})`).join('\n');
 
       document.getElementById('summaryTextarea').value = `CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
 Độc lập - Tự do - Hạnh phúc
 ----------------------------------------
-BIÊN BẢN TỔNG HỢP CUỘC HỌP TRỰC TUYẾN 3D
+BIÊN BẢN TỔNG HỢP CUỘC HỌP & ĐÀO TẠO TRỰC TUYẾN 3D
 
-1. THÔNG TIN CHUNG:
-- Không gian họp: ${sceneNames[currentScene]}
-- Chủ tọa điều hành: ${hostObj ? hostObj.name : 'Đình Lâm'}
-- Số lượng thành viên tham dự: ${participants.length}/${maxSeats} chỗ ngồi
+1. CHỦ TRÌ & SƠ ĐỒ CHỖ NGỒI:
+- Chủ trì điều hành: ${hostObj ? hostObj.name : 'Đình Lâm'}
+${seatingSummary}
 
-2. NỘI DUNG TRÌNH CHIẾU TRÊN SÂN KHẤU 3D:
-${slideSummary}
-
-3. GHI NHẬN CÁC Ý KIẾN PHÁT BIỂU:
+2. GHI NHẬN CÁC Ý KIẾN PHÁT BIỂU:
 ${speakerSummary}
 
-4. KẾT LUẬN CỦA CHỦ TỌA:
-- Các bộ phận triển khai theo đúng nội dung đã thống nhất trên bảng trình chiếu.`;
+3. KẾT LUẬN CỦA CHỦ TRÌ:
+- Các thành viên triển khai công việc theo đúng nội dung đã thống nhất.`;
     }
 
     function downloadSummaryTxt() {
@@ -1471,61 +2063,18 @@ ${speakerSummary}
       const blob = new Blob([document.getElementById('summaryTextarea').value], { type: 'text/plain;charset=utf-8' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = 'Bien-Ban-Cuoc-Hop-3D.txt';
+      a.download = 'Bien-Ban-Hop-3D.txt';
       a.click();
     }
 
-    // ================= CẤU HÌNH QUY MÔ & TIỆN ÍCH =================
-    function openCapacityModal() {
-      if (!isCurrentUserHost()) {
-        alert('⛔ Chỉ có Chủ tọa mới được chỉnh quy mô phòng họp!');
-        return;
-      }
-      document.getElementById('capacityModal').classList.remove('hidden');
-    }
-    function closeCapacityModal() {
-      document.getElementById('capacityModal').classList.add('hidden');
-    }
-    function applyCapacityChange() {
-      maxSeats = parseInt(document.getElementById('seatRangeSlider').value, 10);
-      document.getElementById('seatCountLabel').innerText = maxSeats;
-      closeCapacityModal();
-      build3DScene();
-    }
-    function addParticipant() {
-      const name = document.getElementById('newMemberName').value.trim();
-      const role = document.getElementById('newMemberRole').value.trim() || 'Thành viên';
-      if (!name) return;
-      const palette = [0x38bdf8, 0xf43f5e, 0xa855f7, 0x10b981, 0xeab308];
-      participants.push({
-        id: 'p' + Date.now(),
-        name, role,
-        seat: participants.length,
-        color: palette[participants.length % palette.length],
-        speaking: false, bubble: '', bounceUntil: 0
-      });
-      if (participants.length > maxSeats) {
-        maxSeats = participants.length;
-        document.getElementById('seatCountLabel').innerText = maxSeats;
-      }
-      document.getElementById('newMemberName').value = '';
-      document.getElementById('newMemberRole').value = '';
-      renderWhisperUI();
-      build3DScene();
-    }
-
     function triggerSceneSpecialAction() {
-      if (currentScene === 'nhau') {
-        participants.forEach(p => { p.bubble = '🍻 1, 2, 3 DÔ 100%!'; p.bounceUntil = Date.now() + 1500; });
-        sendReaction('🍻');
-      } else if (currentScene === 'chua') {
-        participants.forEach(p => { p.bubble = '🪷 Tâm an vạn sự an...'; });
-        sendReaction('🪷');
-      } else {
-        simulateColleagueSpeak();
-      }
+      participants.forEach(p => {
+        p.bubble = currentScene === 'nhau' ? '🍻 1, 2, 3 DÔ 100%!' : '👏 Nhất trí cao với Chủ trì!';
+        p.bounceUntil = Date.now() + 1400;
+      });
+      sendReaction('👏');
       rebuildDomLabels();
-      setTimeout(() => { participants.forEach(p => p.bubble = ''); rebuildDomLabels(); }, 3500);
+      setTimeout(() => { participants.forEach(p => p.bubble = ''); rebuildDomLabels(); }, 3200);
     }
 
     function sendReaction(emoji) {
