@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Khán Phòng Vòng Cung 3D Full HD - Đồng Bộ Toàn Diện</title>
+  <title>Khán Phòng Vòng Cung 3D UTE - Đồng Bộ Toàn Diện</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -42,13 +42,14 @@
 </head>
 <body class="h-screen w-screen flex flex-col select-none">
 
-  <!-- VIDEO, AUDIO & INPUT FILE ẨN PHỤC VỤ STREAM HD -->
+  <!-- VIDEO, AUDIO & INPUT FILE ẨN -->
   <video id="screenShareVideo" autoplay playsinline muted class="hidden"></video>
   <video id="activeCamVideo" autoplay playsinline muted class="hidden"></video>
   <audio id="remoteVoiceAudioPlayer" autoplay class="hidden"></audio>
   <input id="logoFileInput" type="file" accept="image/*" class="hidden" onchange="handleLogoFileSelected(event)" />
+  <input id="avatarFileInput" type="file" accept="image/*" class="hidden" onchange="handleAvatarFileSelected(event)" />
 
-  <!-- MODAL PHÓNG TO MÀN HÌNH TRÌNH CHIẾU FULL HD 2D (DÀNH CHO NGƯỜI MUỐN NHÌN SỐ LIỆU SIÊU NÉT) -->
+  <!-- MODAL PHÓNG TO MÀN HÌNH TRÌNH CHIẾU FULL HD -->
   <div id="hdZoomOverlay" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex flex-col p-4">
     <div class="flex items-center justify-between pb-3 mb-2 border-b border-slate-800">
       <div class="flex items-center gap-2">
@@ -64,24 +65,24 @@
     </div>
   </div>
 
-  <!-- MÀN HÌNH ĐĂNG NHẬP: CHỌN CHỦ TRÌ ĐỂ KẾT NỐI ĐÚNG PHÒNG -->
+  <!-- MÀN HÌNH ĐĂNG NHẬP: CHỌN CHỦ TRÌ & UPLOAD AVATAR MẶT NHÂN VẬT -->
   <div id="loginOverlay" style="display: flex;" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md items-center justify-center z-50 p-4">
     <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl">
       <div class="flex items-center justify-between mb-1">
         <div class="flex items-center gap-2">
-          <span class="w-3 h-3 rounded-full bg-emerald-400 animate-ping"></span>
-          <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">Đồng Bộ Toàn Diện: Giọng Nói • Hình Ảnh • Slide</span>
+          <span class="w-3 h-3 rounded-full bg-blue-500 animate-ping"></span>
+          <span class="text-xs font-bold uppercase tracking-wider text-blue-400">Không Gian Hội Trường & Giảng Đường 3D UTE</span>
         </div>
-        <span class="text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full">Full HD</span>
+        <span class="text-[10px] bg-blue-950 text-blue-300 border border-blue-500/40 px-2 py-0.5 rounded-full">Đồng phục UTE</span>
       </div>
-      <h1 class="text-xl font-extrabold text-white mb-1">Vào Khán Phòng & Lớp Học 3D</h1>
-      <p class="text-xs text-slate-400 mb-4">Mọi thành viên vào cùng một Phòng Chủ trì sẽ tự động đồng bộ giọng nói, màn hình trình chiếu HD, camera, logo, slide, chat và đề thi.</p>
+      <h1 class="text-xl font-extrabold text-white mb-1">Vào Khán Phòng Trực Tuyến</h1>
+      <p class="text-xs text-slate-400 mb-4">Tải ảnh Avatar của bạn để hiển thị trên khuôn mặt nhân vật 3D (mặc đồng phục xanh dương UTE).</p>
 
       <div class="space-y-3">
         <div>
           <label class="block text-xs font-semibold text-amber-300 mb-1">🏟️ Chọn Phòng theo Chủ trì (Các máy chọn giống nhau) *</label>
           <select id="loginRoomHostSelect" class="w-full bg-slate-800 border border-amber-500/50 rounded-xl px-3.5 py-2.5 text-sm font-bold text-white focus:outline-none">
-            <option value="phong_dinh_lam">👑 Phòng Chủ trì: Đình Lâm (Khán Phòng Vòng Cung 3D)</option>
+            <option value="phong_dinh_lam">👑 Phòng Chủ trì: Đình Lâm (Khán Phòng Vòng Cung UTE)</option>
             <option value="phong_hoi_dong">🎓 Phòng Chủ trì: Hội Đồng Khoa (Thi & Thảo Luận)</option>
             <option value="phong_du_an">🚀 Phòng Chủ trì: Ban Dự Án (Họp Chiến Lược)</option>
           </select>
@@ -94,10 +95,27 @@
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-300 mb-1">Chức vụ / MSSV</label>
-            <input id="loginRoleInput" type="text" placeholder="Học viên / TV" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400" onkeydown="if(event.key==='Enter') enterMeetingRoom()" />
+            <input id="loginRoleInput" type="text" placeholder="Giảng viên / SV" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400" onkeydown="if(event.key==='Enter') enterMeetingRoom()" />
           </div>
         </div>
 
+        <!-- Upload Ảnh Avatar hiển thị lên mặt trước nhân vật 3D -->
+        <div class="bg-slate-800/80 border border-blue-500/40 rounded-xl p-3 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-2.5">
+            <div id="loginAvatarPreviewBox" class="w-12 h-12 rounded-xl bg-blue-700 border-2 border-amber-400 flex items-center justify-center overflow-hidden shrink-0 font-extrabold text-white text-xs">
+              UTE
+            </div>
+            <div>
+              <div class="text-xs font-bold text-blue-300">Ảnh Avatar Khuôn Mặt 3D</div>
+              <div class="text-[10px] text-slate-400">Hiển thị trực tiếp trên mặt trước nhân vật</div>
+            </div>
+          </div>
+          <button type="button" onclick="triggerUploadMyAvatar()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-3 py-1.5 rounded-lg text-xs shrink-0 shadow">
+            📤 Chọn Ảnh
+          </button>
+        </div>
+
+        <!-- Tùy chọn xác thực Chủ tọa: Mặc định ẩn ô PIN -->
         <div class="bg-slate-800/70 border border-amber-500/30 rounded-xl p-3">
           <label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-amber-300">
             <input id="loginIsHostCheckbox" type="checkbox" onchange="toggleHostPinBox()" class="accent-amber-500 w-4 h-4" />
@@ -110,11 +128,11 @@
 
         <label class="flex items-center gap-2 cursor-pointer text-[11px] text-slate-400 pt-1">
           <input id="keepDemoBotsCheckbox" type="checkbox" class="accent-emerald-500" />
-          <span>Hiển thị thêm các nhân vật mẫu (Bot) ngồi sẵn trong phòng</span>
+          <span>Hiển thị thêm các nhân vật mẫu (Bot) mặc áo UTE ngồi sẵn</span>
         </label>
 
-        <button type="button" onclick="enterMeetingRoom()" class="w-full bg-gradient-to-r from-amber-500 to-emerald-500 hover:from-amber-400 hover:to-emerald-400 text-slate-950 font-extrabold py-3 rounded-xl text-sm shadow-lg transition cursor-pointer">
-          🚀 KẾT NỐI VÀO KHÁN PHÒNG FULL HD
+        <button type="button" onclick="enterMeetingRoom()" class="w-full bg-gradient-to-r from-blue-600 to-emerald-500 hover:from-blue-500 hover:to-emerald-400 text-white font-extrabold py-3 rounded-xl text-sm shadow-lg transition cursor-pointer">
+          🚀 VÀO KHÁN PHÒNG 3D NGAY
         </button>
       </div>
     </div>
@@ -146,7 +164,10 @@
     </div>
 
     <div class="flex items-center gap-1.5">
-      <button onclick="toggleVoiceSpeakerMute()" id="btnSpeakerAudio" class="bg-emerald-600/30 hover:bg-emerald-600/50 border border-emerald-400/50 text-emerald-300 px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1" title="Bật/Tắt nghe âm thanh giọng nói trực tiếp">
+      <button onclick="triggerUploadMyAvatar()" class="bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 shadow" title="Đổi ảnh Avatar trên mặt nhân vật 3D của bạn">
+        🙂 Đổi Avatar Mặt
+      </button>
+      <button onclick="toggleVoiceSpeakerMute()" id="btnSpeakerAudio" class="bg-emerald-600/30 hover:bg-emerald-600/50 border border-emerald-400/50 text-emerald-300 px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1">
         🔊 Loa: BẬT
       </button>
       <button onclick="switchTab('quiz')" class="bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-extrabold flex items-center gap-1 shadow">
@@ -172,6 +193,46 @@
       <canvas id="canvas3d"></canvas>
       <div id="labelsContainer" class="absolute inset-0 pointer-events-none overflow-hidden z-10"></div>
       <div id="floatingReactionsLayer" class="absolute inset-0 pointer-events-none overflow-hidden z-20"></div>
+
+      <!-- KHUNG CAMERA CỐ ĐỊNH Ở GÓC TRÁI HỘI TRƯỜNG (LUÔN HIỂN THỊ RÕ NÉT Ở GÓC TRÁI) -->
+      <div id="leftHallCameraDock" class="absolute top-3 left-3 w-72 bg-slate-900/95 border-2 border-blue-500/80 rounded-2xl overflow-hidden shadow-2xl z-30 backdrop-blur-md">
+        <div class="bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 text-white px-3 py-1.5 text-[11px] font-extrabold flex items-center justify-between">
+          <div class="flex items-center gap-1.5">
+            <span id="camLiveDot" class="w-2 h-2 rounded-full bg-slate-400"></span>
+            <span id="camCardHeaderTitle">📷 CAMERA HỘI TRƯỜNG (GÓC TRÁI)</span>
+          </div>
+          <button onclick="toggleUserCamera()" id="btnQuickCamDock" class="bg-amber-400 hover:bg-amber-300 text-slate-950 px-2 py-0.5 rounded text-[10px] font-extrabold">
+            Bật Cam
+          </button>
+        </div>
+
+        <!-- Khung hình Video / Ảnh Stream Camera -->
+        <div class="relative w-full h-44 bg-slate-950 flex items-center justify-center overflow-hidden">
+          <video id="activeCamPreviewUI" autoplay playsinline muted class="hidden w-full h-full object-cover transform scale-x-[-1]"></video>
+          <img id="remoteCamPreviewImg" class="hidden w-full h-full object-cover transform scale-x-[-1]" alt="Remote Camera" />
+          <div id="camPlaceholderBox" class="flex flex-col items-center justify-center text-center p-4">
+            <div class="w-12 h-12 rounded-full bg-blue-600/20 border border-blue-400/40 flex items-center justify-center text-2xl mb-1.5">📷</div>
+            <div class="text-xs font-bold text-slate-300">Camera Hội Trường đang chờ</div>
+            <div class="text-[10px] text-slate-400 mt-0.5">Chủ tọa hoặc Người phát biểu bấm <b>"Bật Cam"</b> để truyền hình ảnh trực tiếp tại góc trái này.</div>
+          </div>
+        </div>
+
+        <div id="activeCamLabelName" class="px-3 py-1.5 text-[11px] font-bold text-amber-300 bg-slate-950/90 flex items-center justify-between border-t border-slate-800">
+          <span>👕 Đồng phục: Áo Xanh Dương UTE</span>
+          <span id="onlineCountLabel" class="text-emerald-400">1 người</span>
+        </div>
+
+        <!-- Cụm nút Góc Máy 3D tích hợp gọn ngay dưới Camera góc trái -->
+        <div class="p-2 bg-slate-900/95 border-t border-slate-800 flex flex-wrap gap-1">
+          <button onclick="setCamPreset('overview')" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 px-2 py-1 rounded text-[10px] font-semibold">🌌 Toàn cảnh</button>
+          <button onclick="setCamPreset('boardCloseUp')" class="bg-emerald-700/80 hover:bg-emerald-600 text-white px-2 py-1 rounded text-[10px] font-bold">🔍 Cận Bảng HD</button>
+          <button onclick="setCamPreset('hostView')" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 px-2 py-1 rounded text-[10px] font-semibold">👑 Góc Chủ Tọa</button>
+          <button onclick="setCamPreset('audienceView')" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 px-2 py-1 rounded text-[10px] font-semibold">🧑‍🎓 Khán Đài</button>
+          <button onclick="toggle3DDragMode()" id="btn3DDragMode" class="bg-slate-800 hover:bg-amber-500 hover:text-slate-950 border border-amber-500/50 text-amber-300 px-2 py-1 rounded text-[10px] font-bold">
+            ✋ Kéo Thả 3D: Tắt
+          </button>
+        </div>
+      </div>
 
       <!-- POPUP LÀM BÀI TRẮC NGHIỆM NỔI TRÊN MÀN HÌNH -->
       <div id="liveQuizFloatingBanner" class="hidden absolute top-16 left-1/2 -translate-x-1/2 bg-slate-900/95 border-2 border-rose-500 rounded-2xl p-4 shadow-2xl z-30 w-[92%] max-w-xl backdrop-blur-md">
@@ -233,12 +294,15 @@
         </div>
 
         <div class="space-y-1 border-t border-slate-800 pt-2">
+          <button id="btnChangeThisAvatar" onclick="triggerUploadAvatarForTarget()" class="w-full bg-blue-700/80 hover:bg-blue-600 text-white rounded-lg py-1 text-xs font-bold">
+            🖼️ Đổi ảnh Avatar khuôn mặt
+          </button>
           <button onclick="interactWithMember('addWhisper')" class="w-full bg-purple-900/60 hover:bg-purple-700 text-purple-200 rounded-lg py-1 text-xs font-semibold">
             💬 Thêm vào Nhóm Chat
           </button>
           <div id="hostOnlyActionsOnMember" class="hidden space-y-1 pt-1">
             <button onclick="interactWithMember('grantSpeak')" class="w-full bg-emerald-700/80 hover:bg-emerald-600 text-white rounded-lg py-1 text-xs font-bold">
-              🎙️ Mời phát biểu (Cấp Cam Mặt & Share)
+              🎙️ Mời phát biểu (Cấp Cam & Share)
             </button>
             <button onclick="interactWithMember('kick')" class="w-full bg-rose-700/90 hover:bg-rose-600 text-white rounded-lg py-1 text-xs font-extrabold">
               🥾 Kick khỏi phòng họp
@@ -247,37 +311,7 @@
         </div>
       </div>
 
-      <!-- Góc máy 3D & Chế độ Kéo thả trực tiếp trên 3D -->
-      <div class="absolute top-3 left-3 bg-slate-900/90 border border-slate-700/80 backdrop-blur px-3 py-2 rounded-xl z-20 flex flex-col gap-1.5 shadow-lg">
-        <div class="text-[11px] font-bold text-amber-400 flex items-center justify-between gap-3">
-          <span>🎥 GÓC MÁY 3D FULL HD (<span id="onlineCountLabel">1</span> NGƯỜI)</span>
-          <span id="permissionMiniTag" class="text-emerald-400">👑 Chủ tọa</span>
-        </div>
-        <div class="flex flex-wrap gap-1.5">
-          <button onclick="setCamPreset('overview')" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 px-2 py-1 rounded-lg text-xs font-semibold">🌌 Toàn cảnh</button>
-          <button onclick="setCamPreset('boardCloseUp')" class="bg-emerald-700/80 hover:bg-emerald-600 border border-emerald-400 text-white px-2 py-1 rounded-lg text-xs font-bold">🔍 Cận Cảnh Bảng HD</button>
-          <button onclick="setCamPreset('hostView')" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 px-2 py-1 rounded-lg text-xs font-semibold">👑 Góc Chủ Tọa</button>
-          <button onclick="setCamPreset('audienceView')" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 px-2 py-1 rounded-lg text-xs font-semibold">🧑‍🎓 Khán Đài</button>
-          <button onclick="toggle3DDragMode()" id="btn3DDragMode" class="bg-slate-800 hover:bg-amber-500 hover:text-slate-950 border border-amber-500/50 text-amber-300 px-2.5 py-1 rounded-lg text-xs font-bold transition">
-            ✋ Kéo Thả 3D: Tắt
-          </button>
-        </div>
-      </div>
-
-      <!-- KHUNG PREVIEW CAMERA SẮC NÉT GÓC TRÁI -->
-      <div id="activeCamFloatingCard" class="hidden absolute top-24 left-3 w-64 bg-slate-900/95 border-2 border-emerald-400 rounded-2xl overflow-hidden shadow-2xl z-30">
-        <div class="bg-gradient-to-r from-emerald-500 to-amber-500 text-slate-950 px-2.5 py-1 text-[10px] font-extrabold flex items-center justify-between">
-          <span id="camCardHeaderTitle">📷 CAMERA TRỰC TIẾP HD</span>
-          <button onclick="document.getElementById('activeCamFloatingCard').classList.add('hidden')" class="text-slate-900 hover:text-red-900 font-black">✕</button>
-        </div>
-        <video id="activeCamPreviewUI" autoplay playsinline muted class="w-full h-40 object-cover bg-black transform scale-x-[-1]"></video>
-        <img id="remoteCamPreviewImg" class="hidden w-full h-40 object-cover bg-black transform scale-x-[-1]" alt="Remote Camera" />
-        <div id="activeCamLabelName" class="px-2 py-1 text-[10px] font-bold text-emerald-300 bg-slate-950/90 text-center">
-          Đang truyền lên khuôn mặt 3D
-        </div>
-      </div>
-
-      <!-- Điều khiển màn chiếu 3D Full HD, Share Màn Hình & Camera -->
+      <!-- Điều khiển màn chiếu 3D Full HD, Share Màn Hình & Camera bên phải -->
       <div class="absolute top-3 right-3 bg-slate-900/90 border border-slate-700/80 backdrop-blur px-3 py-2 rounded-xl z-20 flex flex-col gap-1.5 shadow-lg">
         <div class="flex items-center gap-1.5 flex-wrap">
           <span class="text-[11px] font-bold text-slate-300">🖥️ BẢNG HD:</span>
@@ -286,7 +320,7 @@
           <button onclick="nextSlide()" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 rounded text-xs font-bold">▶</button>
           <button onclick="openAddSlideModal()" class="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-500 rounded text-xs font-bold">+ Slide</button>
 
-          <button onclick="toggleHdZoomModal()" class="px-2.5 py-0.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-xs font-extrabold shadow" title="Phóng to màn hình thuyết trình lên toàn màn hình Full HD">
+          <button onclick="toggleHdZoomModal()" class="px-2.5 py-0.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-xs font-extrabold shadow">
             🔍 Phóng To HD
           </button>
 
@@ -295,13 +329,14 @@
           </button>
 
           <button id="btnUserCam" onclick="toggleUserCamera()" class="px-2.5 py-0.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded text-xs font-extrabold flex items-center gap-1 shadow">
-            📷 Bật Cam Mặt 3D
+            📷 Bật Camera Góc Trái
           </button>
         </div>
 
-        <div class="flex gap-1.5">
+        <div class="flex gap-1.5 items-center">
+          <span id="permissionMiniTag" class="text-[11px] font-bold text-emerald-400 mr-1">👑 Chủ tọa</span>
           <button onclick="triggerSceneSpecialAction()" id="btnSpecialAction" class="flex-1 py-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 rounded-lg text-xs font-extrabold shadow">
-            👏 VỖ TAY TOÀN KHÁN PHÒNG
+            👏 VỖ TAY TOÀN KHÁN PHÒNG UTE
           </button>
           <button onclick="switchTab('quiz'); document.getElementById('liveQuizFloatingBanner').classList.remove('hidden');" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-extrabold">
             📝 Mở Đề Thi
@@ -411,7 +446,7 @@
         </div>
       </div>
 
-      <!-- TAB 3: CHAT NHÓM ĐÔNG NGƯỜI (ĐỒNG BỘ REALTIME) -->
+      <!-- TAB 3: CHAT NHÓM ĐÔNG NGƯỜI -->
       <div id="panel-whisper" class="hidden flex-1 flex flex-col overflow-hidden p-3">
         <div class="bg-purple-950/40 border border-purple-500/30 rounded-xl p-2.5 mb-2">
           <div class="flex items-center justify-between mb-1.5">
@@ -476,7 +511,7 @@
     </div>
   </div>
 
-  <!-- MODAL 2: UPLOAD LOGO NHÀ TÀI TRỢ (ĐỒNG BỘ SANG MỌI MÁY) -->
+  <!-- MODAL 2: UPLOAD LOGO NHÀ TÀI TRỢ -->
   <div id="sponsorModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
     <div class="bg-slate-900 border border-amber-500/50 rounded-2xl max-w-2xl w-full p-5 shadow-2xl max-h-[90vh] flex flex-col">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
@@ -494,7 +529,7 @@
   <div id="hostModal" class="hidden fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4">
     <div class="bg-slate-900 border border-amber-500/40 rounded-2xl max-w-lg w-full p-5 shadow-2xl">
       <h3 class="text-base font-extrabold text-amber-400 mb-1">👑 Quản Trị Khán Phòng (Chủ Tọa)</h3>
-      <p class="text-xs text-slate-400 mb-3">Gán quyền Chủ tọa, mời phát biểu (mở Camera mặt 3D & Share màn hình) hoặc Kick thành viên.</p>
+      <p class="text-xs text-slate-400 mb-3">Gán quyền Chủ tọa, mời phát biểu (mở Camera góc trái & Share màn hình) hoặc Kick thành viên.</p>
       <div id="hostCandidateList" class="space-y-2 max-h-72 overflow-y-auto mb-4"></div>
       <div class="flex justify-end">
         <button onclick="closeHostAssignModal()" class="bg-slate-800 hover:bg-slate-700 px-4 py-1.5 rounded-lg text-xs font-bold">Đóng</button>
@@ -516,7 +551,7 @@
   </div>
 
   <script>
-    // ================= CẤU HÌNH ĐỒNG BỘ TOÀN DIỆN (FULL HD + VOICE + VIDEO + SLIDE + INTERACT) =================
+    // ================= CẤU HÌNH ĐỒNG PHỤC UTE + AVATAR MẶT 3D + CAMERA GÓC TRÁI =================
     const HOST_PIN = '2020';
     let isOwnerAuthenticated = false;
     let myClientId = 'u_' + Math.random().toString(36).substring(2, 9);
@@ -528,12 +563,18 @@
     let currentScene = 'vongcung';
     let maxSeats = 17;
     let is3DDragEnabled = false;
-    let isSpeakerAudioEnabled = true; // Mặc định bật loa nghe giọng nói của mọi người
+    let isSpeakerAudioEnabled = true;
+
+    // Lưu ảnh Avatar upload của người dùng
+    let myUploadedAvatarUrl = null;
+    let targetAvatarUploadMemberId = null;
+    const avatarTextureCache = {}; // memberId -> THREE.Texture
+    let uteShirtMaterial = null; // Áo đồng phục xanh dương có chữ UTE
 
     let mqttClient = null;
     let mqttTopic = '';
 
-    // Bộ đệm Share Màn Hình chuẩn HD 1280x720 siêu nét
+    // Bộ đệm Share Màn Hình chuẩn HD 1280x720
     let isScreenSharing = false;
     let isRemoteScreenSharing = false;
     let screenStream = null;
@@ -544,44 +585,36 @@
     screenCaptureCanvas.height = 720;
     let screenCaptureCtx = screenCaptureCanvas.getContext('2d');
 
-    // Bộ đệm Camera Khuôn mặt 3D chuẩn HD 480x480 sắc nét
+    // Bộ đệm Camera Góc Trái Hội Trường
     let isCamActive = false;
     let isRemoteCamActive = false;
     let camStream = null;
-    let camVideoTexture = null;
     let camOwnerId = null;
     let camBroadcastTimer = null;
     let camCaptureCanvas = document.createElement('canvas');
-    camCaptureCanvas.width = 400;
-    camCaptureCanvas.height = 400;
+    camCaptureCanvas.width = 480;
+    camCaptureCanvas.height = 320;
     let camCaptureCtx = camCaptureCanvas.getContext('2d');
 
-    let remoteFaceCanvas = document.createElement('canvas');
-    remoteFaceCanvas.width = 512;
-    remoteFaceCanvas.height = 512;
-    let remoteFaceCtx = remoteFaceCanvas.getContext('2d');
-    let remoteFaceTexture = null;
-
-    // Bộ thu & phát Giọng nói thật trực tiếp (Live Audio Chunk Streaming)
     let voiceMediaRecorder = null;
     let voiceAudioStream = null;
 
     let participants = [
-      { id: 'p0', name: 'Đình Lâm', role: 'Chủ Tọa', seat: 0, color: 0xf59e0b, speaking: false, bubble: '', bounceUntil: 0, isBot: false }
+      { id: 'p0', name: 'Đình Lâm', role: 'Chủ Tọa', seat: 0, avatarUrl: null, speaking: false, bubble: '', bounceUntil: 0, isBot: false }
     ];
 
     const demoBots = [
-      { id: 'bot1', name: 'Bảo Ngọc', role: 'Thiết kế 3D', seat: 1, color: 0xec4899, speaking: false, bubble: '', bounceUntil: 0, isBot: true },
-      { id: 'bot2', name: 'Hoàng Nam', role: 'Kỹ thuật', seat: 2, color: 0x3b82f6, speaking: false, bubble: '', bounceUntil: 0, isBot: true },
-      { id: 'bot3', name: 'Thu Hà', role: 'Marketing', seat: 3, color: 0xa855f7, speaking: false, bubble: '', bounceUntil: 0, isBot: true },
-      { id: 'bot4', name: 'Minh Tuấn', role: 'Tài chính', seat: 4, color: 0x10b981, speaking: false, bubble: '', bounceUntil: 0, isBot: true }
+      { id: 'bot1', name: 'Bảo Ngọc', role: 'Thiết kế 3D', seat: 1, avatarUrl: null, speaking: false, bubble: '', bounceUntil: 0, isBot: true },
+      { id: 'bot2', name: 'Hoàng Nam', role: 'Kỹ thuật', seat: 2, avatarUrl: null, speaking: false, bubble: '', bounceUntil: 0, isBot: true },
+      { id: 'bot3', name: 'Thu Hà', role: 'Marketing', seat: 3, avatarUrl: null, speaking: false, bubble: '', bounceUntil: 0, isBot: true },
+      { id: 'bot4', name: 'Minh Tuấn', role: 'Tài chính', seat: 4, avatarUrl: null, speaking: false, bubble: '', bounceUntil: 0, isBot: true }
     ];
 
     let preassignedSeatNames = {};
 
     let quizState = {
       isActive: false,
-      title: 'ĐỀ KIỂM TRA TRẮC NGHIỆM TRỰC TUYẾN',
+      title: 'ĐỀ KIỂM TRA TRẮC NGHIỆM TRỰC TUYẾN UTE',
       durationSec: 180,
       remainSec: 180,
       questions: [
@@ -599,7 +632,7 @@
         },
         {
           id: 'q3',
-          q: 'Câu 3: Khi nào thành viên trong phòng được phép bật Camera khuôn mặt 3D và Share màn hình?',
+          q: 'Câu 3: Khi nào thành viên trong phòng được phép bật Camera góc trái hội trường và Share màn hình?',
           options: ['A. Bất kỳ lúc nào mà không cần xin phép', 'B. Khi đang bật Mic phát biểu hoặc được Chủ tọa mời phát biểu', 'C. Chỉ khi kết thúc cuộc họp', 'D. Không ai được bật ngoài Chủ tọa'],
           correct: 1
         }
@@ -610,8 +643,8 @@
     let quizTimerInterval = null;
 
     const sponsorSlots = [
-      { id: 'top_banner', name: 'Banner Chính (Trên Bảng)', label: 'KHÁN PHÒNG VÒNG CUNG GIẢNG ĐƯỜNG & HỘI NGHỊ 3D FULL HD', bgColor: '#1e3a8a', accent: '#fbbf24', imgUrl: null, texture: null },
-      { id: 'wall_0', name: 'Bờ bao Vòng cung Trái #1', label: 'NHÀ TÀI TRỢ KIM CƯƠNG', bgColor: '#0f172a', accent: '#38bdf8', imgUrl: null, texture: null },
+      { id: 'top_banner', name: 'Banner Chính (Trên Bảng)', label: 'KHÁN PHÒNG VÒNG CUNG GIẢNG ĐƯỜNG & HỘI NGHỊ 3D UTE', bgColor: '#1e3a8a', accent: '#fbbf24', imgUrl: null, texture: null },
+      { id: 'wall_0', name: 'Bờ bao Vòng cung Trái #1', label: 'ĐẠI HỌC SƯ PHẠM KỸ THUẬT (UTE)', bgColor: '#1e3a8a', accent: '#38bdf8', imgUrl: null, texture: null },
       { id: 'wall_1', name: 'Bờ bao Vòng cung Trái #2', label: 'ĐỐI TÁC CÔNG NGHỆ AI', bgColor: '#064e3b', accent: '#34d399', imgUrl: null, texture: null },
       { id: 'wall_2', name: 'Bờ bao Vòng cung Trái #3', label: 'ĐỒNG HÀNH KHỞI NGHIỆP', bgColor: '#3b0764', accent: '#c084fc', imgUrl: null, texture: null },
       { id: 'wall_3', name: 'Bờ bao Vòng cung Phải #1', label: 'NHÀ TÀI TRỢ VÀNG', bgColor: '#451a03', accent: '#fbbf24', imgUrl: null, texture: null },
@@ -623,18 +656,180 @@
     let currentEditingSponsorId = null;
 
     const slides = [
-      { title: 'KHÁN PHÒNG VÒNG CUNG 3D - ĐỘ NÉT FULL HD', lines: ['1. Màn hình 3D nâng cấp chuẩn Full HD (1920x1080) siêu nét', '2. Đồng bộ trực tiếp: Giọng nói, Share Màn Hình, Camera & Slide', '3. Bấm "🔍 Phóng To HD" để xem chi tiết biểu đồ & số liệu nhỏ'] },
-      { title: 'ĐỒNG BỘ GIỌNG NÓI & TƯƠNG TÁC THỜI GIAN THỰC', lines: ['• Khi bật Mic nói: Truyền cả luồng âm thanh thật & giọng đọc AI', '• Upload Logo Nhà tài trợ tự động hiện trên máy mọi thành viên', '• Chat nhóm, Chọc ghẹo, Thọc lét, Cụm ly đồng bộ tức thì'] },
+      { title: 'KHÁN PHÒNG VÒNG CUNG 3D - ĐỒNG PHỤC UTE', lines: ['1. Toàn bộ nhân vật mặc áo Xanh Dương in chữ "UTE" sắc nét', '2. Mặt trước nhân vật hiển thị Ảnh Avatar cá nhân (Upload)', '3. Camera trực tiếp hiển thị cố định ở Góc Trái Hội Trường'] },
+      { title: 'ĐỒNG BỘ GIỌNG NÓI & MÀN HÌNH TRÌNH CHIẾU HD', lines: ['• Khi bật Mic nói: Truyền cả luồng âm thanh thật & giọng đọc AI', '• Upload Avatar và Logo Nhà tài trợ tự động hiện trên mọi máy', '• Chat nhóm, Chọc ghẹo, Thọc lét, Cụm ly đồng bộ tức thì'] },
       { title: 'THI TRẮC NGHIỆM & BIÊN BẢN HỌP TỰ ĐỘNG', lines: ['• Chủ tọa phát đề thi trực tiếp lên màn hình của toàn bộ học viên', '• Bảng xếp hạng chấm điểm tự động và xuất Biên bản cuộc họp'] }
     ];
     let currentSlideIdx = 0;
 
     const transcripts = [
-      { time: '09:00:00', speaker: 'Hệ thống', role: 'Full HD Sync', text: 'Đã kích hoạt độ phân giải Full HD 1920x1080 và đồng bộ toàn diện: Giọng nói, Hình ảnh, Slide, Logo, Chat và Tương tác!' }
+      { time: '09:00:00', speaker: 'Hệ thống', role: 'UTE 3D Sync', text: 'Chào mừng vào Khán Phòng 3D UTE! Tất cả thành viên mặc đồng phục áo xanh dương UTE, mặt nhân vật hiển thị ảnh Avatar upload và Camera trực tiếp nằm ở góc trái hội trường.' }
     ];
 
     let whisperGroupIds = [];
     const whisperLogs = [];
+
+    // ================= TẠO ĐỒNG PHỤC ÁO XANH DƯƠNG CÓ CHỮ "UTE" & AVATAR MẶT 3D =================
+    function getUteBlueShirtMaterials() {
+      if (uteShirtMaterial) return uteShirtMaterial;
+
+      // Vẽ áo màu xanh dương đậm chuẩn UTE kèm dòng chữ "UTE" nổi bật trước ngực & sau lưng
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+
+      // Nền xanh dương đồng phục
+      ctx.fillStyle = '#1d4ed8';
+      ctx.fillRect(0, 0, 512, 512);
+
+      // Viền cổ áo & nẹp áo
+      ctx.fillStyle = '#1e40af';
+      ctx.fillRect(0, 0, 512, 70);
+      ctx.strokeStyle = '#60a5fa';
+      ctx.lineWidth = 6;
+      ctx.strokeRect(12, 12, 488, 488);
+
+      // Huy hiệu & chữ "UTE" lớn sắc nét giữa ngực áo
+      ctx.fillStyle = '#fbbf24';
+      ctx.fillRect(116, 175, 280, 130);
+      ctx.fillStyle = '#1e3a8a';
+      ctx.fillRect(126, 185, 260, 110);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '900 84px "Be Vietnam Pro", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('UTE', 256, 242);
+
+      const shirtTex = new THREE.CanvasTexture(canvas);
+      if (renderer) shirtTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
+      const sideMat = new THREE.MeshLambertMaterial({ color: 0x1d4ed8 });
+      const frontBackMat = new THREE.MeshLambertMaterial({ map: shirtTex });
+
+      // BoxGeometry 6 mặt: [Right, Left, Top, Bottom, Front (+Z), Back (-Z)]
+      uteShirtMaterial = [sideMat, sideMat, sideMat, sideMat, frontBackMat, frontBackMat];
+      return uteShirtMaterial;
+    }
+
+    function getOrCreateMemberAvatarTexture(member) {
+      const cacheKey = member.id + '_' + (member.avatarUrl ? member.avatarUrl.length : member.name);
+      if (avatarTextureCache[cacheKey]) return avatarTextureCache[cacheKey];
+
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      const tex = new THREE.CanvasTexture(canvas);
+      if (renderer) tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
+      if (member.avatarUrl) {
+        // Nếu người dùng đã upload ảnh Avatar -> vẽ ảnh Avatar tràn mặt trước của nhân vật
+        const img = new Image();
+        img.onload = () => {
+          ctx.fillStyle = '#fde68a';
+          ctx.fillRect(0, 0, 256, 256);
+          ctx.drawImage(img, 0, 0, 256, 256);
+          ctx.strokeStyle = '#38bdf8';
+          ctx.lineWidth = 10;
+          ctx.strokeRect(5, 5, 246, 246);
+          tex.needsUpdate = true;
+        };
+        img.src = member.avatarUrl;
+      } else {
+        // Nếu chưa upload ảnh -> vẽ khuôn mặt Avatar mặc định thân thiện kèm tên viết tắt
+        ctx.fillStyle = '#fde68a';
+        ctx.fillRect(0, 0, 256, 256);
+
+        // Mắt & Nụ cười
+        ctx.fillStyle = '#0f172a';
+        ctx.beginPath();
+        ctx.arc(85, 105, 16, 0, Math.PI * 2);
+        ctx.arc(171, 105, 16, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(80, 100, 5, 0, Math.PI * 2);
+        ctx.arc(166, 100, 5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = '#dc2626';
+        ctx.lineWidth = 10;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.arc(128, 145, 38, 0.15 * Math.PI, 0.85 * Math.PI);
+        ctx.stroke();
+
+        // Dải băng tên nhỏ ở cằm
+        ctx.fillStyle = 'rgba(29, 78, 216, 0.88)';
+        ctx.fillRect(0, 206, 256, 50);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 24px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(member.name.slice(0, 12), 128, 238);
+        tex.needsUpdate = true;
+      }
+
+      avatarTextureCache[cacheKey] = tex;
+      return tex;
+    }
+
+    // Upload ảnh Avatar cho chính mình hoặc cho thành viên đang chọn
+    function triggerUploadMyAvatar() {
+      targetAvatarUploadMemberId = currentViewerId;
+      document.getElementById('avatarFileInput').click();
+    }
+
+    function triggerUploadAvatarForTarget() {
+      if (!selectedTargetMemberId) return;
+      if (!isCurrentUserHost() && selectedTargetMemberId !== currentViewerId) {
+        alert('⛔ Bạn chỉ có thể đổi ảnh Avatar của chính mình!');
+        return;
+      }
+      targetAvatarUploadMemberId = selectedTargetMemberId;
+      hideInteractionPopup();
+      document.getElementById('avatarFileInput').click();
+    }
+
+    function handleAvatarFileSelected(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          // Cắt vuông 256x256 để truyền nhanh qua mạng sang máy mọi người
+          const c = document.createElement('canvas');
+          c.width = 256;
+          c.height = 256;
+          const ctx = c.getContext('2d');
+          const minSide = Math.min(img.width, img.height);
+          const sx = (img.width - minSide) / 2;
+          const sy = (img.height - minSide) / 2;
+          ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, 256, 256);
+          const avatarDataUrl = c.toDataURL('image/jpeg', 0.82);
+
+          myUploadedAvatarUrl = avatarDataUrl;
+          const previewBox = document.getElementById('loginAvatarPreviewBox');
+          if (previewBox) {
+            previewBox.innerHTML = `<img src="${avatarDataUrl}" class="w-full h-full object-cover" />`;
+          }
+
+          const targetId = targetAvatarUploadMemberId || currentViewerId;
+          const p = participants.find(x => x.id === targetId);
+          if (p) {
+            p.avatarUrl = avatarDataUrl;
+            build3DScene();
+            broadcastRealtime('AVATAR_UPDATE', { memberId: p.id, avatarUrl: avatarDataUrl });
+          }
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+      event.target.value = '';
+    }
 
     // ================= PHÁT GIỌNG NÓI TIẾNG VIỆT & STREAM AUDIO TRỰC TIẾP =================
     function toggleVoiceSpeakerMute() {
@@ -674,10 +869,8 @@
             reader.readAsDataURL(e.data);
           }
         };
-        voiceMediaRecorder.start(1400); // Gửi gói âm thanh giọng nói mỗi 1.4 giây
-      } catch (err) {
-        console.warn('Chỉ sử dụng nhận diện giọng nói Web Speech:', err);
-      }
+        voiceMediaRecorder.start(1400);
+      } catch (err) {}
     }
 
     function stopLiveVoiceAudioBroadcast() {
@@ -696,15 +889,15 @@
         try { mqttClient.end(true); } catch (e) {}
       }
       currentRoomChannel = roomKey;
-      mqttTopic = `damdao3d_live_v4_hd/${roomKey}`;
+      mqttTopic = `damdao3d_ute_v5/${roomKey}`;
 
       const dot = document.getElementById('networkDot');
       const txt = document.getElementById('networkText');
       dot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
-      txt.innerText = 'Đang kết nối phòng...';
+      txt.innerText = 'Đang kết nối...';
 
       mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt', {
-        clientId: 'dd3d_' + myClientId + '_' + Math.floor(Math.random() * 9999),
+        clientId: 'ute3d_' + myClientId + '_' + Math.floor(Math.random() * 9999),
         clean: true,
         connectTimeout: 5000,
         reconnectPeriod: 2000
@@ -712,7 +905,7 @@
 
       mqttClient.on('connect', () => {
         dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
-        txt.innerText = 'Đồng bộ Toàn diện HD';
+        txt.innerText = 'Đồng bộ Toàn diện UTE';
         mqttClient.subscribe(mqttTopic, { qos: 0 });
 
         const me = participants.find(p => p.id === currentViewerId);
@@ -823,8 +1016,13 @@
         updateOnlineCountUI();
         renderWhisperUI();
         build3DScene();
+      } else if (type === 'AVATAR_UPDATE' && data) {
+        const target = participants.find(p => p.id === data.memberId);
+        if (target) {
+          target.avatarUrl = data.avatarUrl;
+          build3DScene();
+        }
       } else if (type === 'SCREEN_FRAME' && data && data.jpg) {
-        // Nhận khung hình Share Màn Hình chuẩn HD (1280x720) vẽ lên Bảng 3D Full HD (1920x1080)
         isRemoteScreenSharing = true;
         const img = new Image();
         img.onload = () => {
@@ -853,38 +1051,31 @@
         isRemoteScreenSharing = false;
         drawSlideTo3DScreen();
       } else if (type === 'CAM_FRAME' && data && data.jpg) {
-        const needRebuild = (!isRemoteCamActive || camOwnerId !== data.ownerId);
+        // Hiển thị luồng Camera trực tiếp ở Khung Góc Trái Hội Trường (không đè lên mặt Avatar 3D)
         isRemoteCamActive = true;
         camOwnerId = data.ownerId;
 
-        const img = new Image();
-        img.onload = () => {
-          remoteFaceCtx.imageSmoothingEnabled = true;
-          remoteFaceCtx.imageSmoothingQuality = 'high';
-          remoteFaceCtx.drawImage(img, 0, 0, 512, 512);
-          if (remoteFaceTexture) remoteFaceTexture.needsUpdate = true;
-          if (needRebuild) build3DScene();
-        };
-        img.src = data.jpg;
-
-        const pipCard = document.getElementById('activeCamFloatingCard');
         const vidEl = document.getElementById('activeCamPreviewUI');
         const remoteImgEl = document.getElementById('remoteCamPreviewImg');
+        const placeholder = document.getElementById('camPlaceholderBox');
+        const dot = document.getElementById('camLiveDot');
+
         vidEl.classList.add('hidden');
+        placeholder.classList.add('hidden');
         remoteImgEl.classList.remove('hidden');
         remoteImgEl.src = data.jpg;
-        document.getElementById('camCardHeaderTitle').innerText = `📷 CAMERA HD: ${(data.ownerName || 'CHỦ TỌA').toUpperCase()}`;
-        document.getElementById('activeCamLabelName').innerText = `${data.ownerName || 'Chủ tọa'} (Đang phát trực tiếp)`;
-        pipCard.classList.remove('hidden');
+        dot.className = 'w-2 h-2 rounded-full bg-red-500 animate-ping';
+
+        document.getElementById('camCardHeaderTitle').innerText = `📷 CAM: ${(data.ownerName || 'CHỦ TỌA').toUpperCase()}`;
       } else if (type === 'CAM_STOP') {
         isRemoteCamActive = false;
         camOwnerId = null;
-        document.getElementById('activeCamFloatingCard').classList.add('hidden');
         document.getElementById('remoteCamPreviewImg').classList.add('hidden');
-        document.getElementById('activeCamPreviewUI').classList.remove('hidden');
-        build3DScene();
+        document.getElementById('activeCamPreviewUI').classList.add('hidden');
+        document.getElementById('camPlaceholderBox').classList.remove('hidden');
+        document.getElementById('camLiveDot').className = 'w-2 h-2 rounded-full bg-slate-400';
+        document.getElementById('camCardHeaderTitle').innerText = '📷 CAMERA HỘI TRƯỜNG (GÓC TRÁI)';
       } else if (type === 'VOICE_AUDIO_CHUNK' && data && data.audioBase64) {
-        // Phát gói âm thanh giọng nói thật của người đang bật Mic
         if (isSpeakerAudioEnabled) {
           const player = document.getElementById('remoteVoiceAudioPlayer');
           player.src = data.audioBase64;
@@ -901,7 +1092,6 @@
           }
         }
       } else if (type === 'WHISPER_MSG' && data) {
-        // Đồng bộ tin nhắn Chat nhóm cho những thành viên nằm trong danh sách nhận
         if (Array.isArray(data.targetIds) && (data.targetIds.includes(currentViewerId) || data.senderId === currentViewerId)) {
           whisperLogs.push(data.logEntry);
           renderWhisperUI();
@@ -1018,7 +1208,7 @@
     }
 
     function updateOnlineCountUI() {
-      document.getElementById('onlineCountLabel').innerText = participants.length;
+      document.getElementById('onlineCountLabel').innerText = `${participants.length} người`;
     }
 
     // ================= CHẾ ĐỘ PHÓNG TO MÀN HÌNH TRÌNH CHIẾU FULL HD =================
@@ -1082,10 +1272,11 @@
         participants[0].name = rawName || 'Đình Lâm';
         participants[0].role = rawRole || 'Chủ Tọa';
         participants[0].seat = 0;
+        if (myUploadedAvatarUrl) participants[0].avatarUrl = myUploadedAvatarUrl;
       } else {
         isOwnerAuthenticated = false;
         const memberName = rawName || ('Thành viên ' + Math.floor(Math.random() * 90 + 10));
-        const memberRole = rawRole || 'Học viên';
+        const memberRole = rawRole || 'Sinh viên UTE';
 
         let targetSeat = null;
         for (const [sIdx, rName] of Object.entries(preassignedSeatNames)) {
@@ -1108,18 +1299,18 @@
           }
         }
 
-        const palette = [0x38bdf8, 0xec4899, 0xa855f7, 0x10b981, 0xf97316, 0x06b6d4];
         const myExisting = participants.find(p => p.id === myClientId);
         if (myExisting) {
           myExisting.name = memberName;
           myExisting.role = memberRole;
+          if (myUploadedAvatarUrl) myExisting.avatarUrl = myUploadedAvatarUrl;
         } else {
           participants.push({
             id: myClientId,
             name: memberName,
             role: memberRole,
             seat: targetSeat,
-            color: palette[participants.length % palette.length],
+            avatarUrl: myUploadedAvatarUrl,
             speaking: false,
             bubble: '',
             bounceUntil: 0,
@@ -1168,11 +1359,11 @@
       if (quizBuilder) quizBuilder.style.display = isHost ? 'block' : 'none';
 
       if (isHost) {
-        miniTag.className = 'text-emerald-400 font-bold';
-        miniTag.innerText = '👑 Chủ tọa (Toàn quyền)';
+        miniTag.className = 'text-[11px] text-emerald-400 font-bold mr-1';
+        miniTag.innerText = '👑 Chủ tọa';
         sceneButtons.forEach(b => b.classList.remove('opacity-40', 'cursor-not-allowed'));
       } else {
-        miniTag.className = 'text-amber-300 font-semibold';
+        miniTag.className = 'text-[11px] text-amber-300 font-semibold mr-1';
         miniTag.innerText = activeSpeakerId === currentViewerId ? '🎙️ Người phát biểu' : '🔒 Thành viên';
         sceneButtons.forEach(b => b.classList.add('opacity-40', 'cursor-not-allowed'));
       }
@@ -1186,7 +1377,7 @@
       }
     }
 
-    // ================= SHARE MÀN HÌNH HD & CAMERA MẶT 3D ĐỒNG BỘ SANG MỌI MÁY =================
+    // ================= SHARE MÀN HÌNH HD & CAMERA GÓC TRÁI HỘI TRƯỜNG =================
     async function toggleScreenShare() {
       if (!canCurrentUserPresentOrCam()) {
         alert('💡 Vui lòng bấm "🎙️ Bật Mic Nói Trực Tiếp" (hoặc được Chủ tọa mời phát biểu) để Share Màn Hình HD!');
@@ -1219,7 +1410,6 @@
           btn.innerText = '🛑 Dừng Share HD';
           btn.className = 'px-2.5 py-0.5 bg-rose-600 hover:bg-rose-500 text-white rounded text-xs font-extrabold flex items-center gap-1 shadow animate-pulse';
 
-          // Phát sóng khung hình HD (1280x720, chất lượng 0.78) sang tất cả các máy trong phòng
           if (screenBroadcastTimer) clearInterval(screenBroadcastTimer);
           screenBroadcastTimer = setInterval(() => {
             if (!isScreenSharing || videoEl.readyState < 2) return;
@@ -1262,20 +1452,22 @@
 
     async function toggleUserCamera() {
       if (!canCurrentUserPresentOrCam()) {
-        alert('💡 Vui lòng bấm "🎙️ Bật Mic Nói Trực Tiếp" (hoặc được Chủ tọa mời phát biểu) để bật Camera lên mặt trước nhân vật 3D!');
+        alert('💡 Vui lòng bấm "🎙️ Bật Mic Nói Trực Tiếp" (hoặc được Chủ tọa mời phát biểu) để bật Camera ở góc trái hội trường!');
         return;
       }
       const camVideoEl = document.getElementById('activeCamVideo');
       const pipVideoEl = document.getElementById('activeCamPreviewUI');
       const remoteImgEl = document.getElementById('remoteCamPreviewImg');
-      const pipCard = document.getElementById('activeCamFloatingCard');
+      const placeholder = document.getElementById('camPlaceholderBox');
+      const dot = document.getElementById('camLiveDot');
       const btn = document.getElementById('btnUserCam');
+      const dockBtn = document.getElementById('btnQuickCamDock');
       const me = participants.find(p => p.id === currentViewerId) || participants[0];
 
       if (!isCamActive) {
         try {
           camStream = await navigator.mediaDevices.getUserMedia({
-            video: { width: { ideal: 640 }, height: { ideal: 640 }, facingMode: 'user' },
+            video: { width: { ideal: 640 }, height: { ideal: 420 }, facingMode: 'user' },
             audio: false
           });
           camVideoEl.srcObject = camStream;
@@ -1283,25 +1475,20 @@
           await camVideoEl.play();
           await pipVideoEl.play();
 
-          camVideoTexture = new THREE.VideoTexture(camVideoEl);
-          camVideoTexture.minFilter = THREE.LinearFilter;
-          camVideoTexture.magFilter = THREE.LinearFilter;
-          if (renderer) camVideoTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-
           isCamActive = true;
           isRemoteCamActive = false;
           camOwnerId = currentViewerId;
 
+          placeholder.classList.add('hidden');
           remoteImgEl.classList.add('hidden');
           pipVideoEl.classList.remove('hidden');
-          document.getElementById('camCardHeaderTitle').innerText = '📷 CAM HD ĐANG GẮN MẶT 3D';
-          document.getElementById('activeCamLabelName').innerText = `${me.name} (Đang phát HD sang mọi máy)`;
-          pipCard.classList.remove('hidden');
+          dot.className = 'w-2 h-2 rounded-full bg-red-500 animate-ping';
+          document.getElementById('camCardHeaderTitle').innerText = `📷 CAM: ${me.name.toUpperCase()}`;
 
-          btn.innerText = '🛑 Tắt Cam Mặt 3D';
+          btn.innerText = '🛑 Tắt Camera';
           btn.className = 'px-2.5 py-0.5 bg-rose-600 hover:bg-rose-500 text-white rounded text-xs font-extrabold flex items-center gap-1 shadow animate-pulse';
-
-          build3DScene();
+          dockBtn.innerText = 'Tắt Cam';
+          dockBtn.className = 'bg-rose-600 text-white px-2 py-0.5 rounded text-[10px] font-extrabold';
 
           if (camBroadcastTimer) clearInterval(camBroadcastTimer);
           camBroadcastTimer = setInterval(() => {
@@ -1326,10 +1513,16 @@
         }
         isCamActive = false;
         camOwnerId = null;
-        pipCard.classList.add('hidden');
-        btn.innerText = '📷 Bật Cam Mặt 3D';
+        pipVideoEl.classList.add('hidden');
+        remoteImgEl.classList.add('hidden');
+        placeholder.classList.remove('hidden');
+        dot.className = 'w-2 h-2 rounded-full bg-slate-400';
+        document.getElementById('camCardHeaderTitle').innerText = '📷 CAMERA HỘI TRƯỜNG (GÓC TRÁI)';
+
+        btn.innerText = '📷 Bật Camera Góc Trái';
         btn.className = 'px-2.5 py-0.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded text-xs font-extrabold flex items-center gap-1 shadow';
-        build3DScene();
+        dockBtn.innerText = 'Bật Cam';
+        dockBtn.className = 'bg-amber-400 hover:bg-amber-300 text-slate-950 px-2 py-0.5 rounded text-[10px] font-extrabold';
         broadcastRealtime('CAM_STOP', {});
       }
     }
@@ -1376,10 +1569,7 @@
         alert('⛔ Chỉ có Chủ tọa mới được phát đề thi trắc nghiệm cho toàn phòng!');
         return;
       }
-      if (quizState.questions.length === 0) {
-        alert('Chưa có câu hỏi nào trong đề!');
-        return;
-      }
+      if (quizState.questions.length === 0) return;
       quizState.isActive = true;
       quizState.remainSec = quizState.durationSec || 180;
       mySelectedAnswers = {};
@@ -1414,9 +1604,7 @@
         const m = String(Math.floor(quizState.remainSec / 60)).padStart(2, '0');
         const s = String(quizState.remainSec % 60).padStart(2, '0');
         if (timerEl) timerEl.innerText = `⏱️ ${m}:${s}`;
-        if (quizState.remainSec <= 0) {
-          clearInterval(quizTimerInterval);
-        }
+        if (quizState.remainSec <= 0) clearInterval(quizTimerInterval);
       }, 1000);
     }
 
@@ -1514,16 +1702,16 @@
 
     function drawQuizTo3DScreen() {
       if (!screenCtx) return;
-      screenCtx.fillStyle = '#3b0764';
+      screenCtx.fillStyle = '#1e3a8a';
       screenCtx.fillRect(0, 0, 1920, 1080);
 
-      screenCtx.strokeStyle = '#f43f5e';
+      screenCtx.strokeStyle = '#fbbf24';
       screenCtx.lineWidth = 20;
       screenCtx.strokeRect(24, 24, 1872, 1032);
 
       screenCtx.fillStyle = '#fde047';
       screenCtx.font = 'bold 68px sans-serif';
-      screenCtx.fillText('🎓 ĐANG THI TRẮC NGHIỆM TRỰC TUYẾN TRÊN MÀN HÌNH', 85, 150);
+      screenCtx.fillText('🎓 ĐANG THI TRẮC NGHIỆM TRỰC TUYẾN UTE', 85, 150);
 
       const q1 = quizState.questions[0];
       if (q1) {
@@ -1585,7 +1773,7 @@
                ondrop="handleSeatDrop(event, ${i}); this.classList.remove('drag-over');">
             <div class="flex items-center justify-between text-[11px] text-slate-400 mb-1">
               <span class="font-extrabold text-amber-300">🪑 Ghế #${i} <span class="text-[9px] text-cyan-300">(Bậc ${tierNum})</span></span>
-              ${p ? `<span class="text-[10px] bg-indigo-950 text-indigo-300 px-1.5 py-0.5 rounded">Đã ngồi</span>` : `<span class="text-[10px] text-emerald-400">Trống</span>`}
+              ${p ? `<span class="text-[10px] bg-blue-950 text-blue-300 px-1.5 py-0.5 rounded">Áo UTE</span>` : `<span class="text-[10px] text-emerald-400">Trống</span>`}
             </div>
 
             ${p ? `
@@ -1668,11 +1856,10 @@
       const targetSeat = parseInt(document.getElementById('newMemberSeatSelect').value, 10);
       if (!name) return;
 
-      const palette = [0x38bdf8, 0xf43f5e, 0xa855f7, 0x10b981, 0xeab308];
       participants.push({
         id: 'p_' + Date.now(), name, role,
         seat: isNaN(targetSeat) ? participants.length : targetSeat,
-        color: palette[participants.length % palette.length],
+        avatarUrl: null,
         speaking: false, bubble: '', bounceUntil: 0, isBot: false
       });
       if (targetSeat >= maxSeats) maxSeats = targetSeat + 1;
@@ -1750,7 +1937,6 @@
       if (!file || !currentEditingSponsorId) return;
       const reader = new FileReader();
       reader.onload = (e) => {
-        // Nén chuẩn HD nhẹ để truyền qua mạng tức thì sang máy mọi thành viên
         const tempImg = new Image();
         tempImg.onload = () => {
           const compressCanvas = document.createElement('canvas');
@@ -1859,6 +2045,11 @@
         sel.innerHTML = opts;
       }
 
+      const btnAvatar = document.getElementById('btnChangeThisAvatar');
+      if (btnAvatar) {
+        btnAvatar.style.display = (isCurrentUserHost() || target.id === currentViewerId) ? 'block' : 'none';
+      }
+
       const hostActions = document.getElementById('hostOnlyActionsOnMember');
       if (isCurrentUserHost() && target.id !== currentViewerId) {
         hostActions.classList.remove('hidden');
@@ -1872,7 +2063,7 @@
       let topPos = clientY - rect.top - 40;
       if (leftPos + 275 > rect.width) leftPos = rect.width - 285;
       if (topPos < 15) topPos = 15;
-      if (topPos + 290 > rect.height) topPos = rect.height - 300;
+      if (topPos + 310 > rect.height) topPos = rect.height - 320;
 
       popup.style.left = `${leftPos}px`;
       popup.style.top = `${topPos}px`;
@@ -2021,7 +2212,7 @@
       if (target) {
         participants.forEach(p => p.speaking = false);
         target.speaking = true;
-        target.bubble = `🎙️ Được Chủ tọa mời phát biểu & bật Cam mặt 3D!`;
+        target.bubble = `🎙️ Được Chủ tọa mời phát biểu & bật Cam góc trái!`;
         broadcastRealtime('HOST_ASSIGN', { assignedHostId, activeSpeakerId });
         broadcastRealtime('INTERACT', { targetId: target.id, bubble: target.bubble, emoji: '🎙️' });
       }
@@ -2066,7 +2257,6 @@
 
       renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas3d'), antialias: true, powerPreference: 'high-performance' });
       renderer.setSize(w, h);
-      // Sử dụng toàn bộ mật độ điểm ảnh thật của màn hình để hình ảnh 3D sắc nét tối đa
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2.5));
 
       controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -2092,7 +2282,6 @@
       sceneObjectsGroup = new THREE.Group();
       scene.add(sceneObjectsGroup);
 
-      // Nâng cấp Bảng trình chiếu 3D lên chuẩn Full HD 1920x1080 + lọc Anisotropy tối đa
       screenCanvas = document.createElement('canvas');
       screenCanvas.width = 1920;
       screenCanvas.height = 1080;
@@ -2101,11 +2290,6 @@
       screenTexture.minFilter = THREE.LinearFilter;
       screenTexture.magFilter = THREE.LinearFilter;
       screenTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-
-      remoteFaceTexture = new THREE.CanvasTexture(remoteFaceCanvas);
-      remoteFaceTexture.minFilter = THREE.LinearFilter;
-      remoteFaceTexture.magFilter = THREE.LinearFilter;
-      remoteFaceTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
 
       sponsorSlots.forEach(s => createOrUpdateSponsorCanvasTexture(s));
 
@@ -2245,10 +2429,10 @@
       const btn = document.getElementById('btn3DDragMode');
       if (is3DDragEnabled) {
         btn.innerText = '✋ Kéo Thả 3D: BẬT';
-        btn.className = 'bg-amber-500 text-slate-950 px-2.5 py-1 rounded-lg text-xs font-extrabold shadow animate-pulse';
+        btn.className = 'bg-amber-500 text-slate-950 px-2 py-1 rounded text-[10px] font-extrabold shadow animate-pulse';
       } else {
         btn.innerText = '✋ Kéo Thả 3D: Tắt';
-        btn.className = 'bg-slate-800 hover:bg-amber-500 hover:text-slate-950 border border-amber-500/50 text-amber-300 px-2.5 py-1 rounded-lg text-xs font-bold transition';
+        btn.className = 'bg-slate-800 hover:bg-amber-500 hover:text-slate-950 border border-amber-500/50 text-amber-300 px-2 py-1 rounded text-[10px] font-bold';
       }
     }
 
@@ -2562,7 +2746,9 @@
         }
       }
 
-      // 5. Dựng nhân vật 3D + Camera HD trên mặt trước nhân vật
+      // 5. DỰNG NHÂN VẬT 3D: TẤT CẢ MẶC ÁO XANH DƯƠNG CÓ CHỮ "UTE" + MẶT TRƯỚC LÀ ẢNH AVATAR UPLOAD
+      const shirtMaterials = getUteBlueShirtMaterials();
+
       seatPositions.forEach((pos, idx) => {
         const bY = pos.baseY || 0;
         const stool = new THREE.Mesh(
@@ -2583,73 +2769,63 @@
         group.rotation.y = pos.rotY;
         group.userData = { memberId: p.id };
 
+        // Thân áo đồng phục màu Xanh Dương có chữ "UTE" ở cả ngực áo và lưng áo
         const torso = new THREE.Mesh(
-          new THREE.BoxGeometry(1.25, 1.45, 0.72),
-          new THREE.MeshLambertMaterial({ color: p.color })
+          new THREE.BoxGeometry(1.28, 1.48, 0.74),
+          shirtMaterials
         );
-        torso.position.y = 0.95;
+        torso.position.y = 0.96;
         torso.userData = { memberId: p.id };
         group.add(torso);
 
-        const tie = new THREE.Mesh(
-          new THREE.BoxGeometry(0.22, 0.65, 0.06),
-          new THREE.MeshLambertMaterial({ color: 0xfef08a })
+        // Hai cánh tay áo xanh dương UTE
+        const leftArm = new THREE.Mesh(
+          new THREE.BoxGeometry(0.32, 1.25, 0.36),
+          new THREE.MeshLambertMaterial({ color: 0x1d4ed8 })
         );
-        tie.position.set(0, 1.05, 0.36);
-        tie.userData = { memberId: p.id };
-        group.add(tie);
+        leftArm.position.set(-0.82, 0.98, 0);
+        leftArm.userData = { memberId: p.id };
+        group.add(leftArm);
 
+        const rightArm = leftArm.clone();
+        rightArm.position.set(0.82, 0.98, 0);
+        rightArm.userData = { memberId: p.id };
+        group.add(rightArm);
+
+        // Khối đầu của nhân vật
         const headBox = new THREE.Mesh(
-          new THREE.BoxGeometry(1.05, 1.05, 0.95),
+          new THREE.BoxGeometry(1.06, 1.06, 0.96),
           new THREE.MeshLambertMaterial({ color: 0xfde68a })
         );
-        headBox.position.y = 2.25;
+        headBox.position.y = 2.26;
         headBox.userData = { memberId: p.id };
         group.add(headBox);
 
+        // Tóc nhân vật
         const hair = new THREE.Mesh(
-          new THREE.BoxGeometry(1.1, 0.28, 1.0),
+          new THREE.BoxGeometry(1.1, 0.26, 1.0),
           new THREE.MeshLambertMaterial({ color: 0x1e293b })
         );
-        hair.position.y = 2.82;
+        hair.position.y = 2.84;
         hair.userData = { memberId: p.id };
         group.add(hair);
 
-        const isLocalCamOnThisPerson = (isCamActive && camVideoTexture && camOwnerId === p.id);
-        const isRemoteCamOnThisPerson = (isRemoteCamActive && remoteFaceTexture && camOwnerId === p.id);
-
-        if (isLocalCamOnThisPerson || isRemoteCamOnThisPerson) {
-          const activeFaceTex = isLocalCamOnThisPerson ? camVideoTexture : remoteFaceTexture;
-          const camFacePlane = new THREE.Mesh(
-            new THREE.PlaneGeometry(1.02, 1.02),
-            new THREE.MeshBasicMaterial({ map: activeFaceTex, side: THREE.DoubleSide })
-          );
-          camFacePlane.position.set(0, 2.25, 0.49);
-          camFacePlane.userData = { memberId: p.id };
-          group.add(camFacePlane);
-
-          const camFrame = new THREE.Mesh(
-            new THREE.BoxGeometry(1.12, 1.12, 0.04),
-            new THREE.MeshBasicMaterial({ color: 0x10b981 })
-          );
-          camFrame.position.set(0, 2.25, 0.46);
-          group.add(camFrame);
-        } else {
-          const eyeL = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.14, 0.05), new THREE.MeshBasicMaterial({ color: 0x0f172a }));
-          eyeL.position.set(-0.22, 2.32, 0.48);
-          const eyeR = eyeL.clone();
-          eyeR.position.set(0.22, 2.32, 0.48);
-          const smile = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.08, 0.05), new THREE.MeshBasicMaterial({ color: 0xdc2626 }));
-          smile.position.set(0, 2.05, 0.48);
-          group.add(eyeL, eyeR, smile);
-        }
+        // Mặt trước của nhân vật (+Z = +0.49): Luôn hiển thị Ảnh Avatar (đã upload hoặc Avatar mặc định)
+        const avatarTex = getOrCreateMemberAvatarTexture(p);
+        const avatarFacePlane = new THREE.Mesh(
+          new THREE.PlaneGeometry(1.02, 1.02),
+          new THREE.MeshBasicMaterial({ map: avatarTex })
+        );
+        avatarFacePlane.position.set(0, 2.26, 0.49);
+        avatarFacePlane.userData = { memberId: p.id };
+        group.add(avatarFacePlane);
 
         if (p.id === assignedHostId) {
           const crown = new THREE.Mesh(
             new THREE.ConeGeometry(0.45, 0.48, 6),
             new THREE.MeshBasicMaterial({ color: 0xfbbf24 })
           );
-          crown.position.y = 3.2;
+          crown.position.y = 3.22;
           crown.userData = { memberId: p.id };
           group.add(crown);
         }
@@ -2680,8 +2856,8 @@
           const bubbleClass = p.isPokeBubble ? 'poke' : (p.isWhisperBubble ? 'whisper' : '');
           el.innerHTML = `
             ${p.bubble ? `<div class="speech-bubble-3d ${bubbleClass}">${p.bubble}</div>` : ''}
-            <div onclick="openMemberInteractionMenu(event.clientX, event.clientY, '${p.id}')" title="Click để tương tác, dời chỗ hoặc Kick" class="cursor-pointer px-2.5 py-0.5 rounded-xl text-[11px] font-bold shadow-lg flex items-center gap-1 border ${isHost ? 'bg-amber-500 text-slate-950 border-amber-200' : (isMe ? 'bg-indigo-600 text-white border-indigo-300' : (isSpeaker ? 'bg-emerald-600 text-white border-emerald-300' : 'bg-slate-900/90 text-white border-slate-600 hover:border-amber-400'))}">
-              <span>${isHost ? '👑' : (isSpeaker ? '🎙️' : '👤')} ${p.name}${isMe ? ' (Bạn)' : ''}</span>
+            <div onclick="openMemberInteractionMenu(event.clientX, event.clientY, '${p.id}')" title="Click để tương tác, đổi Avatar, dời chỗ hoặc Kick" class="cursor-pointer px-2.5 py-0.5 rounded-xl text-[11px] font-bold shadow-lg flex items-center gap-1 border ${isHost ? 'bg-amber-500 text-slate-950 border-amber-200' : (isMe ? 'bg-blue-600 text-white border-blue-300' : (isSpeaker ? 'bg-emerald-600 text-white border-emerald-300' : 'bg-slate-900/90 text-white border-slate-600 hover:border-amber-400'))}">
+              <span>${isHost ? '👑' : (isSpeaker ? '🎙️' : '👕')} ${p.name}${isMe ? ' (Bạn)' : ''}</span>
             </div>
           `;
         } else {
@@ -2790,7 +2966,6 @@
         camera.position.set(0, 17, 25);
         controls.target.set(0, 2.5, -2);
       } else if (type === 'boardCloseUp') {
-        // Đưa camera lại sát trước Bảng Full HD 3D để nhìn rõ từng dòng chữ
         camera.position.set(0, 5.0, -3.2);
         controls.target.set(0, 4.9, -14.0);
       } else if (type === 'hostView') {
@@ -2900,7 +3075,6 @@
         badge.innerText = '● Đang truyền âm thanh';
         badge.className = 'text-emerald-400 font-bold';
 
-        // Khởi chạy đồng thời: Truyền gói âm thanh giọng nói thật + Nhận diện thành chữ tiếng Việt
         startLiveVoiceAudioBroadcast();
 
         if (SpeechRecognition) {
@@ -3010,7 +3184,7 @@
       document.getElementById('summaryTextarea').value = `CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
 Độc lập - Tự do - Hạnh phúc
 ----------------------------------------
-BIÊN BẢN TỔNG HỢP HỘI NGHỊ & KẾT QUẢ THI TRẮC NGHIỆM 3D
+BIÊN BẢN TỔNG HỢP HỘI NGHỊ & KẾT QUẢ THI TRẮC NGHIỆM 3D UTE
 
 1. CHỦ TRÌ & DANH SÁCH THAM DỰ (${participants.length} thành viên):
 - Chủ trì điều hành: ${hostObj ? hostObj.name : 'Đình Lâm'}
@@ -3031,12 +3205,12 @@ ${speakerSummary}
       const blob = new Blob([document.getElementById('summaryTextarea').value], { type: 'text/plain;charset=utf-8' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = 'Bien-Ban-Va-Diem-Thi-3D.txt';
+      a.download = 'Bien-Ban-Va-Diem-Thi-UTE-3D.txt';
       a.click();
     }
 
     function triggerSceneSpecialAction() {
-      const msg = currentScene === 'nhau' ? '🍻 1, 2, 3 DÔ 100%!' : '👏 Nhất trí cao với Chủ trì!';
+      const msg = currentScene === 'nhau' ? '🍻 1, 2, 3 DÔ 100%!' : '👏 Tự hào UTE - Nhất trí cao với Chủ trì!';
       participants.forEach(p => {
         p.bubble = msg;
         p.bounceUntil = Date.now() + 1400;
