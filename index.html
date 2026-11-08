@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Khán Phòng 3D UTE V2.0 - Khảo sát, Điểm danh GPS, Huy hiệu Khoa, Bảng điểm</title>
+  <title>Khán Phòng Vòng Cung 3D UTE V2.1 - Khảo sát & WebRTC Voice</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -491,6 +491,8 @@
         <button onclick="toggleMic()" id="btnMic" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-lg shrink-0 transition">
           🎙️ Bật Mic Nói Trực Tiếp
         </button>
+        <button onclick="toggleSpeechTranscription()" id="btnSpeechTranscription" title="Ghi âm giọng nói thành chữ (tùy chọn, mặc định tắt)" class="px-2 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl text-[11px] font-semibold shrink-0">📝 Ghi chữ: TẮT</button>
+        <button onclick="rtcVoiceResumeAudio()" id="btnLiveVoiceListen" title="Bấm để cho phép trình duyệt phát âm thanh từ các thành viên khác" class="px-2 py-2 bg-cyan-800 hover:bg-cyan-700 border border-cyan-500 rounded-xl text-[11px] font-bold shrink-0">🔊 Nghe live</button>
         <button onclick="raiseHand()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl text-xs font-semibold shrink-0">
           ✋ Giơ tay
         </button>
@@ -629,7 +631,7 @@
     <div class="bg-slate-900 border border-cyan-500/50 rounded-2xl shadow-2xl w-full max-w-6xl h-[92vh] flex flex-col overflow-hidden">
       <div class="flex justify-between items-center gap-2 border-b border-slate-700 p-3 sm:px-5">
         <div>
-          <h2 class="text-base font-extrabold text-cyan-300">📊 KHÁN PHÒNG 3D UTE — V2.0</h2>
+          <h2 class="text-base font-extrabold text-cyan-300">📊 KHÁN PHÒNG 3D UTE — V2.1</h2>
           <p class="text-[10px] text-slate-400">Khảo sát • Huy hiệu Khoa • Điểm danh GPS • Kết quả thi</p>
         </div>
         <button onclick="v2Close()" class="bg-rose-700 hover:bg-rose-600 px-4 py-2 rounded-xl text-xs font-bold">✕ Đóng</button>
@@ -642,7 +644,7 @@
       </div>
       <div class="flex-1 overflow-y-auto p-3 sm:p-5 space-y-3" id="v2Content"></div>
       <div class="border-t border-slate-800 px-4 py-2 bg-slate-950 text-[10px] text-amber-200/90">
-        Bản V2 chạy thử trên HTML + MQTT công cộng. GPS được mã hóa trong phiên khi gửi đến trình duyệt chủ tọa; chưa có backend xác thực/lưu trữ an toàn. Không dùng để điểm danh hoặc thi chính thức trước khi triển khai server riêng.
+        Bản V2.1 thử nghiệm: âm thanh live dùng WebRTC mesh tối đa 12 người/phòng và STUN (chưa có TURN/SFU). MQTT công cộng chỉ làm signaling, không dùng cho production; GPS, khảo sát và thi chưa có backend bảo mật.
       </div>
     </div>
   </div>
@@ -1453,6 +1455,7 @@
       isSpeakerAudioEnabled = !isSpeakerAudioEnabled;
       const btn = document.getElementById('btnSpeakerAudio');
       if (isSpeakerAudioEnabled) {
+        rtcVoiceResumeAudio();
         btn.innerText = '🔊 Loa: BẬT';
         btn.className = 'bg-emerald-600/30 hover:bg-emerald-600/50 border border-emerald-400/50 text-emerald-300 px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1';
       } else {
@@ -1460,6 +1463,7 @@
         btn.className = 'bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-400 px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1';
         if (window.speechSynthesis) window.speechSynthesis.cancel();
       }
+      document.querySelectorAll('.rtc-live-audio').forEach(a => { a.muted = !isSpeakerAudioEnabled; });
     }
 
     function speakVietnameseText(text) {
@@ -1473,31 +1477,155 @@
       } catch (e) {}
     }
 
-    async function startLiveVoiceAudioBroadcast() {
-      try {
-        voiceAudioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-        voiceMediaRecorder = new MediaRecorder(voiceAudioStream);
-        voiceMediaRecorder.ondataavailable = (e) => {
-          if (e.data && e.data.size > 0 && micActive) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-              broadcastRealtime('VOICE_AUDIO_CHUNK', { audioBase64: reader.result });
-            };
-            reader.readAsDataURL(e.data);
-          }
-        };
-        voiceMediaRecorder.start(1400);
-      } catch (err) {}
-    }
+    // V2.1: Audio REALTIME WebRTC (không phát MediaRecorder/JPEG qua MQTT).
+    // MQTT chỉ dùng SIGNALING SDP/ICE, không chở âm thanh. Mesh phù hợp thử nghiệm phòng nhỏ.
+    const RTC_VOICE_MAX_ROOM = 12; // 1.000 người cần SFU riêng (LiveKit/mediasoup), không dùng mesh.
+    const rtcVoiceConfig = { iceServers: [
+      { urls:'stun:stun.l.google.com:19302' }, { urls:'stun:stun1.l.google.com:19302' }
+    ]};
+    const rtcVoiceOutPeers = new Map(); // listenerId => RTCPeerConnection (mic -> listener)
+    const rtcVoiceInPeers = new Map(); // speakerId => RTCPeerConnection (speaker -> loa)
+    const rtcVoicePendingIce = new Map();
+    let rtcVoiceStarting = false;
+    let speechTranscriptionEnabled = false;
 
+    function rtcVoiceRoomSize() {
+      return participants.filter(p => p && !p.isBot && (p.id === currentViewerId || Date.now() - (p.lastSeen||0) < 45000)).length;
+    }
+    function rtcVoiceStatus(text, isError=false) {
+      const badge = document.getElementById('micStatusBadge');
+      if (badge) {
+        badge.innerText = text;
+        badge.className = isError ? 'text-rose-400 font-bold' : 'text-emerald-400 font-bold';
+      }
+    }
+    function rtcVoiceResumeAudio() {
+      if (!isSpeakerAudioEnabled) {
+        isSpeakerAudioEnabled = true;
+        const b=document.getElementById('btnSpeakerAudio'); if (b) { b.innerText='🔊 Loa: BẬT'; b.className='bg-emerald-600/30 hover:bg-emerald-600/50 border border-emerald-400/50 text-emerald-300 px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1'; }
+      }
+      document.querySelectorAll('.rtc-live-audio').forEach(a => {
+        a.muted = false;
+        a.play().catch(() => rtcVoiceStatus('🔊 Bấm “Nghe live” để mở âm thanh', true));
+      });
+      const btn=document.getElementById('btnLiveVoiceListen'); if (btn) btn.innerText='🔊 Đang nghe live';
+    }
+    function rtcVoiceDropInbound(speakerId) {
+      const pc=rtcVoiceInPeers.get(speakerId); if(pc) { try{pc.close();}catch(e){} rtcVoiceInPeers.delete(speakerId); }
+      const a=document.getElementById('rtc-live-'+speakerId); if(a) { a.pause();a.srcObject=null;a.remove(); }
+      rtcVoicePendingIce.delete('in:'+speakerId);
+    }
+    function rtcVoiceDropOutbound(listenerId) {
+      const pc=rtcVoiceOutPeers.get(listenerId);if(pc){try{pc.close();}catch(e){}rtcVoiceOutPeers.delete(listenerId);}
+      rtcVoicePendingIce.delete('out:'+listenerId);
+    }
+    function rtcVoiceDropMember(id) { rtcVoiceDropInbound(id);rtcVoiceDropOutbound(id); }
+    async function rtcVoiceApplyIce(pc,key,candidate) {
+      if (!candidate) return;
+      if (!pc || !pc.remoteDescription) {
+        const q=rtcVoicePendingIce.get(key)||[];q.push(candidate);rtcVoicePendingIce.set(key,q);return;
+      }
+      try { await pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch(err) { console.warn('ICE failed',key,err); }
+    }
+    async function rtcVoiceFlushIce(pc,key) {
+      const q=rtcVoicePendingIce.get(key)||[]; rtcVoicePendingIce.delete(key);
+      for(const c of q) await rtcVoiceApplyIce(pc,key,c);
+    }
+    function rtcVoiceAttachRemote(speakerId,stream) {
+      let audio=document.getElementById('rtc-live-'+speakerId);
+      if(!audio) {
+        audio=document.createElement('audio');audio.id='rtc-live-'+speakerId;
+        audio.className='rtc-live-audio';audio.autoplay=true;audio.playsInline=true;
+        audio.style.display='none';document.body.appendChild(audio);
+      }
+      audio.srcObject=stream;audio.muted=!isSpeakerAudioEnabled;
+      if (isSpeakerAudioEnabled) audio.play().catch(() => rtcVoiceStatus('🔊 Bấm “Nghe live” để mở âm thanh',true));
+    }
+    async function rtcVoiceOfferTo(listenerId) {
+      if(!micActive || !voiceAudioStream || !listenerId || listenerId===currentViewerId || rtcVoiceOutPeers.has(listenerId)) return;
+      if(rtcVoiceRoomSize()>RTC_VOICE_MAX_ROOM) return;
+      const pc=new RTCPeerConnection(rtcVoiceConfig);
+      rtcVoiceOutPeers.set(listenerId,pc);
+      voiceAudioStream.getAudioTracks().forEach(track=>pc.addTrack(track,voiceAudioStream));
+      pc.onicecandidate=e=>{if(e.candidate)broadcastRealtime('RTC_VOICE_ICE',{
+        toId:listenerId,speakerId:currentViewerId,candidate:e.candidate.toJSON()
+      });};
+      pc.onconnectionstatechange=()=>{
+        if(pc.connectionState==='failed') rtcVoiceStatus('⚠️ WebRTC không kết nối: kiểm tra mạng/TURN',true);
+      };
+      try {
+        const offer=await pc.createOffer();await pc.setLocalDescription(offer);
+        broadcastRealtime('RTC_VOICE_OFFER',{toId:listenerId,speakerId:currentViewerId,sdp:pc.localDescription.toJSON()});
+      }catch(err){console.warn('RTC voice offer error',err);rtcVoiceDropOutbound(listenerId);}
+    }
+    async function rtcVoiceHandleSignal(type,data,msg) {
+      if(!data || (data.toId && data.toId!==currentViewerId)) return;
+      const remoteId=msg.senderId;
+      try {
+        if(type==='RTC_VOICE_READY') {
+          if(micActive && voiceAudioStream && remoteId!==currentViewerId) rtcVoiceOfferTo(remoteId);
+        } else if(type==='RTC_VOICE_START') {
+          // Một thành viên vừa bật mic; yêu cầu người đó thiết lập audio WebRTC đến ta.
+          if(remoteId!==currentViewerId) broadcastRealtime('RTC_VOICE_READY',{toId:remoteId});
+        } else if(type==='RTC_VOICE_STOP') {
+          rtcVoiceDropInbound(data.speakerId||remoteId);
+        } else if(type==='RTC_VOICE_OFFER' && data.sdp && data.speakerId) {
+          const speakerId=data.speakerId;
+          // Giữ các ICE candidate đến sớm trước SDP lần đầu.
+          if(rtcVoiceInPeers.has(speakerId)) rtcVoiceDropInbound(speakerId);
+          const pc=new RTCPeerConnection(rtcVoiceConfig);
+          rtcVoiceInPeers.set(speakerId,pc);
+          pc.ontrack=e=>rtcVoiceAttachRemote(speakerId,e.streams[0]||new MediaStream([e.track]));
+          pc.onicecandidate=e=>{if(e.candidate)broadcastRealtime('RTC_VOICE_ICE',{
+            toId:speakerId,speakerId,listenerId:currentViewerId,candidate:e.candidate.toJSON()
+          });};
+          pc.onconnectionstatechange=()=>{
+            if(pc.connectionState==='failed')rtcVoiceStatus('⚠️ Không nghe được: thử lại hoặc cần TURN server',true);
+          };
+          await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+          await rtcVoiceFlushIce(pc,'in:'+speakerId);
+          const answer=await pc.createAnswer();await pc.setLocalDescription(answer);
+          broadcastRealtime('RTC_VOICE_ANSWER',{toId:speakerId,speakerId,listenerId:currentViewerId,sdp:pc.localDescription.toJSON()});
+        } else if(type==='RTC_VOICE_ANSWER' && data.sdp && data.speakerId===currentViewerId) {
+          const listenerId=data.listenerId||remoteId;
+          const pc=rtcVoiceOutPeers.get(listenerId);
+          if(pc && pc.signalingState!=='closed') {
+            await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+            await rtcVoiceFlushIce(pc,'out:'+listenerId);
+          }
+        } else if(type==='RTC_VOICE_ICE' && data.candidate && data.speakerId) {
+          if(data.speakerId===currentViewerId) {
+            const listenerId=data.listenerId||remoteId;
+            await rtcVoiceApplyIce(rtcVoiceOutPeers.get(listenerId),'out:'+listenerId,data.candidate);
+          } else {
+            await rtcVoiceApplyIce(rtcVoiceInPeers.get(data.speakerId),'in:'+data.speakerId,data.candidate);
+          }
+        }
+      }catch(err){console.warn('RTC voice signal error',type,err);rtcVoiceStatus('⚠️ Kết nối giọng nói gặp lỗi',true);}
+    }
+    async function startLiveVoiceAudioBroadcast() {
+      if(!window.RTCPeerConnection || !navigator.mediaDevices?.getUserMedia) {
+        throw new Error('Trình duyệt không hỗ trợ WebRTC hoặc trang không chạy bằng HTTPS.');
+      }
+      if(rtcVoiceRoomSize()>RTC_VOICE_MAX_ROOM) {
+        throw new Error('Bản thử nghiệm hỗ trợ voice WebRTC tối đa 12 người/phòng. Phòng lớn cần máy chủ SFU.');
+      }
+      voiceAudioStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},video:false});
+      voiceAudioStream.getAudioTracks().forEach(t=>{t.onended=()=>{if(micActive)toggleMic();};});
+      return voiceAudioStream;
+    }
     function stopLiveVoiceAudioBroadcast() {
-      if (voiceMediaRecorder && voiceMediaRecorder.state !== 'inactive') {
-        try { voiceMediaRecorder.stop(); } catch (e) {}
-      }
-      if (voiceAudioStream) {
-        voiceAudioStream.getTracks().forEach(t => t.stop());
-        voiceAudioStream = null;
-      }
+      if (voiceAudioStream) broadcastRealtime('RTC_VOICE_STOP',{speakerId:currentViewerId});
+      for(const id of [...rtcVoiceOutPeers.keys()]) rtcVoiceDropOutbound(id);
+      if(voiceAudioStream){voiceAudioStream.getTracks().forEach(t=>{t.onended=null;t.stop();});voiceAudioStream=null;}
+    }
+    function rtcVoiceCleanup() {
+      stopLiveVoiceAudioBroadcast();
+      for(const id of [...rtcVoiceInPeers.keys()])rtcVoiceDropInbound(id);
+      rtcVoicePendingIce.clear();
+      micActive=false;rtcVoiceStarting=false;
+      if (recognition) try{recognition.stop();}catch(e){}
+      const b=document.getElementById('btnMic'); if(b){b.innerText='🎙️ Bật Mic Nói Trực Tiếp';b.disabled=false;b.className='px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-extrabold shrink-0';}
     }
 
     // ================= HỆ THỐNG ĐỒNG BỘ MẠNG TOÀN DIỆN =================
@@ -1514,6 +1642,7 @@
         return;
       }
       if (mqttClient) {
+        if(currentRoomChannel !== cleanKey) rtcVoiceCleanup();
         try { mqttClient.end(true); } catch (e) {}
       }
       currentRoomChannel = cleanKey;
@@ -1591,6 +1720,10 @@
         if (senderP) senderP.lastSeen = Date.now();
       }
 
+      if (type.startsWith('RTC_VOICE_')) {
+        rtcVoiceHandleSignal(type,data||{},msg);
+        return;
+      }
       if (type.startsWith('V2_')) {
         v2HandleRealtime(type, data || {}, msg);
         return;
@@ -1598,6 +1731,7 @@
 
       if (type === 'USER_LEAVE' && data && data.memberId) {
         if (isCurrentUserHost()) v2MarkLeave(data.memberId);
+        rtcVoiceDropMember(data.memberId);
         removeMemberFromRoomAndGroups(data.memberId);
         return;
       } else if (type === 'HEARTBEAT' && data && data.memberId) {
@@ -1616,6 +1750,7 @@
         }
 
         const seatChanged = resolveSeatCollisions();
+        if(micActive && incoming.id!==currentViewerId) rtcVoiceOfferTo(incoming.id);
 
         updateOnlineCountUI();
         renderWhisperUI();
@@ -1755,11 +1890,7 @@
         document.getElementById('remoteCamPreviewImg').classList.add('hidden');
         document.getElementById('activeCamPreviewUI').classList.add('hidden');
       } else if (type === 'VOICE_AUDIO_CHUNK' && data && data.audioBase64) {
-        if (isSpeakerAudioEnabled) {
-          const player = document.getElementById('remoteVoiceAudioPlayer');
-          player.src = data.audioBase64;
-          player.play().catch(() => {});
-        }
+        // Tương thích ngược với V1: bỏ qua các đoạn audio MQTT, vì chúng gây ngắt quãng.
       } else if (type === 'SPONSOR_UPDATE' && data && data.slot) {
         const targetSlot = sponsorSlots.find(s => s.id === data.slot.id);
         if (targetSlot) {
@@ -1812,7 +1943,7 @@
       } else if (type === 'SPEECH' && data) {
         transcripts.push(data.entry);
         renderTranscripts();
-        speakVietnameseText(data.entry.text);
+        if(data.entry.kind !== 'voice_transcript') speakVietnameseText(data.entry.text);
         const speakerP = participants.find(p => p.id === data.personId);
         if (speakerP) {
           speakerP.speaking = true;
@@ -2111,6 +2242,7 @@
 
       connectRealtimeRoom(roomCode);
       broadcastRealtime('USER_JOIN', { member: me });
+      broadcastRealtime('RTC_VOICE_READY',{listenerId:currentViewerId});
       v2Checkin(me);
       if (isCurrentUserHost()) v2InitGpsKey();
       startRoomHeartbeat();
@@ -3819,10 +3951,10 @@
       list.scrollTop = list.scrollHeight;
     }
 
-    function recordSpeech(personId, text) {
+    function recordSpeech(personId, text, kind='text') {
       const p = participants.find(x => x.id === personId) || participants[0];
       const now = new Date().toTimeString().split(' ')[0];
-      const entry = { time: now, speaker: p.name, role: p.role, text };
+      const entry = { time: now, speaker: p.name, role: p.role, text, kind };
       transcripts.push(entry);
       renderTranscripts();
 
@@ -3860,46 +3992,62 @@
 
     let recognition = null;
     let micActive = false;
-    function toggleMic() {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const btn = document.getElementById('btnMic');
-      const badge = document.getElementById('micStatusBadge');
-
-      if (!micActive) {
-        micActive = true;
-        activeSpeakerId = currentViewerId;
-        updatePermissionUI();
-
-        btn.innerText = '🛑 Đang Truyền Giọng Nói...';
-        btn.className = 'px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-extrabold animate-pulse shrink-0';
-        badge.innerText = '● Đang truyền âm thanh';
-        badge.className = 'text-emerald-400 font-bold';
-
-        startLiveVoiceAudioBroadcast();
-
-        if (SpeechRecognition) {
-          if (!recognition) {
-            recognition = new SpeechRecognition();
-            recognition.lang = 'vi-VN';
-            recognition.continuous = true;
-            recognition.onresult = (e) => {
-              const last = e.results[e.results.length - 1];
-              if (last.isFinal) recordSpeech(currentViewerId, last[0].transcript.trim());
-            };
-          }
-          try { recognition.start(); } catch (e) {}
-        }
+    function v21UpdateSpeechTranscriptUI() {
+      const btn=document.getElementById('btnSpeechTranscription');if(!btn)return;
+      btn.innerText = speechTranscriptionEnabled ? '📝 Ghi chữ: BẬT' : '📝 Ghi chữ: TẮT';
+      btn.className = speechTranscriptionEnabled
+        ? 'px-2 py-2 bg-indigo-700 border border-indigo-400 rounded-xl text-[11px] font-semibold shrink-0'
+        : 'px-2 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl text-[11px] font-semibold shrink-0';
+    }
+    function v21StartTranscript() {
+      const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+      if(!SR) {speechTranscriptionEnabled=false;v21UpdateSpeechTranscriptUI();alert('Trình duyệt chưa hỗ trợ chuyển giọng nói thành chữ. Micro WebRTC vẫn hoạt động độc lập.');return;}
+      if(!recognition) {
+        recognition=new SR();recognition.lang='vi-VN';recognition.continuous=true;recognition.interimResults=false;
+        recognition.onresult=e=>{
+          const last=e.results[e.results.length-1];
+          if(last.isFinal && micActive && speechTranscriptionEnabled)recordSpeech(currentViewerId,last[0].transcript.trim(),'voice_transcript');
+        };
+        recognition.onerror=e=>console.warn('Speech-to-text error:',e.error);
+        recognition.onend=()=>{
+          // Không tự động khởi động lại liên tục; cho phép người dùng bấm lại.
+          if(!micActive) return;
+        };
+      }
+      try{recognition.start();}catch(e){console.warn('SpeechRecognition start',e);}
+    }
+    function toggleSpeechTranscription() {
+      speechTranscriptionEnabled=!speechTranscriptionEnabled;
+      v21UpdateSpeechTranscriptUI();
+      if(speechTranscriptionEnabled && micActive) v21StartTranscript();
+      else if(recognition) try{recognition.stop();}catch(e){}
+    }
+    async function toggleMic() {
+      const btn=document.getElementById('btnMic');
+      if (rtcVoiceStarting) return;
+      if(!micActive) {
+        if(!hasEnteredRoom) return alert('Vui lòng vào phòng trước khi bật micro.');
+        rtcVoiceStarting=true;btn.disabled=true;btn.innerText='🎙️ Đang xin quyền Micro...';
+        try {
+          await startLiveVoiceAudioBroadcast();
+          micActive=true;activeSpeakerId=currentViewerId;updatePermissionUI();
+          btn.innerText='🛑 Tắt Mic Live';
+          btn.className='px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-extrabold animate-pulse shrink-0';
+          rtcVoiceStatus('● Đang phát giọng nói WebRTC');
+          broadcastRealtime('RTC_VOICE_START',{speakerId:currentViewerId});
+          // Danh sách thành viên hiện có; thành viên mới sẽ được kết nối trong USER_JOIN/RTC_VOICE_READY.
+          for(const p of participants) if(!p.isBot && p.id!==currentViewerId && (!p.lastSeen || Date.now()-p.lastSeen<45000)) rtcVoiceOfferTo(p.id);
+          if(speechTranscriptionEnabled) v21StartTranscript();
+        }catch(err){
+          rtcVoiceStatus('⚠️ Không bật được micro',true);
+          alert('Không bật được micro trực tiếp: '+(err.message||err)+'\nKiểm tra quyền Micro, HTTPS và kết nối mạng.');
+        }finally{rtcVoiceStarting=false;btn.disabled=false;if(!micActive)btn.innerText='🎙️ Bật Mic Nói Trực Tiếp';}
       } else {
-        if (recognition) {
-          try { recognition.stop(); } catch (e) {}
-        }
-        stopLiveVoiceAudioBroadcast();
-        micActive = false;
-        btn.innerText = '🎙️ Bật Mic Nói Trực Tiếp';
-        btn.className = 'px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-extrabold shrink-0';
-        badge.innerText = '● Mic tắt';
-        badge.className = 'text-slate-500';
-        updatePermissionUI();
+        if(recognition)try{recognition.stop();}catch(e){}
+        stopLiveVoiceAudioBroadcast();micActive=false;
+        btn.innerText='🎙️ Bật Mic Nói Trực Tiếp';
+        btn.className='px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-extrabold shrink-0';
+        rtcVoiceStatus('● Mic tắt');updatePermissionUI();
       }
     }
 
@@ -4167,6 +4315,7 @@ ${speakerSummary}
             <div id="v2QOptionsBox" class="md:col-span-2"><label class="v2-label">Phương án lựa chọn — mỗi dòng một phương án</label><textarea id="v2DraftQOptions" class="v2-field" rows="3" placeholder="Phương án 1&#10;Phương án 2&#10;Phương án 3"></textarea></div>
           </div>
           <button class="v2-btn" onclick="v2AddDraftQuestion()">+ Thêm câu hỏi</button>
+          <p class="text-xs text-emerald-200">💡 Anh có thể bấm <b>Phát khảo sát</b> ngay sau khi nhập câu hỏi. Hệ thống sẽ tự thêm câu đang soạn; không cần bấm “+ Thêm câu hỏi”.</p>
           <div class="space-y-1">${v2DraftQuestions.map((q,i)=>`<div class="flex gap-2 justify-between rounded bg-slate-800 p-2 text-xs"><span>${i+1}. ${v2Esc(q.text)} <span class="text-slate-400">(${v2Esc(q.type)})</span></span><button onclick="v2DraftQuestions.splice(${i},1);v2Render()" class="text-rose-400">Xóa</button></div>`).join('') || '<p class="text-xs text-slate-500">Chưa có câu hỏi. Thêm tối thiểu một câu hỏi để phát khảo sát.</p>'}</div>
           <div class="flex flex-wrap gap-3 text-xs">
             <label><input type="checkbox" id="v2SurveyAnon" checked /> Ẩn danh trong báo cáo</label>
@@ -4183,23 +4332,29 @@ ${speakerSummary}
       const archive = host && v2Surveys.length ? `<div class="v2-panel-card"><div class="font-bold text-xs mb-2">Lịch sử khảo sát (trong phiên hiện tại)</div>${v2Surveys.slice().reverse().map(s=>`<div class="text-xs py-1 border-b border-slate-700 flex justify-between"><span>${v2Esc(s.title)} · ${s.status} · ${s.responseCount||(s.responses||[]).length} phiếu</span><button class="text-cyan-300" onclick="v2ViewSurvey('${s.id}')">Xem</button></div>`).join('')}</div>`:'';
       return `<div class="space-y-3">${hostBuilder}${surveyStatus}${archive}</div>`;
     }
-    function v2AddDraftQuestion() {
+    function v2AddDraftQuestion(shouldRender=true) {
       const text=document.getElementById('v2DraftQText').value.trim();
       const type=document.getElementById('v2DraftQType').value;
       let options=document.getElementById('v2DraftQOptions').value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
-      if (!text) return alert('Vui lòng nhập nội dung câu hỏi.');
+      if (!text) { alert('Vui lòng nhập nội dung câu hỏi.'); return false; }
       if (type==='yesno') options=['Có','Không'];
       if (type==='likert') options=['1 - Rất không đồng ý','2 - Không đồng ý','3 - Trung lập','4 - Đồng ý','5 - Rất đồng ý'];
-      if (['single','multiple'].includes(type) && options.length<2) return alert('Phải có ít nhất 2 lựa chọn.');
+      if (['single','multiple'].includes(type) && options.length<2) { alert('Phải có ít nhất 2 lựa chọn.'); return false; }
       window.v2DraftSurveyMode=document.getElementById('v2SurveyMode').value;
       window.v2DraftAnon=document.getElementById('v2SurveyAnon').checked;
       window.v2DraftVisible=document.getElementById('v2SurveyVisible').checked;
-      v2DraftQuestions.push({id:v2Id(),text,type,options}); v2Render();
+      v2DraftQuestions.push({id:v2Id(),text,type,options});
+      if (shouldRender) v2Render();
+      return true;
     }
     function v2PublishSurvey() {
       if (!isCurrentUserHost()) return;
       if (v2Surveys.some(s=>s.status==='active')) return alert('Hãy đóng khảo sát đang hoạt động trước.');
-      if (!v2DraftQuestions.length) return alert('Cần có ít nhất một câu hỏi.');
+      // V2.1: người tổ chức thường nhập xong rồi bấm "Phát" mà chưa bấm "Thêm câu hỏi".
+      // Tự động đưa câu hỏi đang soạn vào danh sách, chỉ dừng nếu nội dung không hợp lệ.
+      const pendingText = document.getElementById('v2DraftQText')?.value.trim();
+      if(pendingText && !v2AddDraftQuestion(false)) return;
+      if (!v2DraftQuestions.length) return alert('Cần có ít nhất một câu hỏi. Hãy nhập nội dung câu hỏi trước khi phát.');
       const s={id:v2Id(), title:(document.getElementById('v2SurveyTitle').value.trim()||'Khảo sát cuộc họp'),questions:structuredClone(v2DraftQuestions),
         revealMode:document.getElementById('v2SurveyMode').value,anonymous:document.getElementById('v2SurveyAnon').checked,
         visibleToParticipants:document.getElementById('v2SurveyVisible').checked,status:'active',revealNow:false,responses:[],responseCount:0};
