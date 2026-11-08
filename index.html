@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Khán Phòng Vòng Cung 3D UTE - Share 6 Màn Hình (3x2 Grid)</title>
+  <title>Khán Phòng 3D UTE V2.0 - Khảo sát, Điểm danh GPS, Huy hiệu Khoa, Bảng điểm</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; }
@@ -38,6 +39,18 @@
     .seat-slot-card.drag-over { border-color: #fbbf24 !important; background: rgba(245, 158, 11, 0.2) !important; transform: scale(1.03); }
     ::-webkit-scrollbar { width: 5px; height: 5px; }
     ::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
+    /* V2 - module khảo sát / điểm danh / huy hiệu khoa */
+    .v2-tab.active { background: #2563eb; color: white; border-color: #60a5fa; }
+    .v2-tab { background: #1e293b; color: #cbd5e1; border: 1px solid #334155; padding: 8px 12px; border-radius: 10px; font-size: 12px; font-weight: 700; }
+    .v2-field { width: 100%; background: #020617; border: 1px solid #475569; border-radius: 9px; padding: 9px 11px; font-size: 12px; color: #f8fafc; }
+    .v2-label { display: block; font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 5px; }
+    .v2-btn { background: #2563eb; color: white; border-radius: 9px; padding: 9px 12px; font-size: 12px; font-weight: 700; }
+    .v2-btn:disabled { opacity: .4; cursor: not-allowed; }
+    .v2-panel-card { background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 12px; }
+    .v2-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    .v2-table th, .v2-table td { border-bottom: 1px solid #334155; padding: 8px; text-align: left; vertical-align: top; }
+    .v2-table th { background: #1e293b; color: #a5f3fc; position: sticky; top: 0; }
+    .v2-pill { border-radius: 100px; padding: 2px 8px; background: #334155; font-size: 10px; }
   </style>
 </head>
 <body class="h-screen w-screen flex flex-col select-none">
@@ -200,6 +213,24 @@
           </div>
         </div>
 
+        <!-- V2: Mã người dùng và huy hiệu Khoa -->
+        <div class="grid grid-cols-2 gap-2 bg-indigo-950/25 border border-indigo-500/30 rounded-xl p-3">
+          <div>
+            <label class="v2-label">🪪 MSSV / Mã nhân viên</label>
+            <input id="v2UserCode" class="v2-field" placeholder="VD: SV2026001" maxlength="60" />
+          </div>
+          <div>
+            <label class="v2-label">🏅 Khoa / Đơn vị</label>
+            <input id="v2FacultyName" class="v2-field" list="v2FacultySuggestions" placeholder="Chọn hoặc nhập tên Khoa" maxlength="100" />
+            <datalist id="v2FacultySuggestions">
+              <option value="Khoa Kinh tế"></option><option value="Khoa Công nghệ thông tin"></option>
+              <option value="Khoa Cơ khí"></option><option value="Khoa Điện - Điện tử"></option>
+              <option value="Phòng/Ban chức năng"></option><option value="Khách mời"></option>
+            </datalist>
+          </div>
+          <div class="col-span-2 text-[10px] text-slate-400">Huy hiệu Khoa sẽ xuất hiện trên ngực áo 3D và bảng tên. Thông tin do người dùng tự nhập ở bản V2 thử nghiệm.</div>
+        </div>
+
         <div class="bg-slate-800/80 border border-blue-500/40 rounded-xl p-2.5 flex items-center justify-between gap-3">
           <div class="flex items-center gap-2.5">
             <div id="loginAvatarPreviewBox" class="w-11 h-11 rounded-xl bg-blue-700 border-2 border-amber-400 flex items-center justify-center overflow-hidden shrink-0 font-extrabold text-white text-xs">
@@ -267,6 +298,7 @@
       <button onclick="openQuizPanelFromHeader()" class="bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-extrabold flex items-center gap-1 shadow">
         🎓 Đề Thi
       </button>
+      <button onclick="v2Open('survey')" class="bg-cyan-700 hover:bg-cyan-600 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold" title="Khảo sát - Điểm danh - Bảng điểm - Huy hiệu Khoa">📊 V2 · Khảo sát / Điểm danh</button>
       <button onclick="openSeatingPlannerModal()" id="btnSeatingPlanner" class="bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 shadow">
         🗺️ Xếp Chỗ
       </button>
@@ -482,6 +514,7 @@
         <button onclick="switchTab('transcript')" id="tab-transcript" class="flex-1 py-2 rounded-xl bg-indigo-600 text-white">🎙️ Phát biểu</button>
         <button onclick="switchTab('quiz')" id="tab-quiz" class="flex-1 py-2 rounded-xl bg-slate-800 text-rose-300 hover:text-white">🎓 Trắc nghiệm</button>
         <button onclick="switchTab('whisper')" id="tab-whisper" class="flex-1 py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white">💬 Chat nhóm</button>
+        <button onclick="v2Open('survey')" class="flex-1 py-2 rounded-xl bg-cyan-800 text-white" title="Mở các công cụ V2">📊 V2</button>
         <button onclick="switchTab('summary')" id="tab-summary" class="flex-1 py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white">📝 Biên bản</button>
         <button onclick="toggleRightSidebar()" class="px-2.5 py-2 rounded-xl bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white font-extrabold transition" title="Ẩn Sidebar để mở rộng không gian 3D ra toàn màn hình">
           ✕
@@ -588,6 +621,30 @@
         <textarea id="summaryTextarea" class="flex-1 w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-200 leading-relaxed focus:outline-none resize-none"></textarea>
       </div>
     </aside>
+  </div>
+
+
+  <!-- V2: KHẢO SÁT, HUY HIỆU, GPS ĐIỂM DANH, BẢNG ĐIỂM -->
+  <div id="v2Modal" class="hidden fixed inset-0 bg-black/85 backdrop-blur-md z-50 items-center justify-center p-2 sm:p-4" role="dialog" aria-modal="true" aria-label="Bảng điều khiển V2">
+    <div class="bg-slate-900 border border-cyan-500/50 rounded-2xl shadow-2xl w-full max-w-6xl h-[92vh] flex flex-col overflow-hidden">
+      <div class="flex justify-between items-center gap-2 border-b border-slate-700 p-3 sm:px-5">
+        <div>
+          <h2 class="text-base font-extrabold text-cyan-300">📊 KHÁN PHÒNG 3D UTE — V2.0</h2>
+          <p class="text-[10px] text-slate-400">Khảo sát • Huy hiệu Khoa • Điểm danh GPS • Kết quả thi</p>
+        </div>
+        <button onclick="v2Close()" class="bg-rose-700 hover:bg-rose-600 px-4 py-2 rounded-xl text-xs font-bold">✕ Đóng</button>
+      </div>
+      <div class="flex flex-wrap gap-2 p-3 border-b border-slate-800" id="v2TabButtons">
+        <button class="v2-tab active" data-v2-tab="survey" onclick="v2Switch('survey')">📋 Khảo sát</button>
+        <button class="v2-tab" data-v2-tab="attendance" onclick="v2Switch('attendance')">📍 Điểm danh / GPS</button>
+        <button class="v2-tab" data-v2-tab="grades" onclick="v2Switch('grades')">🏆 Bảng điểm / Xuất Excel</button>
+        <button class="v2-tab" data-v2-tab="faculty" onclick="v2Switch('faculty')">🏅 Huy hiệu Khoa</button>
+      </div>
+      <div class="flex-1 overflow-y-auto p-3 sm:p-5 space-y-3" id="v2Content"></div>
+      <div class="border-t border-slate-800 px-4 py-2 bg-slate-950 text-[10px] text-amber-200/90">
+        Bản V2 chạy thử trên HTML + MQTT công cộng. GPS được mã hóa trong phiên khi gửi đến trình duyệt chủ tọa; chưa có backend xác thực/lưu trữ an toàn. Không dùng để điểm danh hoặc thi chính thức trước khi triển khai server riêng.
+      </div>
+    </div>
   </div>
 
   <!-- MODAL 1: SƠ ĐỒ KÉO THẢ & CHỈ ĐỊNH CHỖ NGỒI TỪ TRƯỚC -->
@@ -1039,6 +1096,7 @@
         const now = Date.now();
         const me = participants.find(p => p.id === currentViewerId);
         if (me) me.lastSeen = now;
+        if (isCurrentUserHost()) v2TouchAttendance(currentViewerId);
 
         broadcastRealtime('HEARTBEAT', { memberId: currentViewerId });
 
@@ -1533,14 +1591,22 @@
         if (senderP) senderP.lastSeen = Date.now();
       }
 
+      if (type.startsWith('V2_')) {
+        v2HandleRealtime(type, data || {}, msg);
+        return;
+      }
+
       if (type === 'USER_LEAVE' && data && data.memberId) {
+        if (isCurrentUserHost()) v2MarkLeave(data.memberId);
         removeMemberFromRoomAndGroups(data.memberId);
         return;
       } else if (type === 'HEARTBEAT' && data && data.memberId) {
+        if (isCurrentUserHost()) v2TouchAttendance(data.memberId);
         const p = participants.find(x => x.id === data.memberId);
         if (p) p.lastSeen = Date.now();
         return;
       } else if (type === 'USER_JOIN' && data.member) {
+        if (isCurrentUserHost()) v2MarkAttendance(data.member, Date.now());
         const incoming = { ...data.member, lastSeen: Date.now() };
         const idx = participants.findIndex(p => p.id === incoming.id);
         if (idx >= 0) {
@@ -1608,6 +1674,17 @@
             }
           });
         }
+        if (Array.isArray(data.v2PublicSurveys) && !isCurrentUserHost()) {
+          v2Surveys = data.v2PublicSurveys;
+        }
+        if (Array.isArray(data.v2FacultyCatalog)) {
+          v2FacultyCatalog = data.v2FacultyCatalog;
+          v2UpdateFacultySuggestions();
+        }
+        if (data.v2HostGpsPublicJwk) {
+          v2HostGpsPublicJwk = data.v2HostGpsPublicJwk;
+          v2TrySendPendingGps();
+        }
         if (data.quizState) {
           quizState.questions = data.quizState.questions || quizState.questions;
           quizState.submissions = data.quizState.submissions || quizState.submissions;
@@ -1623,6 +1700,7 @@
         updateOnlineCountUI();
         renderWhisperUI();
         build3DScene();
+        v2RenderIfOpen();
       } else if (type === 'AVATAR_UPDATE' && data) {
         const target = participants.find(p => p.id === data.memberId);
         if (target) {
@@ -1780,6 +1858,7 @@
         if (existIdx >= 0) quizState.submissions[existIdx] = sub;
         else quizState.submissions.push(sub);
         renderQuizUI();
+        v2RenderIfOpen();
 
         const studentP = participants.find(p => p.id === sub.memberId);
         if (studentP) {
@@ -1806,7 +1885,10 @@
         transcripts: transcripts.slice(-30),
         preassignedSeatNames,
         sponsorsMeta,
-        quizState
+        quizState,
+        v2PublicSurveys: v2Surveys.map(v2PublicSurvey),
+        v2FacultyCatalog,
+        v2HostGpsPublicJwk: v2HostGpsPublicJwk
       });
     }
 
@@ -2005,6 +2087,14 @@
         }
       }
 
+      if (v2BoundRoom && v2BoundRoom !== roomCode) v2ResetRoomData();
+      v2BoundRoom = roomCode;
+      // V2: gắn mã người dùng và Khoa vào hồ sơ đã tạo.
+      const v2Member = participants.find(p => p.id === currentViewerId);
+      if (v2Member) {
+        v2Member.userCode = document.getElementById('v2UserCode').value.trim();
+        v2Member.faculty = document.getElementById('v2FacultyName').value.trim() || 'Khách mời';
+      }
       hasEnteredRoom = true;
       resolveSeatCollisions();
 
@@ -2021,6 +2111,8 @@
 
       connectRealtimeRoom(roomCode);
       broadcastRealtime('USER_JOIN', { member: me });
+      v2Checkin(me);
+      if (isCurrentUserHost()) v2InitGpsKey();
       startRoomHeartbeat();
 
       if (lobbyMode === 'create') {
@@ -2266,6 +2358,9 @@
         return;
       }
       if (quizState.questions.length === 0) return;
+      if (quizState.submissions && quizState.submissions.length) v2ArchiveQuiz();
+      quizState.runId = 'quiz_' + Date.now();
+      quizState.submissions = [];
       quizState.isActive = true;
       quizState.remainSec = quizState.durationSec || 180;
       mySelectedAnswers = {};
@@ -2281,6 +2376,7 @@
     function endActiveQuiz() {
       if (!isCurrentUserHost()) return;
       quizState.isActive = false;
+      v2ArchiveQuiz();
       if (quizTimerInterval) clearInterval(quizTimerInterval);
       document.getElementById('liveQuizFloatingBanner').classList.add('hidden');
       drawMultiScreenOrSlideTo3DBoard();
@@ -2340,6 +2436,7 @@
       sendReaction('💯', true);
 
       broadcastRealtime('QUIZ_SUBMIT', { submission });
+      v2RenderIfOpen();
     }
 
     function renderQuizUI() {
@@ -3500,6 +3597,17 @@
         hair.userData = { memberId: p.id };
         group.add(hair);
 
+        // V2: Huy hiệu Khoa trên ngực áo nhân vật (canvas texture, không che mặt).
+        if (p.faculty) {
+          const facultyBadge = new THREE.Mesh(
+            new THREE.PlaneGeometry(0.36, 0.36),
+            new THREE.MeshBasicMaterial({ map: v2FacultyTexture(p.faculty), transparent: true, side: THREE.DoubleSide })
+          );
+          facultyBadge.position.set(0.30, 1.55, 0.512);
+          facultyBadge.userData = { memberId: p.id };
+          group.add(facultyBadge);
+        }
+
         const avatarTex = getOrCreateMemberAvatarTexture(p);
         const avatarFacePlane = new THREE.Mesh(
           new THREE.PlaneGeometry(1.02, 1.02),
@@ -3546,7 +3654,8 @@
           el.innerHTML = `
             ${p.bubble ? `<div class="speech-bubble-3d ${bubbleClass}">${p.bubble}</div>` : ''}
             <div onclick="openMemberInteractionMenu(event.clientX, event.clientY, '${p.id}')" title="Click để tương tác, đổi Avatar, dời chỗ hoặc Kick" class="cursor-pointer px-2.5 py-0.5 rounded-xl text-[11px] font-bold shadow-lg flex items-center gap-1 border ${isHost ? 'bg-amber-500 text-slate-950 border-amber-200' : (isMe ? 'bg-blue-600 text-white border-blue-300' : (isSpeaker ? 'bg-emerald-600 text-white border-emerald-300' : 'bg-slate-900/90 text-white border-slate-600 hover:border-amber-400'))}">
-              <span>${isHost ? '👑' : (isSpeaker ? '🎙️' : '👕')} #${idx} ${p.name}${isMe ? ' (Bạn)' : ''}</span>
+              <span>${isHost ? '👑' : (isSpeaker ? '🎙️' : '👕')} #${idx} ${v2Esc(p.name)}${isMe ? ' (Bạn)' : ''}</span>
+              ${p.faculty ? `<span title="${v2Esc(p.faculty)}" class="bg-cyan-700/70 text-white px-1.5 rounded text-[9px]">🏅${v2Esc(v2FacultyShort(p.faculty))}</span>` : ''}
             </div>
           `;
         } else {
@@ -3937,6 +4046,442 @@ ${speakerSummary}
       if (tab === 'quiz') renderQuizUI();
     }
 
+    // ===== V2: Khảo sát, điểm danh, huy hiệu Khoa và xuất báo cáo (prototype) =====
+    let v2BoundRoom = null;
+    let v2ActiveTab = 'survey';
+    let v2DraftQuestions = [];
+    let v2Surveys = [];
+    let v2SurveyAnswers = Object.create(null);
+    let v2Attendance = Object.create(null);  // Chủ tọa lưu tạm RAM. Không gửi GPS plaintext qua MQTT.
+    let v2QuizHistory = [];
+    let v2FacultyCatalog = [
+      { name:'Khoa Kinh tế', abbr:'KT', color:'#0d9488', logo:null },
+      { name:'Khoa Công nghệ thông tin', abbr:'CNTT', color:'#2563eb', logo:null },
+      { name:'Khoa Cơ khí', abbr:'CK', color:'#b45309', logo:null },
+      { name:'Khoa Điện - Điện tử', abbr:'ĐĐT', color:'#7c3aed', logo:null },
+      { name:'Phòng/Ban chức năng', abbr:'PB', color:'#db2777', logo:null },
+      { name:'Khách mời', abbr:'KM', color:'#64748b', logo:null }
+    ];
+    let v2HostGpsKeyPair = null;
+    let v2HostGpsPublicJwk = null;
+    let v2LastMyGps = null;
+    let v2GpsStatus = 'Chưa lấy vị trí';
+    const v2BadgeTextures = new Map();
+
+    function v2ResetRoomData() {
+      v2Surveys=[];v2DraftQuestions=[];v2SurveyAnswers=Object.create(null);
+      v2Attendance=Object.create(null);v2QuizHistory=[];
+      v2HostGpsKeyPair=null;v2HostGpsPublicJwk=null;v2LastMyGps=null;
+      v2GpsStatus='Chưa lấy vị trí';
+    }
+    function v2Esc(str) {
+      return String(str == null ? '' : str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+    function v2Id() { return 'v2_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8); }
+    function v2Date(val) { return val ? new Date(val).toLocaleString('vi-VN', { hour12:false }) : '—'; }
+    function v2FacultyShort(name) {
+      const item = v2FacultyCatalog.find(x => x.name.toLowerCase() === String(name || '').toLowerCase());
+      return item ? item.abbr : String(name || 'KM').split(/\s+/).filter(Boolean).slice(-2).map(x => x.charAt(0).toUpperCase()).join('').slice(0,4);
+    }
+    function v2FacultyTexture(faculty) {
+      const def = v2FacultyCatalog.find(x => x.name === faculty) || {abbr:v2FacultyShort(faculty),color:'#0e7490',logo:null};
+      const key = faculty + ':' + (def.logo ? def.logo.length : '') + ':' + def.color;
+      if (v2BadgeTextures.has(key)) return v2BadgeTextures.get(key);
+      const canvas = document.createElement('canvas'); canvas.width=128; canvas.height=128;
+      const ctx=canvas.getContext('2d');
+      ctx.clearRect(0,0,128,128);
+      ctx.fillStyle='#f8fafc';ctx.beginPath();ctx.arc(64,64,59,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle=def.color;ctx.beginPath();ctx.arc(64,64,52,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='#fbbf24';ctx.lineWidth=5;ctx.beginPath();ctx.arc(64,64,52,0,Math.PI*2);ctx.stroke();
+      ctx.fillStyle='#ffffff';ctx.font='bold 33px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText((def.abbr||'K').slice(0,5),64,66,98);
+      const texture = new THREE.CanvasTexture(canvas); texture.needsUpdate=true;
+      if (def.logo) {
+        const img = new Image();
+        img.onload=()=>{
+          ctx.fillStyle=def.color;ctx.beginPath();ctx.arc(64,64,52,0,Math.PI*2);ctx.fill();
+          ctx.save();ctx.beginPath();ctx.arc(64,64,48,0,Math.PI*2);ctx.clip();
+          const size=Math.min(img.width,img.height);ctx.drawImage(img,(img.width-size)/2,(img.height-size)/2,size,size,16,16,96,96);
+          ctx.restore();texture.needsUpdate=true;
+        };
+        img.src=def.logo;
+      }
+      v2BadgeTextures.set(key,texture);
+      return texture;
+    }
+    function v2UpdateFacultySuggestions() {
+      const list=document.getElementById('v2FacultySuggestions');
+      if (list) list.innerHTML=v2FacultyCatalog.map(x=>`<option value="${v2Esc(x.name)}"></option>`).join('');
+    }
+    function v2Open(tab='survey') {
+      document.getElementById('v2Modal').classList.remove('hidden');
+      document.getElementById('v2Modal').classList.add('flex');
+      v2Switch(tab);
+    }
+    function v2Close() {
+      document.getElementById('v2Modal').classList.add('hidden');
+      document.getElementById('v2Modal').classList.remove('flex');
+    }
+    function v2Switch(tab) {
+      v2ActiveTab=tab;
+      document.querySelectorAll('[data-v2-tab]').forEach(b=>b.classList.toggle('active',b.dataset.v2Tab===tab));
+      v2Render();
+    }
+    function v2RenderIfOpen() {
+      const panel=document.getElementById('v2Modal');
+      if (panel && !panel.classList.contains('hidden')) v2Render();
+    }
+    function v2Render() {
+      const el=document.getElementById('v2Content'); if (!el) return;
+      el.innerHTML = v2ActiveTab==='survey' ? v2RenderSurvey() : v2ActiveTab==='attendance' ? v2RenderAttendance() : v2ActiveTab==='grades' ? v2RenderGrades() : v2RenderFaculty();
+      if(v2ActiveTab==='survey' && isCurrentUserHost()) {
+        const mode=document.getElementById('v2SurveyMode');if(mode)mode.value=window.v2DraftSurveyMode||'live';
+        const anon=document.getElementById('v2SurveyAnon');if(anon)anon.checked=window.v2DraftAnon!==false;
+        const visible=document.getElementById('v2SurveyVisible');if(visible)visible.checked=!!window.v2DraftVisible;
+      }
+    }
+    function v2GetActiveSurvey() { return v2Surveys.find(s=>s.status==='active') || v2Surveys.slice().reverse().find(s=>s.status==='closed') || null; }
+    function v2SurveyCanReveal(s) { return !!(s && (s.revealMode==='live' || (s.revealMode==='close' && s.status==='closed') || s.revealNow)); }
+    function v2PublicSurvey(s) {
+      const visible = s.visibleToParticipants && v2SurveyCanReveal(s);
+      return {id:s.id,title:s.title,status:s.status,questions:s.questions,anonymous:s.anonymous,
+        revealMode:s.revealMode,revealNow:s.revealNow,visibleToParticipants:s.visibleToParticipants,
+        responseCount:s.responseCount || (s.responses||[]).length,
+        publicResponses:visible ? (s.responses||[]).map(r=>({answers:r.answers})) : []};
+    }
+    function v2BroadcastSurveys() {
+      // Chỉ xuất kết quả công khai cho client, giữ câu trả lời chi tiết ở trình duyệt chủ trì.
+      broadcastRealtime('V2_SURVEY_STATE', {surveys:v2Surveys.map(v2PublicSurvey)});
+      v2RenderIfOpen();
+    }
+    function v2RenderSurvey() {
+      const host=isCurrentUserHost();
+      const survey=v2GetActiveSurvey();
+      const hostBuilder = host ? `
+        <div class="v2-panel-card space-y-3">
+          <h3 class="text-cyan-300 font-bold text-sm">👑 Tạo khảo sát mới</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div><label class="v2-label">Tiêu đề khảo sát</label><input id="v2SurveyTitle" class="v2-field" placeholder="VD: Đánh giá buổi họp tháng 11" value="${v2Esc(window.v2DraftTitle||'')}" oninput="window.v2DraftTitle=this.value" /></div>
+            <div><label class="v2-label">Chế độ chủ tọa xem kết quả</label><select id="v2SurveyMode" class="v2-field" onchange="window.v2DraftSurveyMode=this.value"><option value="live">Xem realtime</option><option value="close">Chỉ xem khi đóng khảo sát</option><option value="manual">Ẩn đến khi chủ tọa bấm công bố</option></select></div>
+            <div><label class="v2-label">Câu hỏi</label><input id="v2DraftQText" class="v2-field" placeholder="Nhập nội dung câu hỏi" /></div>
+            <div><label class="v2-label">Loại câu hỏi</label><select id="v2DraftQType" class="v2-field" onchange="document.getElementById('v2QOptionsBox').classList.toggle('hidden',this.value==='text'||this.value==='likert'||this.value==='yesno')"><option value="single">Chọn một đáp án</option><option value="multiple">Chọn nhiều đáp án</option><option value="likert">Likert 1–5</option><option value="yesno">Có / Không</option><option value="text">Ý kiến tự do</option></select></div>
+            <div id="v2QOptionsBox" class="md:col-span-2"><label class="v2-label">Phương án lựa chọn — mỗi dòng một phương án</label><textarea id="v2DraftQOptions" class="v2-field" rows="3" placeholder="Phương án 1&#10;Phương án 2&#10;Phương án 3"></textarea></div>
+          </div>
+          <button class="v2-btn" onclick="v2AddDraftQuestion()">+ Thêm câu hỏi</button>
+          <div class="space-y-1">${v2DraftQuestions.map((q,i)=>`<div class="flex gap-2 justify-between rounded bg-slate-800 p-2 text-xs"><span>${i+1}. ${v2Esc(q.text)} <span class="text-slate-400">(${v2Esc(q.type)})</span></span><button onclick="v2DraftQuestions.splice(${i},1);v2Render()" class="text-rose-400">Xóa</button></div>`).join('') || '<p class="text-xs text-slate-500">Chưa có câu hỏi. Thêm tối thiểu một câu hỏi để phát khảo sát.</p>'}</div>
+          <div class="flex flex-wrap gap-3 text-xs">
+            <label><input type="checkbox" id="v2SurveyAnon" checked /> Ẩn danh trong báo cáo</label>
+            <label><input type="checkbox" id="v2SurveyVisible" /> Cho người dự họp xem kết quả khi được mở</label>
+          </div>
+          <button class="v2-btn bg-emerald-700" onclick="v2PublishSurvey()" ${survey&&survey.status==='active'?'disabled':''}>🚀 Phát khảo sát toàn phòng</button>
+          <p class="text-amber-200 text-[10px]">Bản HTML thử nghiệm: ẩn danh chỉ là ẩn danh trên giao diện/báo cáo; MQTT công cộng không bảo đảm bí mật danh tính hoặc chống giả mạo. Không dùng cho bỏ phiếu kín chính thức.</p>
+        </div>`:'';
+      const surveyStatus = survey ? `<div class="v2-panel-card space-y-3">
+        <div class="flex flex-wrap justify-between items-start gap-2"><div><div class="text-emerald-300 font-extrabold">${v2Esc(survey.title)}</div><div class="text-xs text-slate-400">${survey.status==='active'?'🟢 Đang nhận câu trả lời':'🔒 Đã đóng'} · ${survey.responseCount || (survey.responses||[]).length} lượt nộp · ${survey.questions.length} câu</div></div>${host?`<div class="flex gap-2 flex-wrap">${survey.status==='active'?`<button class="v2-btn bg-rose-700" onclick="v2CloseSurvey('${survey.id}')">⏹ Đóng khảo sát</button>`:''}<button class="v2-btn bg-indigo-700" onclick="v2RevealSurvey('${survey.id}')">${survey.revealNow?'🙈 Ẩn kết quả':'👁 Công bố kết quả'}</button></div>`:''}</div>
+        ${host ? v2SurveyResults(survey, false) : v2SurveyForm(survey)}
+        ${!host && survey.visibleToParticipants && v2SurveyCanReveal(survey) ? v2SurveyResults(survey,true) : ''}
+      </div>`:'<div class="v2-panel-card text-slate-400 text-sm">Chưa có khảo sát đang hoạt động. Chủ tọa có thể tạo và phát ngay trong phòng.</div>';
+      const archive = host && v2Surveys.length ? `<div class="v2-panel-card"><div class="font-bold text-xs mb-2">Lịch sử khảo sát (trong phiên hiện tại)</div>${v2Surveys.slice().reverse().map(s=>`<div class="text-xs py-1 border-b border-slate-700 flex justify-between"><span>${v2Esc(s.title)} · ${s.status} · ${s.responseCount||(s.responses||[]).length} phiếu</span><button class="text-cyan-300" onclick="v2ViewSurvey('${s.id}')">Xem</button></div>`).join('')}</div>`:'';
+      return `<div class="space-y-3">${hostBuilder}${surveyStatus}${archive}</div>`;
+    }
+    function v2AddDraftQuestion() {
+      const text=document.getElementById('v2DraftQText').value.trim();
+      const type=document.getElementById('v2DraftQType').value;
+      let options=document.getElementById('v2DraftQOptions').value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+      if (!text) return alert('Vui lòng nhập nội dung câu hỏi.');
+      if (type==='yesno') options=['Có','Không'];
+      if (type==='likert') options=['1 - Rất không đồng ý','2 - Không đồng ý','3 - Trung lập','4 - Đồng ý','5 - Rất đồng ý'];
+      if (['single','multiple'].includes(type) && options.length<2) return alert('Phải có ít nhất 2 lựa chọn.');
+      window.v2DraftSurveyMode=document.getElementById('v2SurveyMode').value;
+      window.v2DraftAnon=document.getElementById('v2SurveyAnon').checked;
+      window.v2DraftVisible=document.getElementById('v2SurveyVisible').checked;
+      v2DraftQuestions.push({id:v2Id(),text,type,options}); v2Render();
+    }
+    function v2PublishSurvey() {
+      if (!isCurrentUserHost()) return;
+      if (v2Surveys.some(s=>s.status==='active')) return alert('Hãy đóng khảo sát đang hoạt động trước.');
+      if (!v2DraftQuestions.length) return alert('Cần có ít nhất một câu hỏi.');
+      const s={id:v2Id(), title:(document.getElementById('v2SurveyTitle').value.trim()||'Khảo sát cuộc họp'),questions:structuredClone(v2DraftQuestions),
+        revealMode:document.getElementById('v2SurveyMode').value,anonymous:document.getElementById('v2SurveyAnon').checked,
+        visibleToParticipants:document.getElementById('v2SurveyVisible').checked,status:'active',revealNow:false,responses:[],responseCount:0};
+      v2Surveys.push(s);v2DraftQuestions=[];window.v2DraftTitle='';window.v2DraftSurveyMode='live';window.v2DraftAnon=true;window.v2DraftVisible=false;
+      v2BroadcastSurveys();v2Render();
+    }
+    function v2CloseSurvey(id) {
+      if (!isCurrentUserHost()) return;
+      const s=v2Surveys.find(x=>x.id===id);if (!s) return;
+      s.status='closed';v2BroadcastSurveys();
+    }
+    function v2RevealSurvey(id) {
+      if (!isCurrentUserHost()) return;
+      const s=v2Surveys.find(x=>x.id===id);if(!s)return;
+      s.revealNow=!s.revealNow;v2BroadcastSurveys();
+    }
+    function v2ViewSurvey(id) {
+      const s=v2Surveys.find(x=>x.id===id);if (!s) return;
+      const area=document.getElementById('v2Content');
+      area.innerHTML=`<button class="v2-btn mb-3" onclick="v2Render()">← Quay lại</button><div class="v2-panel-card"><div class="font-bold text-cyan-300 mb-2">${v2Esc(s.title)}</div>${v2SurveyResults(s,false)}</div>`;
+    }
+    function v2SurveyForm(s) {
+      if (s.status!=='active') return '<p class="text-xs text-slate-400">Khảo sát đã kết thúc.</p>';
+      if (v2SurveyAnswers[s.id]) return '<p class="text-emerald-300 text-xs">✅ Bạn đã nộp khảo sát này. Mỗi phiên được nộp một lần.</p>';
+      return `<div class="space-y-3">${s.questions.map((q,i)=>`<div class="bg-slate-800/70 rounded-xl p-3"><div class="text-sm font-semibold mb-2">${i+1}. ${v2Esc(q.text)}</div>${q.type==='text'?`<textarea class="v2-field" rows="2" data-v2-answer="${q.id}" placeholder="Ý kiến của bạn..."></textarea>`:q.options.map((o,j)=>`<label class="flex items-center gap-2 text-xs py-1.5 cursor-pointer"><input data-v2-answer="${q.id}" type="${q.type==='multiple'?'checkbox':'radio'}" name="v2_${q.id}" value="${j}" /> ${v2Esc(o)}</label>`).join('')}</div>`).join('')}<button class="v2-btn bg-emerald-600" onclick="v2SubmitSurvey('${s.id}')">✅ Nộp khảo sát</button></div>`;
+    }
+    function v2SubmitSurvey(id) {
+      if (!hasEnteredRoom) return alert('Bạn cần vào phòng trước.');
+      const s=v2Surveys.find(x=>x.id===id);
+      if (!s||s.status!=='active'||v2SurveyAnswers[id]) return;
+      const answers={};
+      for (const q of s.questions) {
+        const nodes=[...document.querySelectorAll(`[data-v2-answer="${q.id}"]`)];
+        const val=q.type==='text'?(nodes[0]?.value||'').trim().slice(0,500):nodes.filter(n=>n.checked).map(n=>Number(n.value));
+        if ((q.type==='text'&&!val)||(q.type!=='text'&&!val.length)) return alert('Vui lòng trả lời tất cả các câu hỏi.');
+        answers[q.id]=val;
+      }
+      const me=participants.find(p=>p.id===currentViewerId)||{};
+      v2SurveyAnswers[id]=true;
+      if (isCurrentUserHost()) {
+        v2HostAcceptSurvey({surveyId:id,memberId:currentViewerId,name:me.name,answers},true);
+      } else {
+        broadcastRealtime('V2_SURVEY_ANSWER', {surveyId:id,memberId:currentViewerId,name:me.name,answers});
+      }
+      v2Render();
+    }
+    function v2HostAcceptSurvey(data,local) {
+      const s=v2Surveys.find(x=>x.id===data.surveyId);
+      if (!s||s.status!=='active'||!isCurrentUserHost()) return;
+      s.responses=s.responses||[];
+      if (s.responses.some(r=>r.memberId===data.memberId)) return;
+      s.responses.push({memberId:data.memberId,name:data.name,answers:data.answers,submittedAt:new Date().toISOString()});
+      s.responseCount=s.responses.length;
+      v2BroadcastSurveys();
+    }
+    function v2SurveyResults(s,publicView) {
+      if (!v2SurveyCanReveal(s) && !publicView) return '<p class="text-amber-200 text-xs">🔒 Chủ tọa đã chọn ẩn kết quả. Chỉ mở sau khi đóng khảo sát hoặc bấm công bố.</p>';
+      const records=publicView ? (s.publicResponses||[]) : (s.responses||[]);
+      return `<div class="space-y-3"><div class="text-xs text-slate-400">📈 Tổng số phiếu: ${s.responseCount||records.length}${s.anonymous?' · Ẩn danh trong báo cáo':''}</div>${s.questions.map(q=>{
+        let block=`<div class="v2-panel-card"><div class="text-xs font-bold mb-2">${v2Esc(q.text)}</div>`;
+        if(q.type==='text') {
+          block+=records.map(r=>`<div class="text-xs py-1 border-b border-slate-700">“${v2Esc(r.answers?.[q.id]||'')}” ${!publicView&&!s.anonymous?`— ${v2Esc(r.name||'')}`:''}</div>`).join('') || '<div class="text-xs text-slate-500">Chưa có ý kiến</div>';
+        } else {
+          const counts=q.options.map((_,i)=>records.filter(r=>Array.isArray(r.answers?.[q.id])&&r.answers[q.id].includes(i)).length);
+          const num=records.length;
+          block+=q.options.map((opt,i)=>`<div class="text-xs mb-2"><div class="flex justify-between gap-3"><span>${v2Esc(opt)}</span><span>${counts[i]} (${num?Math.round(counts[i]/num*100):0}%)</span></div><div class="h-2 bg-slate-700 rounded mt-1 overflow-hidden"><div class="h-full bg-cyan-500" style="width:${num?counts[i]/num*100:0}%"></div></div></div>`).join('');
+        }
+        return block+'</div>';
+      }).join('')}</div>`;
+    }
+    function v2MarkAttendance(member,ms) {
+      if (!isCurrentUserHost()) return;
+      if (!member||member.isBot) return;
+      const id=member.id,now=ms||Date.now();
+      const current=v2Attendance[id];
+      if (!current) v2Attendance[id]={memberId:id,name:member.name||'',userCode:member.userCode||'',faculty:member.faculty||'',checkIn:now,lastSeen:now,checkOut:null,gpsStatus:'Chưa chia sẻ',lat:null,lon:null,accuracy:null,gpsTime:null};
+      else {current.name=member.name||current.name;current.userCode=member.userCode||current.userCode;current.faculty=member.faculty||current.faculty;current.lastSeen=now;current.checkOut=null;}
+    }
+    function v2Checkin(member) {
+      v2MarkAttendance(member,Date.now());
+      broadcastRealtime('V2_CHECKIN',{memberId:member.id,name:member.name,userCode:member.userCode||'',faculty:member.faculty||'',at:Date.now()});
+    }
+    function v2TouchAttendance(memberId) {
+      if(!isCurrentUserHost())return;
+      const r=v2Attendance[memberId];if(r){r.lastSeen=Date.now();r.checkOut=null;}
+    }
+    function v2MarkLeave(memberId) {
+      if(!isCurrentUserHost())return;
+      const r=v2Attendance[memberId];if(r){r.checkOut=Date.now();r.lastSeen=r.checkOut;}
+      v2RenderIfOpen();
+    }
+    function v2AttendanceRows() {
+      if (isCurrentUserHost()) {
+        participants.filter(x=>!x.isBot).forEach(x=>{if(!v2Attendance[x.id])v2MarkAttendance(x,x.joinedAt>100000000?x.joinedAt:Date.now());});
+      }
+      return Object.values(v2Attendance).map(r=>({
+        'Họ tên':r.name,'Mã SV/NV':r.userCode,'Khoa/Đơn vị':r.faculty,
+        'Giờ vào':v2Date(r.checkIn),'Hoạt động cuối':v2Date(r.lastSeen),'Giờ ra':v2Date(r.checkOut),
+        'Phút tham dự (ước tính)':Math.max(0,Math.round(((r.checkOut||r.lastSeen)-r.checkIn)/60000)),
+        'Tình trạng':r.checkOut?'Đã rời':(Date.now()-r.lastSeen<20000?'Đang tham gia':'Mất kết nối'),
+        'Trạng thái GPS':r.gpsStatus,'Vĩ độ':r.lat??'', 'Kinh độ':r.lon??'', 'Độ chính xác (m)':r.accuracy??'','Thời điểm GPS':v2Date(r.gpsTime)
+      }));
+    }
+    function v2RenderAttendance() {
+      const host=isCurrentUserHost();
+      const rows=host?v2AttendanceRows():[];
+      return `<div class="space-y-3"><div class="v2-panel-card space-y-2"><h3 class="text-cyan-300 font-bold text-sm">📍 Điểm danh kèm GPS (người tham dự tự cấp quyền)</h3>
+        <p class="text-xs text-slate-300">${hasEnteredRoom?'Bạn đã tham gia phòng. Giờ vào được ghi nhận trong phiên.':'Vui lòng vào phòng trước khi điểm danh.'} Tọa độ chỉ gửi sau khi bạn bấm nút và đồng ý quyền vị trí. Có thể từ chối; hệ thống vẫn ghi nhận thời gian tham dự.</p>
+        <div class="flex flex-wrap gap-2 items-center"><button class="v2-btn bg-emerald-700" onclick="v2RequestGps()" ${!hasEnteredRoom?'disabled':''}>📍 Cấp quyền & gửi GPS cho chủ tọa</button><span class="text-xs text-amber-200" id="v2GpsStatus">${v2Esc(v2GpsStatus)}</span></div>
+        <p class="text-[10px] text-slate-400">Không theo dõi GPS liên tục. GPS được mã hóa RSA-OAEP khi truyền (nếu trình duyệt và chủ tọa hỗ trợ), nhưng bản thử nghiệm chưa có xác thực server chống giả mạo khóa hoặc điểm danh hộ.</p>
+      </div>${host?`<div class="v2-panel-card space-y-3"><div class="flex justify-between items-center gap-2 flex-wrap"><div class="text-sm font-bold text-emerald-300">👑 Danh sách điểm danh <span class="v2-pill">${rows.length} người</span></div><button class="v2-btn bg-teal-700" onclick="v2ExportWorkbook()">📗 Xuất Excel (Điểm danh + Điểm + Khảo sát)</button></div>
+      <div class="overflow-auto max-h-[430px]"><table class="v2-table"><thead><tr><th>Họ tên / Mã</th><th>Khoa</th><th>Giờ vào</th><th>Phút (ước tính)</th><th>Trạng thái</th><th>GPS</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${v2Esc(r['Họ tên'])}<div class="text-slate-500">${v2Esc(r['Mã SV/NV'])}</div></td><td>${v2Esc(r['Khoa/Đơn vị'])}</td><td>${v2Esc(r['Giờ vào'])}</td><td>${r['Phút tham dự (ước tính)']}</td><td>${v2Esc(r['Tình trạng'])}</td><td><span class="text-xs">${v2Esc(r['Trạng thái GPS'])}</span>${r['Vĩ độ']!==''?`<div class="text-[10px] text-slate-400">${r['Vĩ độ']}, ${r['Kinh độ']} (±${r['Độ chính xác (m)']}m)</div>`:''}</td></tr>`).join('')}</tbody></table></div>
+      <p class="text-xs text-slate-400">Thời lượng dựa vào kết nối/heartbeat, chỉ mang tính tham khảo. Trong bản HTML này, dữ liệu mất khi trình duyệt chủ tọa đóng hoặc làm mới.</p></div>`:''}</div>`;
+    }
+    async function v2InitGpsKey() {
+      if(!isCurrentUserHost()||v2HostGpsKeyPair)return;
+      if(!window.crypto?.subtle) {v2GpsStatus='Không có Web Crypto (cần HTTPS/localhost)';return;}
+      try {
+        v2HostGpsKeyPair=await crypto.subtle.generateKey({name:'RSA-OAEP',modulusLength:2048,publicExponent:new Uint8Array([1,0,1]),hash:'SHA-256'},true,['encrypt','decrypt']);
+        v2HostGpsPublicJwk=await crypto.subtle.exportKey('jwk',v2HostGpsKeyPair.publicKey);
+        broadcastRealtime('V2_GPS_KEY',{jwk:v2HostGpsPublicJwk});
+      } catch(err) {v2GpsStatus='Không tạo được khóa mã hóa GPS';}
+    }
+    function v2BytesToB64(arr) { let s='';new Uint8Array(arr).forEach(b=>s+=String.fromCharCode(b));return btoa(s); }
+    function v2B64ToBytes(val) {return Uint8Array.from(atob(val),c=>c.charCodeAt(0));}
+    async function v2RequestGps() {
+      if(!hasEnteredRoom) return alert('Vui lòng vào phòng trước.');
+      if(!navigator.geolocation) {v2GpsStatus='Thiết bị không hỗ trợ định vị';v2RenderIfOpen();return;}
+      if(!confirm('Bạn đồng ý lấy vị trí hiện tại một lần để điểm danh và gửi tọa độ đến chủ tọa? Vị trí có thể không chính xác trên máy tính.')) return;
+      v2GpsStatus='Đang xin quyền vị trí...';v2RenderIfOpen();
+      navigator.geolocation.getCurrentPosition(async pos=>{
+        v2LastMyGps={lat:pos.coords.latitude,lon:pos.coords.longitude,accuracy:pos.coords.accuracy,ts:Date.now()};
+        v2GpsStatus='Đã lấy vị trí; đang gửi dữ liệu mã hóa...';v2RenderIfOpen();
+        await v2TrySendPendingGps();
+      },err=>{v2GpsStatus=err.code===1?'Bạn đã từ chối quyền vị trí':`Không lấy được vị trí: ${err.message}`;v2RenderIfOpen();},
+      {enableHighAccuracy:true,maximumAge:0,timeout:15000});
+    }
+    async function v2TrySendPendingGps() {
+      if(!v2LastMyGps || !hasEnteredRoom) return;
+      if(isCurrentUserHost()) {
+        const me=participants.find(x=>x.id===currentViewerId);
+        if(me) {v2MarkAttendance(me,Date.now());Object.assign(v2Attendance[me.id],{gpsStatus:'Đã xác nhận tại máy chủ tọa',lat:v2LastMyGps.lat,lon:v2LastMyGps.lon,accuracy:Math.round(v2LastMyGps.accuracy),gpsTime:v2LastMyGps.ts});}
+        v2LastMyGps=null;v2GpsStatus='✅ Đã cập nhật tọa độ tại máy chủ tọa';v2RenderIfOpen();return;
+      }
+      if(!v2HostGpsPublicJwk) {
+        v2GpsStatus='Đang chờ chủ tọa cung cấp khóa mã hóa...';
+        broadcastRealtime('V2_GPS_KEY_REQUEST',{});v2RenderIfOpen();return;
+      }
+      if(!crypto.subtle){v2GpsStatus='Không thể mã hóa: cần HTTPS/localhost';v2RenderIfOpen();return;}
+      try {
+        const key=await crypto.subtle.importKey('jwk',v2HostGpsPublicJwk,{name:'RSA-OAEP',hash:'SHA-256'},false,['encrypt']);
+        const bytes=new TextEncoder().encode(JSON.stringify(v2LastMyGps));
+        const encrypted=await crypto.subtle.encrypt({name:'RSA-OAEP'},key,bytes);
+        broadcastRealtime('V2_GPS_ENCRYPTED',{memberId:currentViewerId,ciphertext:v2BytesToB64(encrypted)});
+        v2LastMyGps=null;
+        v2GpsStatus='📨 Đã gửi GPS mã hóa, đang chờ xác nhận...';v2RenderIfOpen();
+      } catch(err) {v2GpsStatus='Lỗi mã hóa GPS: '+err.message;v2RenderIfOpen();}
+    }
+    async function v2DecodeHostGps(data) {
+      if(!isCurrentUserHost()||!v2HostGpsKeyPair||!data.ciphertext||!data.memberId)return;
+      try {
+        const decrypted=await crypto.subtle.decrypt({name:'RSA-OAEP'},v2HostGpsKeyPair.privateKey,v2B64ToBytes(data.ciphertext));
+        const gps=JSON.parse(new TextDecoder().decode(decrypted));
+        if(!Number.isFinite(gps.lat)||!Number.isFinite(gps.lon)||Math.abs(gps.lat)>90||Math.abs(gps.lon)>180)return;
+        const member=participants.find(p=>p.id===data.memberId);
+        if(!member)return;
+        v2MarkAttendance(member,Date.now());
+        Object.assign(v2Attendance[member.id],{gpsStatus:'Đã nhận (định vị thiết bị)',lat:gps.lat,lon:gps.lon,accuracy:Math.round(gps.accuracy||0),gpsTime:gps.ts||Date.now()});
+        broadcastRealtime('V2_GPS_ACK',{memberId:data.memberId});
+        v2RenderIfOpen();
+      }catch(e){console.warn('V2: GPS decrypt failure',e);}
+    }
+    function v2ArchiveQuiz() {
+      if(!isCurrentUserHost()||!quizState?.submissions?.length)return;
+      const id=quizState.runId || (quizState.title+'_'+(quizState.submissions[0]?.timeStr||''));
+      if(v2QuizHistory.some(h=>h.id===id))return;
+      v2QuizHistory.push({id,title:quizState.title||'Bài kiểm tra',date:Date.now(),submissions:quizState.submissions.map(s=>({...s}))});
+    }
+    function v2GradeRows() {
+      const series=v2QuizHistory.slice();
+      if(quizState?.submissions?.length && (!series.some(s=>s.id===(quizState.runId||''))))series.push({id:quizState.runId||'current',title:quizState.title||'Bài hiện tại',submissions:quizState.submissions});
+      const members=new Map();
+      Object.values(v2Attendance).forEach(r=>members.set(r.memberId,{memberId:r.memberId,name:r.name,userCode:r.userCode,faculty:r.faculty}));
+      participants.filter(p=>!p.isBot).forEach(p=>members.set(p.id,{memberId:p.id,name:p.name,userCode:p.userCode||'',faculty:p.faculty||''}));
+      series.forEach(test=>test.submissions.forEach(r=>{if(!members.has(r.memberId))members.set(r.memberId,{memberId:r.memberId,name:r.name,userCode:'',faculty:''});}));
+      const rows=[...members.values()].map(m=>{
+        const row={'Họ tên':m.name,'Mã SV/NV':m.userCode,'Khoa/Đơn vị':m.faculty};
+        let sum=0,num=0;
+        series.forEach((test,i)=>{
+          const result=test.submissions.find(s=>s.memberId===m.memberId);
+          row[`Bài ${i+1}: ${test.title.slice(0,32)}`]=result?`${result.score}/${result.total} (${result.percent}%)`:'';
+          if(result){sum+=Number(result.percent)||0;num++;}
+        });
+        row['Điểm trung bình / 10']=num?Math.round(sum/num)/10:'';
+        row['Số bài đã nộp']=num;
+        return row;
+      });
+      return {series,rows};
+    }
+    function v2RenderGrades() {
+      const host=isCurrentUserHost();const {series,rows}=v2GradeRows();
+      return `<div class="space-y-3"><div class="v2-panel-card flex flex-wrap items-center gap-3 justify-between"><div><h3 class="font-bold text-emerald-300">🏆 Bảng điểm tổng hợp</h3><p class="text-xs text-slate-400">${series.length} bài kiểm tra · ${rows.length} thành viên. Trung bình các bài đã nộp, trọng số bằng nhau.</p></div>${host?'<button class="v2-btn bg-emerald-700" onclick="v2ExportWorkbook()">📗 Xuất Excel 3 sheet</button>':''}</div>
+      ${host?`<div class="v2-panel-card overflow-auto"><table class="v2-table"><thead><tr><th>Họ tên / Mã</th><th>Khoa</th>${series.map((x,i)=>`<th>Bài ${i+1}</th>`).join('')}<th>TB / 10</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${v2Esc(r['Họ tên'])}<div class="text-slate-500">${v2Esc(r['Mã SV/NV'])}</div></td><td>${v2Esc(r['Khoa/Đơn vị'])}</td>${series.map((x,i)=>`<td>${v2Esc(r[`Bài ${i+1}: ${x.title.slice(0,32)}`])}</td>`).join('')}<td class="font-bold text-amber-300">${r['Điểm trung bình / 10']}</td></tr>`).join('')}</tbody></table></div>`:'<div class="v2-panel-card text-xs text-slate-300">Bảng điểm tổng hợp toàn phòng chỉ hiển thị với chủ tọa trong bản V2. Điểm bài đang làm vẫn hiển thị trong tab Trắc nghiệm hiện có.</div>'}
+      <p class="text-amber-200 text-[11px]">Đây là bảng điểm từ kết quả chấm ở trình duyệt của phiên họp, chưa đủ tin cậy cho thi/đánh giá chính thức. Cần chấm điểm máy chủ, xác thực tài khoản và cơ sở dữ liệu.</p></div>`;
+    }
+    function v2SurveyExportRows() {
+      const rows=[];
+      v2Surveys.forEach(s=>(s.responses||[]).forEach((r,i)=>{
+        const record={'Khảo sát':s.title,'Trạng thái':s.status,'Lượt':i+1,'Thời điểm':v2Date(r.submittedAt),'Họ tên':s.anonymous?'Ẩn danh':r.name,'Mã tham gia':s.anonymous?'':r.memberId};
+        s.questions.forEach((q,idx)=>{const val=r.answers?.[q.id];record[`Câu ${idx+1}: ${q.text.slice(0,45)}`]=Array.isArray(val)?val.map(j=>q.options[j]??'').join(' | '):String(val??'');});
+        rows.push(record);
+      }));
+      return rows;
+    }
+    function v2DownloadCsv(rows,filename) {
+      const keys=[...new Set(rows.flatMap(x=>Object.keys(x)))];
+      const csv='\ufeff'+[keys.join(','),...rows.map(r=>keys.map(k=>'"'+String(r[k]??'').replace(/"/g,'""')+'"').join(','))].join('\r\n');
+      const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+    }
+    function v2ExportWorkbook() {
+      if(!isCurrentUserHost()) return alert('Chỉ chủ tọa được xuất báo cáo toàn phòng.');
+      const attendance=v2AttendanceRows(),grades=v2GradeRows().rows,surveys=v2SurveyExportRows();
+      const prefix='UTE_V2_'+currentRoomJoinCode+'_'+new Date().toISOString().slice(0,10);
+      if(typeof XLSX!=='undefined') {
+        const wb=XLSX.utils.book_new();
+        [['Diem_danh',attendance],['Bang_diem',grades],['Khao_sat',surveys]].forEach(([name,rows])=>{
+          const ws=XLSX.utils.json_to_sheet(rows.length?rows:[{'Thông báo':'Chưa có dữ liệu'}]);
+          ws['!cols']=Array.from({length:Math.max(1,Object.keys(rows[0]||{}).length)},()=>({wch:21}));
+          XLSX.utils.book_append_sheet(wb,ws,name);
+        });
+        XLSX.writeFile(wb,prefix+'.xlsx');
+      } else {
+        v2DownloadCsv(attendance,prefix+'_Diem_danh.csv');
+        v2DownloadCsv(grades,prefix+'_Bang_diem.csv');
+        v2DownloadCsv(surveys,prefix+'_Khao_sat.csv');
+        alert('Thư viện Excel chưa tải được nên hệ thống xuất 3 file CSV để mở bằng Excel.');
+      }
+    }
+    function v2RenderFaculty() {
+      const host=isCurrentUserHost();
+      return `<div class="space-y-3"><div class="v2-panel-card"><h3 class="font-bold text-cyan-300 mb-1">🏅 Huy hiệu Khoa / Đơn vị</h3><p class="text-xs text-slate-300">Người tham gia chọn Khoa lúc vào phòng. Logo hoặc mã viết tắt được đặt ở ngực áo nhân vật 3D và trên bảng tên. Quản lý huy hiệu tại máy chủ tọa, thay đổi đồng bộ qua phiên.</p></div>
+      ${host?`<div class="v2-panel-card space-y-3"><h4 class="text-sm font-bold">👑 Thêm / cập nhật Khoa</h4><div class="grid grid-cols-1 md:grid-cols-4 gap-2"><input id="v2FacName" class="v2-field md:col-span-2" placeholder="Tên Khoa/Đơn vị"/><input id="v2FacAbbr" class="v2-field" placeholder="Mã (VD: KT)" maxlength="6"/><input id="v2FacColor" type="color" value="#0e7490" class="h-10 rounded border border-slate-600 w-full" /></div><label class="v2-label">Logo Khoa (tùy chọn, ảnh nhỏ dưới 80 KB)</label><input id="v2FacLogo" type="file" accept="image/png,image/jpeg,image/webp" class="text-xs" /><button class="v2-btn" onclick="v2SaveFaculty()">+ Lưu huy hiệu</button></div>`:''}
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">${v2FacultyCatalog.map((f,i)=>`<div class="v2-panel-card flex gap-3 items-center"><div style="background:${/^#[0-9a-fA-F]{6}$/.test(f.color)?f.color:'#0e7490'}" class="w-12 h-12 rounded-full border-2 border-amber-300 flex items-center justify-center font-bold text-sm overflow-hidden shrink-0">${f.logo?`<img src="${f.logo}" alt="Logo" class="w-full h-full object-cover"/>`:v2Esc(f.abbr)}</div><div class="min-w-0"><div class="font-bold text-xs">${v2Esc(f.name)}</div><div class="text-[10px] text-slate-400">${v2Esc(f.abbr)} · ${participants.filter(p=>p.faculty===f.name).length} người</div></div></div>`).join('')}</div>
+      <p class="text-[11px] text-amber-200">Để tránh mạo danh Khoa khi sử dụng chính thức, cần dùng danh mục Khoa gắn với tài khoản đã xác thực; hiện tại người dùng có thể tự khai Khoa.</p></div>`;
+    }
+    function v2SaveFaculty() {
+      if(!isCurrentUserHost())return;
+      const name=document.getElementById('v2FacName').value.trim().slice(0,100);
+      const abbr=document.getElementById('v2FacAbbr').value.trim().slice(0,6).toUpperCase();
+      const color=document.getElementById('v2FacColor').value;
+      const file=document.getElementById('v2FacLogo').files[0];
+      if(!name||!abbr)return alert('Cần nhập tên Khoa và tên viết tắt.');
+      if(file && file.size>80000)return alert('Ảnh quá lớn. Vui lòng dùng logo dưới 80 KB.');
+      const save=logo=>{
+        const f=v2FacultyCatalog.find(x=>x.name.toLowerCase()===name.toLowerCase());
+        if(f){f.abbr=abbr;f.color=color;if(logo)f.logo=logo;}else v2FacultyCatalog.push({name,abbr,color,logo:logo||null});
+        v2BadgeTextures.clear();v2UpdateFacultySuggestions();build3DScene();
+        broadcastRealtime('V2_FACULTIES',{catalog:v2FacultyCatalog});v2Render();
+      };
+      if(file){const reader=new FileReader();reader.onload=()=>save(reader.result);reader.readAsDataURL(file);}else save(null);
+    }
+    function v2HandleRealtime(type,data,msg) {
+      if(type==='V2_SURVEY_STATE'&&Array.isArray(data.surveys)&&!isCurrentUserHost()) {
+        v2Surveys=data.surveys;v2RenderIfOpen();
+      } else if(type==='V2_SURVEY_ANSWER'&&isCurrentUserHost()) {
+        // MQTT không xác thực: kết quả này chỉ dùng thử nghiệm.
+        v2HostAcceptSurvey(data,false);
+      } else if(type==='V2_CHECKIN'&&isCurrentUserHost()) {
+        v2MarkAttendance({id:data.memberId,name:data.name,userCode:data.userCode,faculty:data.faculty},data.at||Date.now());v2RenderIfOpen();
+      } else if(type==='V2_GPS_KEY'&&data.jwk&&!isCurrentUserHost()) {
+        v2HostGpsPublicJwk=data.jwk;v2TrySendPendingGps();
+      } else if(type==='V2_GPS_KEY_REQUEST'&&isCurrentUserHost()) {
+        if(v2HostGpsPublicJwk)broadcastRealtime('V2_GPS_KEY',{jwk:v2HostGpsPublicJwk});else v2InitGpsKey();
+      } else if(type==='V2_GPS_ENCRYPTED'&&isCurrentUserHost()) {
+        v2DecodeHostGps(data);
+      } else if(type==='V2_GPS_ACK'&&data.memberId===currentViewerId) {
+        v2GpsStatus='✅ Chủ tọa đã xác nhận nhận GPS';v2RenderIfOpen();
+      } else if(type==='V2_FACULTIES'&&Array.isArray(data.catalog)&&!isCurrentUserHost()) {
+        v2FacultyCatalog=data.catalog;v2BadgeTextures.clear();v2UpdateFacultySuggestions();build3DScene();v2RenderIfOpen();
+      }
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
       checkUrlInviteParams();
       updatePermissionUI();
@@ -3945,6 +4490,7 @@ ${speakerSummary}
       renderQuizUI();
       init3D();
       connectRealtimeRoom(currentRoomChannel);
+      v2UpdateFacultySuggestions();
     });
   </script>
 </body>
