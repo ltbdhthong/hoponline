@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Khán Phòng Vòng Cung 3D UTE - Đồng Bộ Toàn Diện</title>
+  <title>Khán Phòng Vòng Cung 3D UTE - Share 6 Màn Hình (3x2 Grid)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -49,65 +49,165 @@
   <input id="logoFileInput" type="file" accept="image/*" class="hidden" onchange="handleLogoFileSelected(event)" />
   <input id="avatarFileInput" type="file" accept="image/*" class="hidden" onchange="handleAvatarFileSelected(event)" />
 
-  <!-- MODAL PHÓNG TO MÀN HÌNH TRÌNH CHIẾU FULL HD -->
-  <div id="hdZoomOverlay" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex flex-col p-4">
-    <div class="flex items-center justify-between pb-3 mb-2 border-b border-slate-800">
-      <div class="flex items-center gap-2">
-        <span class="px-2.5 py-0.5 bg-emerald-500 text-slate-950 font-extrabold text-xs rounded">CHẾ ĐỘ SIÊU NÉT FULL HD</span>
-        <span class="text-xs text-slate-300">Đồng bộ trực tiếp từ Bảng chính 3D</span>
+  <!-- MODAL PHÓNG TO LƯỚI 6 MÀN HÌNH SHARE (3 CỘT X 2 HÀNG) CHUẨN FULL HD -->
+  <div id="hdZoomOverlay" class="hidden fixed inset-0 bg-slate-950/95 backdrop-blur-md z-50 flex flex-col p-4">
+    <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-800">
+      <div class="flex items-center gap-2.5">
+        <span class="px-2.5 py-1 bg-cyan-500 text-slate-950 font-extrabold text-xs rounded-lg">🖥️ LƯỚI ĐA MÀN HÌNH FULL HD (TỐI ĐA 6 MÀN - 3 CỘT x 2 HÀNG)</span>
+        <span id="hdZoomSubStatus" class="text-xs text-slate-300">Click vào bất kỳ màn hình nào để phóng to 100%</span>
       </div>
-      <button onclick="toggleHdZoomModal()" class="bg-rose-600 hover:bg-rose-500 text-white px-4 py-1.5 rounded-xl text-xs font-extrabold">
-        ✕ Thu nhỏ về 3D
-      </button>
+      <div class="flex items-center gap-2">
+        <button id="btnBackTo6Grid" onclick="focusedScreenSharerId = null; renderHdZoomOverlayContent();" class="hidden bg-amber-500 hover:bg-amber-400 text-slate-950 px-3 py-1.5 rounded-xl text-xs font-extrabold">
+          ⊞ Xem lại đủ Lưới 6 Màn Hình
+        </button>
+        <button onclick="toggleHdZoomModal()" class="bg-rose-600 hover:bg-rose-500 text-white px-4 py-1.5 rounded-xl text-xs font-extrabold">
+          ✕ Thu nhỏ về Không gian 3D
+        </button>
+      </div>
     </div>
-    <div class="flex-1 flex items-center justify-center overflow-hidden">
-      <img id="hdZoomMirrorImg" class="max-w-full max-h-full object-contain rounded-xl border-2 border-amber-400 shadow-2xl" alt="HD Screen" />
+
+    <!-- Khung chứa Lưới 3 cột x 2 hàng hoặc Slide khi chưa có ai Share -->
+    <div id="hdMultiScreenGridContainer" class="flex-1 grid grid-cols-1 md:grid-cols-3 md:grid-rows-2 gap-3 overflow-hidden items-center justify-center"></div>
+  </div>
+
+  <!-- MODAL LẤY MÃ PHÒNG, CODE THAM GIA, CODE CHỦ TRÌ & COPY LINK MỜI -->
+  <div id="inviteRoomModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div class="bg-slate-900 border border-amber-500/50 rounded-2xl max-w-md w-full p-5 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-3">
+        <h3 class="text-base font-extrabold text-amber-400">🔗 Thông Tin Phòng & Mời Tham Gia</h3>
+        <button onclick="document.getElementById('inviteRoomModal').classList.add('hidden')" class="bg-slate-800 hover:bg-slate-700 px-2.5 py-1 rounded-lg text-xs font-bold">✕</button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div class="bg-slate-800/90 border border-slate-700 rounded-xl p-3">
+          <div class="text-slate-400 mb-0.5">Tên phòng đang hoạt động:</div>
+          <div id="inviteRoomTitleText" class="text-sm font-extrabold text-white">Phòng Chủ trì: Đình Lâm</div>
+        </div>
+
+        <div class="bg-emerald-950/40 border border-emerald-500/40 rounded-xl p-3 flex items-center justify-between">
+          <div>
+            <div class="text-emerald-300 font-bold">🔑 Mã Tham Gia (Gửi cho thành viên):</div>
+            <div id="inviteJoinCodeText" class="text-lg font-black text-white tracking-wider mt-0.5">UTE101</div>
+          </div>
+          <button onclick="copyInviteJoinCode()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-1.5 rounded-lg text-xs">
+            📋 Copy Mã
+          </button>
+        </div>
+
+        <div id="inviteHostCodeBox" class="hidden bg-amber-950/40 border border-amber-500/40 rounded-xl p-3 flex items-center justify-between">
+          <div>
+            <div class="text-amber-300 font-bold">👑 Mã Chủ Trì (Chỉ dành cho Chủ tọa):</div>
+            <div id="inviteHostCodeText" class="text-base font-black text-amber-200 tracking-wider mt-0.5">2020</div>
+          </div>
+          <span class="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-1 rounded">Bảo mật</span>
+        </div>
+
+        <div class="bg-slate-800/80 border border-blue-500/40 rounded-xl p-3">
+          <div class="text-blue-300 font-bold mb-1.5">🌐 Link mời vào thẳng phòng này (Kèm sẵn Mã tham gia):</div>
+          <div class="flex gap-1.5">
+            <input id="inviteShareUrlInput" type="text" readonly class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-300 focus:outline-none" />
+            <button onclick="copyInviteShareLink()" class="bg-blue-600 hover:bg-blue-500 text-white font-extrabold px-3 py-1.5 rounded-lg text-xs shrink-0">
+              🔗 Copy Link
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- MÀN HÌNH ĐĂNG NHẬP: CHỌN CHỦ TRÌ & UPLOAD AVATAR MẶT NHÂN VẬT -->
+  <!-- MÀN HÌNH ĐĂNG NHẬP: CHO PHÉP VÀO PHÒNG BẰNG CODE HOẶC TỰ TẠO PHÒNG RIÊNG -->
   <div id="loginOverlay" style="display: flex;" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md items-center justify-center z-50 p-4">
-    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl">
-      <div class="flex items-center justify-between mb-1">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl max-h-[95vh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-2">
         <div class="flex items-center gap-2">
           <span class="w-3 h-3 rounded-full bg-blue-500 animate-ping"></span>
-          <span class="text-xs font-bold uppercase tracking-wider text-blue-400">Không Gian Hội Trường & Giảng Đường 3D UTE</span>
+          <span class="text-xs font-bold uppercase tracking-wider text-blue-400">Hệ Thống Phòng Họp & Giảng Đường 3D UTE</span>
         </div>
-        <span class="text-[10px] bg-blue-950 text-blue-300 border border-blue-500/40 px-2 py-0.5 rounded-full">Tự động xếp ghế trống</span>
+        <span class="text-[10px] bg-cyan-950 text-cyan-300 border border-cyan-500/40 px-2 py-0.5 rounded-full">Share 6 Màn Hình (3x2)</span>
       </div>
-      <h1 class="text-xl font-extrabold text-white mb-1">Vào Khán Phòng Trực Tuyến</h1>
-      <p class="text-xs text-slate-400 mb-4">Hệ thống tự động kiểm tra những người đang ngồi sẵn để xếp bạn vào ghế trống tiếp theo (không bao giờ ngồi đè lên người cũ).</p>
+
+      <div class="grid grid-cols-2 gap-1.5 bg-slate-800 p-1 rounded-xl mb-4 border border-slate-700">
+        <button type="button" id="tabModeJoin" onclick="switchLobbyMode('join')" class="py-2 rounded-lg text-xs font-extrabold bg-blue-600 text-white shadow transition">
+          🔑 Vào Phòng Bằng Mã
+        </button>
+        <button type="button" id="tabModeCreate" onclick="switchLobbyMode('create')" class="py-2 rounded-lg text-xs font-extrabold text-slate-300 hover:text-white transition">
+          ➕ Tự Tạo Phòng Mới
+        </button>
+      </div>
 
       <div class="space-y-3">
-        <div>
-          <label class="block text-xs font-semibold text-amber-300 mb-1">🏟️ Chọn Phòng theo Chủ trì (Các máy chọn giống nhau) *</label>
-          <select id="loginRoomHostSelect" onchange="switchLobbyRoomChannel(this.value)" class="w-full bg-slate-800 border border-amber-500/50 rounded-xl px-3.5 py-2.5 text-sm font-bold text-white focus:outline-none">
-            <option value="phong_dinh_lam">👑 Phòng Chủ trì: Đình Lâm (Khán Phòng Vòng Cung UTE)</option>
-            <option value="phong_hoi_dong">🎓 Phòng Chủ trì: Hội Đồng Khoa (Thi & Thảo Luận)</option>
-            <option value="phong_du_an">🚀 Phòng Chủ trì: Ban Dự Án (Họp Chiến Lược)</option>
-          </select>
+        <!-- KHUNG 1: VÀO PHÒNG CÓ SẴN HOẶC NHẬP MÃ THAM GIA -->
+        <div id="lobbyJoinSection" class="space-y-3">
+          <div>
+            <label class="block text-xs font-semibold text-amber-300 mb-1">🏟️ Chọn Phòng mẫu hoặc Nhập Mã Tham Gia *</label>
+            <select id="loginPresetRoomSelect" onchange="handlePresetRoomChange(this.value)" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none mb-2">
+              <option value="UTE101">👑 Phòng mặc định: Đình Lâm (Mã tham gia: UTE101)</option>
+              <option value="KHOA01">🎓 Phòng Hội Đồng Khoa (Mã tham gia: KHOA01)</option>
+              <option value="DUAN01">🚀 Phòng Ban Dự Án (Mã tham gia: DUAN01)</option>
+              <option value="CUSTOM">✨ Nhập Mã Tham Gia của phòng riêng khác...</option>
+            </select>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold text-emerald-400 shrink-0">🔑 Mã Tham Gia:</span>
+              <input id="joinRoomCodeInput" type="text" value="UTE101" oninput="this.value = this.value.toUpperCase(); switchLobbyRoomChannel(this.value);" placeholder="VD: UTE101 hoặc mã bạn bè gửi..." class="flex-1 bg-slate-950 border border-emerald-500/50 rounded-xl px-3 py-2 text-sm font-black tracking-wider text-emerald-300 uppercase focus:outline-none focus:border-emerald-400" />
+            </div>
+          </div>
+
+          <div class="bg-slate-800/70 border border-amber-500/30 rounded-xl p-3">
+            <label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-amber-300">
+              <input id="loginIsHostCheckbox" type="checkbox" onchange="toggleHostPinBox()" class="accent-amber-500 w-4 h-4" />
+              <span>👑 Tôi là Chủ trì phòng này (Nhập Code Chủ trì)</span>
+            </label>
+            <div id="hostPinBox" style="display: none;" class="mt-2">
+              <input id="loginPinInput" type="password" value="" placeholder="Nhập Code Chủ trì để điều hành phòng..." class="w-full bg-slate-900 border border-amber-500/40 rounded-lg px-3 py-2 text-xs text-amber-200 focus:outline-none" onkeydown="if(event.key==='Enter') enterMeetingRoom()" />
+            </div>
+          </div>
         </div>
 
-        <div class="grid grid-cols-3 gap-2">
+        <!-- KHUNG 2: TỰ TẠO PHÒNG CỦA RIÊNG MÌNH -->
+        <div id="lobbyCreateSection" class="hidden space-y-3 bg-slate-800/60 border border-indigo-500/40 rounded-xl p-3">
+          <div class="text-xs font-extrabold text-indigo-300">✨ Thiết lập Phòng Họp 3D của riêng bạn:</div>
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-300 mb-1">Tên Phòng họp / Lớp học của bạn *</label>
+            <input id="createRoomTitleInput" type="text" placeholder="VD: Lớp Quản Trị Sản Xuất - Nhóm 1..." class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-400" />
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[11px] font-bold text-emerald-400 mb-1">🔑 Code Tham Gia (Gửi bạn bè)</label>
+              <div class="flex gap-1">
+                <input id="createJoinCodeInput" type="text" value="PHONG88" oninput="this.value = this.value.toUpperCase()" class="w-full bg-slate-950 border border-emerald-500/50 rounded-lg px-2.5 py-1.5 text-xs font-black text-emerald-300 uppercase" />
+                <button type="button" onclick="randomizeNewRoomCodes()" class="bg-slate-700 hover:bg-slate-600 px-2 rounded-lg text-xs" title="Tạo mã ngẫu nhiên">🎲</button>
+              </div>
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-amber-400 mb-1">👑 Code Chủ Trì (Của riêng bạn)</label>
+              <input id="createHostCodeInput" type="text" value="9999" placeholder="VD: 9999" class="w-full bg-slate-950 border border-amber-500/50 rounded-lg px-2.5 py-1.5 text-xs font-black text-amber-300" />
+            </div>
+          </div>
+          <div class="text-[10px] text-slate-400 leading-relaxed">
+            💡 Sau khi tạo phòng, tối đa 6 thành viên có thể cùng lúc Share màn hình (hiển thị dạng lưới 3 cột x 2 hàng trên bảng 3D).
+          </div>
+        </div>
+
+        <!-- THÔNG TIN CÁ NHÂN & AVATAR -->
+        <div class="grid grid-cols-3 gap-2 pt-1 border-t border-slate-800">
           <div class="col-span-2">
             <label class="block text-xs font-semibold text-slate-300 mb-1">Họ và tên của bạn *</label>
             <input id="loginNameInput" type="text" placeholder="Nhập họ và tên..." class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400" onkeydown="if(event.key==='Enter') enterMeetingRoom()" />
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-300 mb-1">Chức vụ / MSSV</label>
-            <input id="loginRoleInput" type="text" placeholder="Giảng viên / SV" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400" onkeydown="if(event.key==='Enter') enterMeetingRoom()" />
+            <input id="loginRoleInput" type="text" placeholder="Chủ trì / TV" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400" onkeydown="if(event.key==='Enter') enterMeetingRoom()" />
           </div>
         </div>
 
-        <!-- Upload Ảnh Avatar hiển thị lên mặt trước nhân vật 3D -->
-        <div class="bg-slate-800/80 border border-blue-500/40 rounded-xl p-3 flex items-center justify-between gap-3">
+        <div class="bg-slate-800/80 border border-blue-500/40 rounded-xl p-2.5 flex items-center justify-between gap-3">
           <div class="flex items-center gap-2.5">
-            <div id="loginAvatarPreviewBox" class="w-12 h-12 rounded-xl bg-blue-700 border-2 border-amber-400 flex items-center justify-center overflow-hidden shrink-0 font-extrabold text-white text-xs">
+            <div id="loginAvatarPreviewBox" class="w-11 h-11 rounded-xl bg-blue-700 border-2 border-amber-400 flex items-center justify-center overflow-hidden shrink-0 font-extrabold text-white text-xs">
               UTE
             </div>
             <div>
               <div class="text-xs font-bold text-blue-300">Ảnh Avatar Khuôn Mặt 3D</div>
-              <div class="text-[10px] text-slate-400">Hiển thị trực tiếp trên mặt trước nhân vật</div>
+              <div class="text-[10px] text-slate-400">Hiển thị trên mặt nhân vật áo xanh UTE</div>
             </div>
           </div>
           <button type="button" onclick="triggerUploadMyAvatar()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-3 py-1.5 rounded-lg text-xs shrink-0 shadow">
@@ -115,23 +215,12 @@
           </button>
         </div>
 
-        <!-- Tùy chọn xác thực Chủ tọa: Mặc định ẩn ô PIN -->
-        <div class="bg-slate-800/70 border border-amber-500/30 rounded-xl p-3">
-          <label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-amber-300">
-            <input id="loginIsHostCheckbox" type="checkbox" onchange="toggleHostPinBox()" class="accent-amber-500 w-4 h-4" />
-            <span>👑 Tôi là Chủ tọa điều hành phòng này</span>
-          </label>
-          <div id="hostPinBox" style="display: none;" class="mt-2.5">
-            <input id="loginPinInput" type="password" value="" placeholder="Nhập mã PIN Chủ tọa..." class="w-full bg-slate-900 border border-amber-500/40 rounded-lg px-3 py-2 text-xs text-amber-200 focus:outline-none" onkeydown="if(event.key==='Enter') enterMeetingRoom()" />
-          </div>
-        </div>
-
-        <label class="flex items-center gap-2 cursor-pointer text-[11px] text-slate-400 pt-1">
+        <label class="flex items-center gap-2 cursor-pointer text-[11px] text-slate-400">
           <input id="keepDemoBotsCheckbox" type="checkbox" class="accent-emerald-500" />
           <span>Hiển thị thêm các nhân vật mẫu (Bot) mặc áo UTE ngồi sẵn</span>
         </label>
 
-        <button type="button" onclick="enterMeetingRoom()" class="w-full bg-gradient-to-r from-blue-600 to-emerald-500 hover:from-blue-500 hover:to-emerald-400 text-white font-extrabold py-3 rounded-xl text-sm shadow-lg transition cursor-pointer">
+        <button type="button" id="btnSubmitLobby" onclick="enterMeetingRoom()" class="w-full bg-gradient-to-r from-blue-600 to-emerald-500 hover:from-blue-500 hover:to-emerald-400 text-white font-extrabold py-3 rounded-xl text-sm shadow-lg transition cursor-pointer">
           🚀 VÀO KHÁN PHÒNG 3D NGAY
         </button>
       </div>
@@ -146,7 +235,12 @@
         <span id="networkText" class="text-[10px] font-extrabold text-emerald-400">Đang kết nối...</span>
       </div>
 
-      <div class="flex items-center gap-1.5 bg-slate-800 border border-amber-500/40 rounded-lg px-2.5 py-1 text-xs">
+      <button onclick="openInviteRoomModal()" class="flex items-center gap-1.5 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/50 rounded-lg px-2.5 py-1 text-xs transition shadow" title="Bấm để lấy Mã Tham Gia & Link gửi cho bạn bè">
+        <span>🔑 Mã phòng: <b id="headerJoinCodeBadge" class="text-emerald-300 font-black">UTE101</b></span>
+        <span class="bg-emerald-500 text-slate-950 px-1.5 py-0.2 rounded text-[10px] font-extrabold">🔗 Mời</span>
+      </button>
+
+      <div class="hidden sm:flex items-center gap-1.5 bg-slate-800 border border-amber-500/40 rounded-lg px-2.5 py-1 text-xs">
         <span>👑 Chủ trì: <b id="hostNameBadge" class="text-amber-400">Đình Lâm</b></span>
         <button id="btnAssignHost" onclick="openHostAssignModal()" class="ml-1 bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded font-semibold transition">
           Quản trị & Kick
@@ -179,11 +273,10 @@
       <button onclick="openSponsorLogoModal()" id="btnSponsorConfig" class="bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 text-amber-300 px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1">
         🖼️ Logo
       </button>
-      <div onclick="reopenLoginModal()" class="cursor-pointer flex items-center gap-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 px-2 py-1 rounded-xl text-xs">
+      <div onclick="reopenLoginModal()" class="cursor-pointer flex items-center gap-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 px-2 py-1 rounded-xl text-xs" title="Đổi phòng hoặc tạo phòng mới">
         <span id="currentUserBadge" class="font-bold text-emerald-400">👤 Khách</span>
       </div>
-      <!-- NÚT ẨN / HIỆN THANH SIDEBAR BÊN PHẢI ĐỂ MỞ RỘNG 3D TOÀN MÀN HÌNH -->
-      <button onclick="toggleRightSidebar()" id="btnToggleSidebarHeader" class="bg-slate-800 hover:bg-amber-500 hover:text-slate-950 border border-amber-400/60 text-amber-300 px-2.5 py-1.5 rounded-lg text-xs font-extrabold flex items-center gap-1 transition shadow" title="Đóng/Mở thanh công cụ bên phải để xem toàn màn hình 3D">
+      <button onclick="toggleRightSidebar()" id="btnToggleSidebarHeader" class="bg-slate-800 hover:bg-amber-500 hover:text-slate-950 border border-amber-400/60 text-amber-300 px-2.5 py-1.5 rounded-lg text-xs font-extrabold flex items-center gap-1 transition shadow">
         ◨ Ẩn Sidebar
       </button>
     </div>
@@ -208,7 +301,6 @@
           ✋ Kéo Thả 3D: Tắt
         </button>
 
-        <!-- Nút nhỏ mở lại Camera khi người dùng đã bấm ẩn -->
         <button id="btnRestoreHiddenCam" onclick="restoreLeftCameraDock()" class="hidden bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-1 rounded text-[10px] font-extrabold flex items-center gap-1 animate-pulse shadow">
           📷 Hiện lại Camera đang phát
         </button>
@@ -318,31 +410,34 @@
         </div>
       </div>
 
-      <!-- CỤM ĐIỀU KHIỂN BẢNG HD GÓC TRÊN BÊN PHẢI (CÓ NÚT THU GỌN) -->
-      <div id="topRightControlDock" class="absolute top-3 right-3 bg-slate-900/90 border border-slate-700/80 backdrop-blur px-3 py-2 rounded-xl z-20 flex flex-col gap-1.5 shadow-lg">
+      <!-- CỤM ĐIỀU KHIỂN BẢNG HD & SHARE 6 MÀN HÌNH (3x2) GÓC TRÊN BÊN PHẢI -->
+      <div id="topRightControlDock" class="absolute top-3 right-3 bg-slate-900/90 border border-slate-700/80 backdrop-blur px-3 py-2 rounded-xl z-20 flex flex-col gap-1.5 shadow-lg max-w-md">
         <div class="flex items-center gap-1.5 flex-wrap">
-          <span class="text-[11px] font-bold text-slate-300">🖥️ BẢNG HD:</span>
+          <span class="text-[11px] font-bold text-slate-300">🖥️ BẢNG 3x2:</span>
           <button onclick="prevSlide()" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 rounded text-xs font-bold">◀</button>
           <span id="slideIndicator" class="text-xs font-bold text-amber-300">1/3</span>
           <button onclick="nextSlide()" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 rounded text-xs font-bold">▶</button>
           <button onclick="openAddSlideModal()" class="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-500 rounded text-xs font-bold">+ Slide</button>
 
-          <button onclick="toggleHdZoomModal()" class="px-2.5 py-0.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-xs font-extrabold shadow">
-            🔍 Phóng To HD
+          <button onclick="toggleHdZoomModal()" class="px-2.5 py-0.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-xs font-extrabold shadow" title="Xem lưới 6 màn hình ở chế độ Full HD">
+            🔍 Xem Lưới 6 Màn HD
           </button>
 
           <button id="btnShareScreen" onclick="toggleScreenShare()" class="px-2.5 py-0.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded text-xs font-extrabold flex items-center gap-1 shadow">
-            🖥️ Share Màn Hình HD
+            🖥️ Share Màn Hình (<span id="activeScreensCountBadge">0</span>/6)
           </button>
 
           <button id="btnUserCam" onclick="toggleUserCamera()" class="px-2.5 py-0.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded text-xs font-extrabold flex items-center gap-1 shadow">
             📷 Bật Camera
           </button>
 
-          <button onclick="toggleTopRightDock(true)" class="ml-1 px-1.5 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded text-[10px] font-bold" title="Thu gọn bảng điều khiển này">
+          <button onclick="toggleTopRightDock(true)" class="ml-auto px-1.5 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded text-[10px] font-bold" title="Thu gọn bảng điều khiển này">
             ➖
           </button>
         </div>
+
+        <!-- Danh sách nhanh các màn hình đang Share (Tối đa 6 màn hình) -->
+        <div id="activeScreensMiniBar" class="hidden flex items-center gap-1 flex-wrap bg-slate-950/80 px-2 py-1 rounded-lg border border-cyan-500/30 text-[10px]"></div>
 
         <div class="flex gap-1.5 items-center">
           <span id="permissionMiniTag" class="text-[11px] font-bold text-emerald-400 mr-1">👑 Chủ tọa</span>
@@ -355,9 +450,8 @@
         </div>
       </div>
 
-      <!-- Nút nhỏ mở lại cụm điều khiển góc phải khi đã thu gọn -->
       <button id="btnRestoreTopRightDock" onclick="toggleTopRightDock(false)" class="hidden absolute top-3 right-3 bg-slate-900/90 hover:bg-slate-800 border border-amber-400/60 text-amber-300 px-3 py-1.5 rounded-xl z-20 text-xs font-extrabold shadow-lg">
-        🖥️ Mở điều khiển Bảng HD
+        🖥️ Mở điều khiển Bảng (6 Màn Hình)
       </button>
 
       <!-- Thanh phát biểu & truyền giọng nói trực tiếp dưới đáy -->
@@ -570,15 +664,23 @@
   </div>
 
   <script>
-    // ================= CẤU HÌNH ĐỒNG PHỤC UTE + ĐÓNG/MỞ SIDEBAR TOÀN MÀN HÌNH 3D =================
-    const HOST_PIN = '2020';
+    // ================= CẤU HÌNH SHARE 6 MÀN HÌNH CÙNG LÚC (3 CỘT X 2 HÀNG) + TỰ TẠO PHÒNG + AUTO-LEAVE =================
+    const MAX_SCREEN_SHARES = 6; // Tối đa 6 màn hình cùng lúc (3 cột x 2 hàng)
+    let activeScreenShares = {}; // { sharerId: { sharerId, sharerName, jpg, imgElement, updatedAt } }
+    let focusedScreenSharerId = null; // Cho phép click phóng to 1 màn hình trong 6 màn hình
+
+    let currentRoomHostPin = '2020';
+    let currentRoomJoinCode = 'UTE101';
+    let currentRoomTitle = 'Phòng Chủ trì: Đình Lâm';
+    let lobbyMode = 'join';
+
     let isOwnerAuthenticated = false;
     let myClientId = 'u_' + Math.random().toString(36).substring(2, 9);
     let currentViewerId = myClientId;
     let assignedHostId = 'p0';
     let activeSpeakerId = null;
     let selectedTargetMemberId = null;
-    let currentRoomChannel = 'phong_dinh_lam';
+    let currentRoomChannel = 'UTE101';
     let currentScene = 'vongcung';
     let maxSeats = 17;
     let is3DDragEnabled = false;
@@ -593,16 +695,15 @@
 
     let mqttClient = null;
     let mqttTopic = '';
+    let heartbeatInterval = null;
 
-    // Bộ đệm Share Màn Hình chuẩn HD 1280x720
+    // Bộ đệm Share Màn Hình của máy hiện tại
     let isScreenSharing = false;
-    let isRemoteScreenSharing = false;
     let screenStream = null;
-    let screenVideoTexture = null;
     let screenBroadcastTimer = null;
     let screenCaptureCanvas = document.createElement('canvas');
-    screenCaptureCanvas.width = 1280;
-    screenCaptureCanvas.height = 720;
+    screenCaptureCanvas.width = 800;
+    screenCaptureCanvas.height = 450;
     let screenCaptureCtx = screenCaptureCanvas.getContext('2d');
 
     // Bộ đệm Camera Góc Trái Hội Trường
@@ -621,30 +722,363 @@
     let voiceAudioStream = null;
 
     let participants = [
-      { id: 'p0', name: 'Đình Lâm', role: 'Chủ Tọa', seat: 0, joinedAt: 1000, avatarUrl: null, speaking: false, bubble: '', bounceUntil: 0, isBot: false }
+      { id: 'p0', name: 'Đình Lâm', role: 'Chủ Tọa', seat: 0, joinedAt: 1000, lastSeen: Date.now(), avatarUrl: null, speaking: false, bubble: '', bounceUntil: 0, isBot: false }
     ];
 
     const demoBots = [
-      { id: 'bot1', name: 'Bảo Ngọc', role: 'Thiết kế 3D', seat: 1, joinedAt: 2001, avatarUrl: null, speaking: false, bubble: '', bounceUntil: 0, isBot: true },
-      { id: 'bot2', name: 'Hoàng Nam', role: 'Kỹ thuật', seat: 2, joinedAt: 2002, avatarUrl: null, speaking: false, bubble: '', bounceUntil: 0, isBot: true },
-      { id: 'bot3', name: 'Thu Hà', role: 'Marketing', seat: 3, joinedAt: 2003, avatarUrl: null, speaking: false, bubble: '', bounceUntil: 0, isBot: true },
-      { id: 'bot4', name: 'Minh Tuấn', role: 'Tài chính', seat: 4, joinedAt: 2004, avatarUrl: null, speaking: false, bubble: '', bounceUntil: 0, isBot: true }
+      { id: 'bot1', name: 'Bảo Ngọc', role: 'Thiết kế 3D', seat: 1, joinedAt: 2001, lastSeen: Date.now(), avatarUrl: null, speaking: false, bubble: '', bounceUntil: 0, isBot: true },
+      { id: 'bot2', name: 'Hoàng Nam', role: 'Kỹ thuật', seat: 2, joinedAt: 2002, lastSeen: Date.now(), avatarUrl: null, speaking: false, bubble: '', bounceUntil: 0, isBot: true },
+      { id: 'bot3', name: 'Thu Hà', role: 'Marketing', seat: 3, joinedAt: 2003, lastSeen: Date.now(), avatarUrl: null, speaking: false, bubble: '', bounceUntil: 0, isBot: true },
+      { id: 'bot4', name: 'Minh Tuấn', role: 'Tài chính', seat: 4, joinedAt: 2004, lastSeen: Date.now(), avatarUrl: null, speaking: false, bubble: '', bounceUntil: 0, isBot: true }
     ];
 
     let preassignedSeatNames = {};
+
+    // ================= BỘ VẼ LƯỚI ĐA MÀN HÌNH (TỐI ĐA 6 MÀN HÌNH - 3 CỘT X 2 HÀNG) =================
+    function getActiveScreenSharesList() {
+      return Object.values(activeScreenShares).slice(0, MAX_SCREEN_SHARES);
+    }
+
+    function updateMultiScreenUIAndBoard() {
+      const list = getActiveScreenSharesList();
+      const count = list.length;
+      const badge = document.getElementById('activeScreensCountBadge');
+      if (badge) badge.innerText = count;
+
+      // Thanh hiển thị nhanh những ai đang Share màn hình (cho phép click vào để xem riêng hoặc Chủ tọa tắt)
+      const miniBar = document.getElementById('activeScreensMiniBar');
+      if (miniBar) {
+        if (count === 0) {
+          miniBar.classList.add('hidden');
+          miniBar.innerHTML = '';
+        } else {
+          miniBar.classList.remove('hidden');
+          miniBar.innerHTML = `<span class="text-cyan-400 font-bold">Đang chiếu (${count}/6):</span>` + list.map((item, idx) => `
+            <span class="inline-flex items-center gap-1 bg-slate-800 border ${focusedScreenSharerId === item.sharerId ? 'border-amber-400 text-amber-300' : 'border-slate-700 text-slate-200'} px-2 py-0.5 rounded cursor-pointer"
+                  onclick="toggleFocusSingleScreen('${item.sharerId}')" title="Click để phóng to riêng màn hình này">
+              <b>#${idx + 1} ${item.sharerName}</b>
+              ${(isCurrentUserHost() || item.sharerId === currentViewerId) ? `<button onclick="event.stopPropagation(); forceStopScreenShareOf('${item.sharerId}')" class="text-rose-400 hover:text-rose-300 ml-1 font-black" title="Tắt màn hình này">✕</button>` : ''}
+            </span>
+          `).join('');
+        }
+      }
+
+      drawMultiScreenOrSlideTo3DBoard();
+      renderHdZoomOverlayContent();
+    }
+
+    function toggleFocusSingleScreen(sharerId) {
+      if (focusedScreenSharerId === sharerId) focusedScreenSharerId = null;
+      else focusedScreenSharerId = sharerId;
+      updateMultiScreenUIAndBoard();
+    }
+
+    function forceStopScreenShareOf(targetSharerId) {
+      if (targetSharerId === currentViewerId) {
+        stopScreenShareCleanup();
+        return;
+      }
+      if (!isCurrentUserHost()) return;
+      delete activeScreenShares[targetSharerId];
+      if (focusedScreenSharerId === targetSharerId) focusedScreenSharerId = null;
+      updateMultiScreenUIAndBoard();
+      broadcastRealtime('SCREEN_STOP', { sharerId: targetSharerId });
+    }
+
+    function upsertActiveScreenShareFrame(sharerId, sharerName, jpgData, localVideoElement = null) {
+      const existing = activeScreenShares[sharerId];
+      if (!existing && Object.keys(activeScreenShares).length >= MAX_SCREEN_SHARES) {
+        return false; // Đã đủ 6 màn hình
+      }
+
+      if (localVideoElement) {
+        activeScreenShares[sharerId] = {
+          sharerId,
+          sharerName,
+          jpg: jpgData,
+          videoEl: localVideoElement,
+          imgEl: null,
+          updatedAt: Date.now()
+        };
+        updateMultiScreenUIAndBoard();
+      } else if (jpgData) {
+        const entry = existing || { sharerId, sharerName, jpg: jpgData, videoEl: null, imgEl: new Image(), updatedAt: Date.now() };
+        entry.sharerName = sharerName || entry.sharerName;
+        entry.jpg = jpgData;
+        entry.updatedAt = Date.now();
+        if (!entry.imgEl) entry.imgEl = new Image();
+        entry.imgEl.onload = () => {
+          drawMultiScreenOrSlideTo3DBoard();
+          renderHdZoomOverlayContent();
+        };
+        entry.imgEl.src = jpgData;
+        activeScreenShares[sharerId] = entry;
+        updateMultiScreenUIAndBoard();
+      }
+      return true;
+    }
+
+    // Vẽ tự động Lưới 6 Màn Hình (Tối đa 3 Cột x 2 Hàng) lên Bảng 3D Full HD (1920x1080)
+    function drawMultiScreenOrSlideTo3DBoard() {
+      if (!screenCtx) return;
+      const list = getActiveScreenSharesList();
+
+      if (list.length === 0) {
+        drawSlideTo3DScreen();
+        return;
+      }
+
+      // Nếu người dùng đang chọn phóng to 1 màn hình cụ thể trong 6 màn hình
+      const displayList = focusedScreenSharerId
+        ? list.filter(x => x.sharerId === focusedScreenSharerId)
+        : list;
+      const activeItems = displayList.length > 0 ? displayList : list;
+      const count = activeItems.length;
+
+      // Xác định số cột (tối đa 3 cột) và số hàng (tối đa 2 hàng)
+      let cols = 1;
+      let rows = 1;
+      if (count === 1) { cols = 1; rows = 1; }
+      else if (count === 2) { cols = 2; rows = 1; }
+      else if (count === 3) { cols = 3; rows = 1; }
+      else if (count === 4) { cols = 2; rows = 2; }
+      else { cols = 3; rows = 2; } // 5 hoặc 6 màn hình: 3 cột x 2 hàng
+
+      screenCtx.fillStyle = '#090d16';
+      screenCtx.fillRect(0, 0, 1920, 1080);
+
+      const pad = 12;
+      const headerH = 64;
+      const usableW = 1920 - pad * (cols + 1);
+      const usableH = 1080 - headerH - pad * (rows + 1);
+      const cellW = Math.floor(usableW / cols);
+      const cellH = Math.floor(usableH / rows);
+
+      // Thanh tiêu đề phía trên Bảng 3D
+      screenCtx.fillStyle = '#0f172a';
+      screenCtx.fillRect(0, 0, 1920, headerH);
+      screenCtx.fillStyle = '#38bdf8';
+      screenCtx.font = 'bold 32px sans-serif';
+      screenCtx.fillText(`🖥️ TRÌNH CHIẾU ĐA MÀN HÌNH TRỰC TIẾP (${list.length}/6 MÀN HÌNH - LAYOUT ${cols}x${rows})`, 28, 43);
+
+      activeItems.forEach((item, idx) => {
+        const c = idx % cols;
+        const r = Math.floor(idx / cols);
+        const x = pad + c * (cellW + pad);
+        const y = headerH + pad + r * (cellH + pad);
+
+        // Nền ô màn hình
+        screenCtx.fillStyle = '#1e293b';
+        screenCtx.fillRect(x, y, cellW, cellH);
+
+        // Vẽ nội dung Video local hoặc Ảnh stream từ máy bạn
+        screenCtx.imageSmoothingEnabled = true;
+        screenCtx.imageSmoothingQuality = 'high';
+        if (item.videoEl && item.videoEl.readyState >= 2) {
+          screenCtx.drawImage(item.videoEl, x, y, cellW, cellH);
+        } else if (item.imgEl && item.imgEl.complete && item.imgEl.naturalWidth > 0) {
+          screenCtx.drawImage(item.imgEl, x, y, cellW, cellH);
+        }
+
+        // Viền từng ô màn hình
+        screenCtx.strokeStyle = item.sharerId === currentViewerId ? '#fbbf24' : '#06b6d4';
+        screenCtx.lineWidth = 6;
+        screenCtx.strokeRect(x, y, cellW, cellH);
+
+        // Nhãn tên người đang Share ở góc dưới mỗi ô
+        const labelH = 44;
+        screenCtx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+        screenCtx.fillRect(x + 6, y + cellH - labelH - 6, Math.min(cellW - 12, 460), labelH);
+        screenCtx.fillStyle = '#fde047';
+        screenCtx.font = 'bold 24px sans-serif';
+        screenCtx.fillText(`🖥️ #${idx + 1}: ${item.sharerName}`, x + 18, y + cellH - 18);
+      });
+
+      if (screenTexture) screenTexture.needsUpdate = true;
+    }
+
+    // ================= QUẢN LÝ CHẾ ĐỘ TỰ TẠO PHÒNG MỚI & MỜI BẠN BÈ =================
+    function switchLobbyMode(mode) {
+      lobbyMode = mode;
+      const joinSec = document.getElementById('lobbyJoinSection');
+      const createSec = document.getElementById('lobbyCreateSection');
+      const tabJoin = document.getElementById('tabModeJoin');
+      const tabCreate = document.getElementById('tabModeCreate');
+      const submitBtn = document.getElementById('btnSubmitLobby');
+
+      if (mode === 'create') {
+        joinSec.classList.add('hidden');
+        createSec.classList.remove('hidden');
+        tabCreate.className = 'py-2 rounded-lg text-xs font-extrabold bg-indigo-600 text-white shadow transition';
+        tabJoin.className = 'py-2 rounded-lg text-xs font-extrabold text-slate-300 hover:text-white transition';
+        submitBtn.innerText = '✨ KHỞI TẠO PHÒNG & VÀO VỚI QUYỀN CHỦ TRÌ';
+        randomizeNewRoomCodes();
+      } else {
+        createSec.classList.add('hidden');
+        joinSec.classList.remove('hidden');
+        tabJoin.className = 'py-2 rounded-lg text-xs font-extrabold bg-blue-600 text-white shadow transition';
+        tabCreate.className = 'py-2 rounded-lg text-xs font-extrabold text-slate-300 hover:text-white transition';
+        submitBtn.innerText = '🚀 VÀO KHÁN PHÒNG 3D NGAY';
+      }
+    }
+
+    function randomizeNewRoomCodes() {
+      const randJoin = 'UTE' + Math.floor(100 + Math.random() * 900);
+      const randHost = String(Math.floor(1000 + Math.random() * 9000));
+      document.getElementById('createJoinCodeInput').value = randJoin;
+      document.getElementById('createHostCodeInput').value = randHost;
+      switchLobbyRoomChannel(randJoin);
+    }
+
+    function handlePresetRoomChange(val) {
+      const inp = document.getElementById('joinRoomCodeInput');
+      if (val === 'CUSTOM') {
+        inp.value = '';
+        inp.focus();
+      } else {
+        inp.value = val;
+        switchLobbyRoomChannel(val);
+      }
+    }
+
+    function openInviteRoomModal() {
+      document.getElementById('inviteRoomTitleText').innerText = currentRoomTitle;
+      document.getElementById('inviteJoinCodeText').innerText = currentRoomJoinCode;
+
+      const hostBox = document.getElementById('inviteHostCodeBox');
+      if (isCurrentUserHost()) {
+        hostBox.classList.remove('hidden');
+        document.getElementById('inviteHostCodeText').innerText = currentRoomHostPin;
+      } else {
+        hostBox.classList.add('hidden');
+      }
+
+      const baseUrl = window.location.origin + window.location.pathname;
+      const inviteUrl = `${baseUrl}?join=${encodeURIComponent(currentRoomJoinCode)}`;
+      document.getElementById('inviteShareUrlInput').value = inviteUrl;
+      document.getElementById('inviteRoomModal').classList.remove('hidden');
+    }
+
+    function copyInviteJoinCode() {
+      navigator.clipboard.writeText(currentRoomJoinCode);
+      alert(`✅ Đã copy Mã Tham Gia: ${currentRoomJoinCode}\nHãy gửi mã này cho các thành viên bạn muốn mời vào phòng!`);
+    }
+
+    function copyInviteShareLink() {
+      const url = document.getElementById('inviteShareUrlInput').value;
+      navigator.clipboard.writeText(url);
+      alert(`✅ Đã copy Link mời trực tiếp:\n${url}\nNgười nhận bấm vào link sẽ tự động điền sẵn Mã phòng này!`);
+    }
+
+    function checkUrlInviteParams() {
+      const params = new URLSearchParams(window.location.search);
+      const joinParam = params.get('join') || params.get('room');
+      if (joinParam) {
+        const cleanCode = joinParam.trim().toUpperCase();
+        document.getElementById('joinRoomCodeInput').value = cleanCode;
+        document.getElementById('loginPresetRoomSelect').value = 'CUSTOM';
+        currentRoomJoinCode = cleanCode;
+        currentRoomChannel = cleanCode;
+      }
+    }
+
+    // ================= TỰ ĐỘNG RỜI PHÒNG & XÓA MÀN HÌNH SHARE KHI TẮT TRÌNH DUYỆT =================
+    function removeMemberFromRoomAndGroups(memberId) {
+      if (!memberId) return;
+      const hadScreen = !!activeScreenShares[memberId];
+      if (hadScreen) {
+        delete activeScreenShares[memberId];
+        if (focusedScreenSharerId === memberId) focusedScreenSharerId = null;
+        updateMultiScreenUIAndBoard();
+      }
+
+      const existed = participants.some(p => p.id === memberId);
+      if (!existed) return;
+
+      participants = participants.filter(p => p.id !== memberId);
+      whisperGroupIds = whisperGroupIds.filter(id => id !== memberId);
+
+      if (camOwnerId === memberId) {
+        isRemoteCamActive = false;
+        camOwnerId = null;
+        document.getElementById('leftHallCameraDock').classList.add('hidden');
+        document.getElementById('btnRestoreHiddenCam').classList.add('hidden');
+      }
+
+      updateOnlineCountUI();
+      renderWhisperUI();
+      build3DScene();
+      if (!document.getElementById('seatingPlannerModal').classList.contains('hidden')) {
+        renderSeatingPlannerGrid();
+      }
+      if (!document.getElementById('hostModal').classList.contains('hidden')) {
+        openHostAssignModal();
+      }
+    }
+
+    function notifyLeavingRoomNow() {
+      if (!hasEnteredRoom || !mqttClient || !mqttClient.connected) return;
+      const packet = JSON.stringify({
+        type: 'USER_LEAVE',
+        senderId: currentViewerId,
+        ts: Date.now(),
+        data: { memberId: currentViewerId }
+      });
+      try {
+        mqttClient.publish(mqttTopic, packet);
+      } catch (e) {}
+    }
+
+    window.addEventListener('beforeunload', notifyLeavingRoomNow);
+    window.addEventListener('pagehide', notifyLeavingRoomNow);
+
+    function startRoomHeartbeat() {
+      if (heartbeatInterval) clearInterval(heartbeatInterval);
+      heartbeatInterval = setInterval(() => {
+        if (!hasEnteredRoom) return;
+        const now = Date.now();
+        const me = participants.find(p => p.id === currentViewerId);
+        if (me) me.lastSeen = now;
+
+        broadcastRealtime('HEARTBEAT', { memberId: currentViewerId });
+
+        let removedAny = false;
+        participants.slice().forEach(p => {
+          if (p.id !== currentViewerId && !p.isBot && p.id !== 'p0') {
+            if (p.lastSeen && (now - p.lastSeen > 18000)) {
+              participants = participants.filter(x => x.id !== p.id);
+              whisperGroupIds = whisperGroupIds.filter(id => id !== p.id);
+              delete activeScreenShares[p.id];
+              removedAny = true;
+            }
+          }
+        });
+
+        // Dọn các màn hình Share từ máy đã ngắt kết nối quá 12 giây
+        Object.keys(activeScreenShares).forEach(sId => {
+          if (sId !== currentViewerId && activeScreenShares[sId].updatedAt && (now - activeScreenShares[sId].updatedAt > 12000)) {
+            delete activeScreenShares[sId];
+            removedAny = true;
+          }
+        });
+
+        if (removedAny) {
+          updateMultiScreenUIAndBoard();
+          updateOnlineCountUI();
+          renderWhisperUI();
+          build3DScene();
+        }
+      }, 5000);
+    }
 
     // ================= HÀM ĐÓNG / MỞ SIDEBAR BÊN PHẢI & THU GỌN CỤM ĐIỀU KHIỂN =================
     function toggleRightSidebar(forceShow = null) {
       const sidebar = document.getElementById('rightSidebarPanel');
       const btnHeader = document.getElementById('btnToggleSidebarHeader');
 
-      if (forceShow === true) {
-        isRightSidebarHidden = false;
-      } else if (forceShow === false) {
-        isRightSidebarHidden = true;
-      } else {
-        isRightSidebarHidden = !isRightSidebarHidden;
-      }
+      if (forceShow === true) isRightSidebarHidden = false;
+      else if (forceShow === false) isRightSidebarHidden = true;
+      else isRightSidebarHidden = !isRightSidebarHidden;
 
       if (isRightSidebarHidden) {
         sidebar.classList.add('hidden');
@@ -656,7 +1090,6 @@
         btnHeader.className = 'bg-slate-800 hover:bg-amber-500 hover:text-slate-950 border border-amber-400/60 text-amber-300 px-2.5 py-1.5 rounded-lg text-xs font-extrabold flex items-center gap-1 transition shadow';
       }
 
-      // Cập nhật lại kích thước khung 3D ngay lập tức
       setTimeout(() => {
         const container = document.getElementById('viewport3d');
         if (camera && renderer && container) {
@@ -688,7 +1121,6 @@
       }
     }
 
-    // ================= ĐIỀU KHIỂN ẨN / HIỆN KHUNG CAMERA GÓC TRÁI =================
     function hideLeftCameraDock() {
       isCamDockManuallyHidden = true;
       document.getElementById('leftHallCameraDock').classList.add('hidden');
@@ -705,15 +1137,11 @@
       }
     }
 
-    // ================= HÀM CHỐNG NGỒI ĐÈ LÊN NHAU (RESOLVE SEAT COLLISIONS) =================
+    // ================= HÀM CHỐNG NGỒI ĐÈ LÊN NHAU =================
     function findNextFreeSeat(occupiedSet) {
       let s = 1;
-      while (occupiedSet.has(s)) {
-        s++;
-      }
-      if (s >= maxSeats) {
-        maxSeats = s + 1;
-      }
+      while (occupiedSet.has(s)) s++;
+      if (s >= maxSeats) maxSeats = s + 1;
       return s;
     }
 
@@ -768,14 +1196,14 @@
         },
         {
           id: 'q2',
-          q: 'Câu 2: Điểm ưu việt nhất của Khán phòng vòng cung giảng đường 3D là gì?',
-          options: ['A. Bàn ghế xếp bậc thang cao dần giúp mọi người nhìn rõ sân khấu', 'B. Mọi ánh nhìn đều hướng đối diện về phía Bàn Chủ tọa', 'C. Đồng bộ trực tiếp giọng nói, màn hình HD, slide và bài thi', 'D. Tất cả các đáp án trên đều đúng'],
-          correct: 3
+          q: 'Câu 2: Phòng họp 3D UTE hỗ trợ tối đa bao nhiêu màn hình Share cùng lúc trên bảng chính?',
+          options: ['A. Tối đa 6 màn hình (Layout 3 cột x 2 hàng)', 'B. Chỉ 1 màn hình duy nhất', 'C. Không hỗ trợ Share màn hình', 'D. Tối đa 2 màn hình'],
+          correct: 0
         },
         {
           id: 'q3',
-          q: 'Câu 3: Khi nào thành viên trong phòng được phép bật Camera góc trái hội trường và Share màn hình?',
-          options: ['A. Bất kỳ lúc nào mà không cần xin phép', 'B. Khi đang bật Mic phát biểu hoặc được Chủ tọa mời phát biểu', 'C. Chỉ khi kết thúc cuộc họp', 'D. Không ai được bật ngoài Chủ tọa'],
+          q: 'Câu 3: Khi người dùng tắt trình duyệt rời phòng thì hệ thống xử lý thế nào?',
+          options: ['A. Vẫn giữ nguyên nhân vật cũ mãi mãi', 'B. Tự động thoát khỏi phòng và giải phóng ghế trống + ô màn hình ngay lập tức', 'C. Khóa toàn bộ phòng họp', 'D. Tắt màn hình 3D'],
           correct: 1
         }
       ],
@@ -798,14 +1226,14 @@
     let currentEditingSponsorId = null;
 
     const slides = [
-      { title: 'KHÁN PHÒNG VÒNG CUNG 3D - ĐỒNG PHỤC UTE', lines: ['1. Toàn bộ nhân vật mặc áo Xanh Dương in chữ "UTE" sắc nét', '2. Mặt trước nhân vật hiển thị Ảnh Avatar cá nhân (Upload)', '3. Có nút Ẩn/Hiện Sidebar để mở rộng không gian 3D toàn màn hình'] },
-      { title: 'ĐỒNG BỘ GIỌNG NÓI & MÀN HÌNH TRÌNH CHIẾU HD', lines: ['• Khi bật Mic nói: Truyền cả luồng âm thanh thật & giọng đọc AI', '• Upload Avatar và Logo Nhà tài trợ tự động hiện trên mọi máy', '• Chat nhóm, Chọc ghẹo, Thọc lét, Cụm ly đồng bộ tức thì'] },
+      { title: 'SHARE CÙNG LÚC 6 MÀN HÌNH (LAYOUT 3 CỘT X 2 HÀNG)', lines: ['1. Tối đa 6 thành viên có thể cùng lúc Share màn hình lên bảng 3D', '2. Tự động chia lưới chuẩn 3 Cột x 2 Hàng (hoặc 1x1, 2x1, 2x2)', '3. Bấm "🔍 Xem Lưới 6 Màn HD" để xem rõ nét và click phóng to từng màn'] },
+      { title: 'TỰ TẠO PHÒNG RIÊNG & AUTO-LEAVE KHI ĐÓNG WEB', lines: ['• Tạo phòng riêng với Code Chủ Trì & Code Tham Gia gửi bạn bè', '• Khi người dùng tắt trình duyệt sẽ tự động rời phòng & giải phóng ghế', '• Đồng phục áo xanh dương UTE + Avatar mặt nhân vật 3D'] },
       { title: 'THI TRẮC NGHIỆM & BIÊN BẢN HỌP TỰ ĐỘNG', lines: ['• Chủ tọa phát đề thi trực tiếp lên màn hình của toàn bộ học viên', '• Bảng xếp hạng chấm điểm tự động và xuất Biên bản cuộc họp'] }
     ];
     let currentSlideIdx = 0;
 
     const transcripts = [
-      { time: '09:00:00', speaker: 'Hệ thống', role: 'UTE 3D Sync', text: 'Chào mừng vào Khán Phòng 3D UTE! Bạn có thể bấm nút "◨ Ẩn Sidebar" ở góc phải trên cùng để mở rộng không gian 3D ra toàn màn hình.' }
+      { time: '09:00:00', speaker: 'Hệ thống', role: 'Multi-Screen 3x2', text: 'Đã kích hoạt tính năng Share 6 màn hình cùng lúc (Layout 3 cột x 2 hàng)! Các thành viên có thể bấm nút "🖥️ Share Màn Hình (0/6)" để cùng chiếu bài lên bảng.' }
     ];
 
     let whisperGroupIds = [];
@@ -1016,35 +1444,56 @@
 
     // ================= HỆ THỐNG ĐỒNG BỘ MẠNG TOÀN DIỆN =================
     function switchLobbyRoomChannel(newRoomKey) {
-      connectRealtimeRoom(newRoomKey);
+      const clean = (newRoomKey || 'UTE101').trim().toUpperCase();
+      if (!clean) return;
+      connectRealtimeRoom(clean);
     }
 
     function connectRealtimeRoom(roomKey) {
-      if (mqttClient && currentRoomChannel === roomKey && mqttClient.connected) {
+      const cleanKey = (roomKey || 'UTE101').trim().toUpperCase();
+      if (mqttClient && currentRoomChannel === cleanKey && mqttClient.connected) {
         broadcastRealtime('REQUEST_STATE', { requesterId: currentViewerId });
         return;
       }
       if (mqttClient) {
         try { mqttClient.end(true); } catch (e) {}
       }
-      currentRoomChannel = roomKey;
-      mqttTopic = `damdao3d_ute_v6/${roomKey}`;
+      currentRoomChannel = cleanKey;
+      currentRoomJoinCode = cleanKey;
+      mqttTopic = `damdao3d_ute_v8_grid6/${cleanKey}`;
+
+      const headerCodeEl = document.getElementById('headerJoinCodeBadge');
+      if (headerCodeEl) headerCodeEl.innerText = cleanKey;
 
       const dot = document.getElementById('networkDot');
       const txt = document.getElementById('networkText');
       dot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
       txt.innerText = 'Đang kết nối...';
 
+      const willPayload = JSON.stringify({
+        type: 'USER_LEAVE',
+        senderId: currentViewerId,
+        ts: Date.now(),
+        data: { memberId: currentViewerId }
+      });
+
       mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt', {
         clientId: 'ute3d_' + myClientId + '_' + Math.floor(Math.random() * 9999),
         clean: true,
+        keepalive: 15,
         connectTimeout: 5000,
-        reconnectPeriod: 2000
+        reconnectPeriod: 2000,
+        will: {
+          topic: mqttTopic,
+          payload: willPayload,
+          qos: 0,
+          retain: false
+        }
       });
 
       mqttClient.on('connect', () => {
         dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
-        txt.innerText = 'Đồng bộ Toàn diện UTE';
+        txt.innerText = `Phòng: ${cleanKey}`;
         mqttClient.subscribe(mqttTopic, { qos: 0 });
 
         broadcastRealtime('REQUEST_STATE', { requesterId: currentViewerId });
@@ -1079,8 +1528,20 @@
     function handleIncomingRealtimeMessage(msg) {
       const { type, data } = msg;
 
-      if (type === 'USER_JOIN' && data.member) {
-        const incoming = data.member;
+      if (msg.senderId) {
+        const senderP = participants.find(p => p.id === msg.senderId);
+        if (senderP) senderP.lastSeen = Date.now();
+      }
+
+      if (type === 'USER_LEAVE' && data && data.memberId) {
+        removeMemberFromRoomAndGroups(data.memberId);
+        return;
+      } else if (type === 'HEARTBEAT' && data && data.memberId) {
+        const p = participants.find(x => x.id === data.memberId);
+        if (p) p.lastSeen = Date.now();
+        return;
+      } else if (type === 'USER_JOIN' && data.member) {
+        const incoming = { ...data.member, lastSeen: Date.now() };
         const idx = participants.findIndex(p => p.id === incoming.id);
         if (idx >= 0) {
           participants[idx] = { ...participants[idx], ...incoming };
@@ -1102,14 +1563,17 @@
           sendFullRoomState();
         }
       } else if (type === 'FULL_STATE' && data) {
+        if (data.roomTitle) currentRoomTitle = data.roomTitle;
+        if (data.roomHostPin) currentRoomHostPin = data.roomHostPin;
+
         if (Array.isArray(data.participants)) {
           data.participants.forEach(remoteP => {
             if (remoteP.isBot && !document.getElementById('keepDemoBotsCheckbox').checked) return;
             const localIdx = participants.findIndex(lp => lp.id === remoteP.id);
             if (localIdx >= 0) {
-              participants[localIdx] = { ...participants[localIdx], ...remoteP };
+              participants[localIdx] = { ...participants[localIdx], ...remoteP, lastSeen: Date.now() };
             } else {
-              participants.push(remoteP);
+              participants.push({ ...remoteP, lastSeen: Date.now() });
             }
           });
         }
@@ -1165,34 +1629,18 @@
           target.avatarUrl = data.avatarUrl;
           build3DScene();
         }
-      } else if (type === 'SCREEN_FRAME' && data && data.jpg) {
-        isRemoteScreenSharing = true;
-        const img = new Image();
-        img.onload = () => {
-          if (screenCtx && screenMesh) {
-            if (screenMesh.material.map !== screenTexture) {
-              screenMesh.material.map = screenTexture;
-              screenMesh.material.needsUpdate = true;
-            }
-            screenCtx.imageSmoothingEnabled = true;
-            screenCtx.imageSmoothingQuality = 'high';
-            screenCtx.drawImage(img, 0, 0, 1920, 1080);
-            screenCtx.strokeStyle = '#06b6d4';
-            screenCtx.lineWidth = 14;
-            screenCtx.strokeRect(10, 10, 1900, 1060);
-            screenCtx.fillStyle = 'rgba(15, 23, 42, 0.85)';
-            screenCtx.fillRect(35, 985, 860, 68);
-            screenCtx.fillStyle = '#38bdf8';
-            screenCtx.font = 'bold 38px sans-serif';
-            screenCtx.fillText(`🖥️ Đang chiếu màn hình HD của: ${data.sharerName || 'Chủ tọa'}`, 60, 1032);
-            screenTexture.needsUpdate = true;
-            updateHdZoomMirrorIfOpen();
-          }
-        };
-        img.src = data.jpg;
-      } else if (type === 'SCREEN_STOP') {
-        isRemoteScreenSharing = false;
-        drawSlideTo3DScreen();
+      } else if (type === 'SCREEN_FRAME' && data && data.jpg && data.sharerId) {
+        // Nhận khung hình Share màn hình từ 1 trong 6 người đang Share -> đưa vào lưới 3 cột x 2 hàng
+        upsertActiveScreenShareFrame(data.sharerId, data.sharerName || 'Thành viên', data.jpg, null);
+      } else if (type === 'SCREEN_STOP' && data) {
+        const targetId = data.sharerId || msg.senderId;
+        if (targetId === currentViewerId && isScreenSharing) {
+          stopScreenShareCleanup(false);
+        } else if (targetId && activeScreenShares[targetId]) {
+          delete activeScreenShares[targetId];
+          if (focusedScreenSharerId === targetId) focusedScreenSharerId = null;
+          updateMultiScreenUIAndBoard();
+        }
       } else if (type === 'CAM_FRAME' && data && data.jpg) {
         const wasInactive = !isRemoteCamActive;
         isRemoteCamActive = true;
@@ -1282,7 +1730,7 @@
           data.slides.forEach(s => slides.push(s));
         }
         if (typeof data.currentSlideIdx === 'number') currentSlideIdx = data.currentSlideIdx;
-        drawSlideTo3DScreen();
+        drawMultiScreenOrSlideTo3DBoard();
       } else if (type === 'SPEECH' && data) {
         transcripts.push(data.entry);
         renderTranscripts();
@@ -1312,9 +1760,7 @@
           location.reload();
           return;
         }
-        participants = participants.filter(p => p.id !== data.targetId);
-        updateOnlineCountUI();
-        build3DScene();
+        removeMemberFromRoomAndGroups(data.targetId);
       } else if (type === 'QUIZ_LAUNCH' && data.quizState) {
         quizState = data.quizState;
         mySelectedAnswers = {};
@@ -1326,7 +1772,7 @@
         quizState.isActive = false;
         if (quizTimerInterval) clearInterval(quizTimerInterval);
         document.getElementById('liveQuizFloatingBanner').classList.add('hidden');
-        drawSlideTo3DScreen();
+        drawMultiScreenOrSlideTo3DBoard();
         renderQuizUI();
       } else if (type === 'QUIZ_SUBMIT' && data.submission) {
         const sub = data.submission;
@@ -1349,6 +1795,8 @@
       resolveSeatCollisions();
       const sponsorsMeta = sponsorSlots.map(s => ({ id: s.id, label: s.label, imgUrl: s.imgUrl }));
       broadcastRealtime('FULL_STATE', {
+        roomTitle: currentRoomTitle,
+        roomHostPin: currentRoomHostPin,
         participants,
         assignedHostId,
         activeSpeakerId,
@@ -1366,29 +1814,67 @@
       document.getElementById('onlineCountLabel').innerText = `${participants.length} người`;
     }
 
-    // ================= CHẾ ĐỘ PHÓNG TO MÀN HÌNH TRÌNH CHIẾU FULL HD =================
+    // ================= CHẾ ĐỘ PHÓNG TO LƯỚI 6 MÀN HÌNH SHARE (3 CỘT X 2 HÀNG) FULL HD =================
     function toggleHdZoomModal() {
       const modal = document.getElementById('hdZoomOverlay');
       modal.classList.toggle('hidden');
-      updateHdZoomMirrorIfOpen();
+      renderHdZoomOverlayContent();
     }
 
-    function updateHdZoomMirrorIfOpen() {
+    function renderHdZoomOverlayContent() {
       const modal = document.getElementById('hdZoomOverlay');
       if (modal.classList.contains('hidden')) return;
-      const mirrorImg = document.getElementById('hdZoomMirrorImg');
-      if (isScreenSharing) {
-        const videoEl = document.getElementById('screenShareVideo');
-        if (videoEl.readyState >= 2) {
-          screenCaptureCtx.drawImage(videoEl, 0, 0, screenCaptureCanvas.width, screenCaptureCanvas.height);
-          mirrorImg.src = screenCaptureCanvas.toDataURL('image/jpeg', 0.92);
-        }
-      } else if (screenCanvas) {
-        mirrorImg.src = screenCanvas.toDataURL('image/png');
+
+      const container = document.getElementById('hdMultiScreenGridContainer');
+      const backBtn = document.getElementById('btnBackTo6Grid');
+      const list = getActiveScreenSharesList();
+
+      if (list.length === 0) {
+        backBtn.classList.add('hidden');
+        container.className = 'flex-1 flex items-center justify-center overflow-hidden';
+        const dataUrl = screenCanvas ? screenCanvas.toDataURL('image/png') : '';
+        container.innerHTML = `<img src="${dataUrl}" class="max-w-full max-h-full object-contain rounded-xl border-2 border-amber-400 shadow-2xl" />`;
+        return;
       }
+
+      if (focusedScreenSharerId) {
+        const single = list.find(x => x.sharerId === focusedScreenSharerId) || list[0];
+        backBtn.classList.remove('hidden');
+        container.className = 'flex-1 flex items-center justify-center overflow-hidden';
+        const imgSrc = single.jpg || (screenCanvas ? screenCanvas.toDataURL('image/png') : '');
+        container.innerHTML = `
+          <div class="relative w-full h-full flex items-center justify-center">
+            <img src="${imgSrc}" class="max-w-full max-h-full object-contain rounded-xl border-2 border-amber-400 shadow-2xl" />
+            <div class="absolute bottom-4 left-4 bg-slate-900/90 border border-amber-400 px-4 py-1.5 rounded-xl text-sm font-extrabold text-amber-300">
+              🖥️ Đang phóng to màn hình của: ${single.sharerName}
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      backBtn.classList.add('hidden');
+      // Bố cục Lưới chuẩn tối đa 3 cột, 2 hàng
+      let gridClass = 'grid-cols-1';
+      if (list.length === 2) gridClass = 'grid-cols-1 md:grid-cols-2';
+      else if (list.length === 3) gridClass = 'grid-cols-1 md:grid-cols-3';
+      else if (list.length === 4) gridClass = 'grid-cols-2 md:grid-rows-2';
+      else if (list.length >= 5) gridClass = 'grid-cols-2 md:grid-cols-3 md:grid-rows-2';
+
+      container.className = `flex-1 grid ${gridClass} gap-3 overflow-hidden`;
+      container.innerHTML = list.map((item, idx) => `
+        <div onclick="toggleFocusSingleScreen('${item.sharerId}')"
+             class="cursor-pointer relative bg-slate-900 border-2 border-cyan-500/70 hover:border-amber-400 rounded-2xl overflow-hidden flex items-center justify-center group">
+          <img src="${item.jpg || ''}" class="w-full h-full object-contain bg-black" />
+          <div class="absolute bottom-2 left-2 bg-slate-950/90 border border-slate-700 px-3 py-1 rounded-lg text-xs font-extrabold text-amber-300 flex items-center gap-2">
+            <span>🖥️ #${idx + 1}: ${item.sharerName}</span>
+            <span class="text-[10px] text-cyan-300 opacity-80 group-hover:opacity-100">🔍 Click phóng to</span>
+          </div>
+        </div>
+      `).join('');
     }
 
-    // ================= CỔNG ĐĂNG NHẬP & KIỂM TRA QUYỀN =================
+    // ================= CỔNG ĐĂNG NHẬP: VÀO BẰNG MÃ HOẶC TỰ TẠO PHÒNG MỚI =================
     function toggleHostPinBox() {
       const checked = document.getElementById('loginIsHostCheckbox').checked;
       const pinBox = document.getElementById('hostPinBox');
@@ -1402,76 +1888,121 @@
     }
 
     function enterMeetingRoom() {
-      const roomCode = document.getElementById('loginRoomHostSelect').value;
+      if (hasEnteredRoom) {
+        notifyLeavingRoomNow();
+      }
+
       const rawName = document.getElementById('loginNameInput').value.trim();
       const rawRole = document.getElementById('loginRoleInput').value.trim();
-      const wantsHost = document.getElementById('loginIsHostCheckbox').checked;
-      const pinVal = document.getElementById('loginPinInput').value.trim();
       const useBots = document.getElementById('keepDemoBotsCheckbox').checked;
 
       if (!useBots) {
         participants = participants.filter(p => !p.isBot);
       } else {
         demoBots.forEach(b => {
-          if (!participants.some(p => p.id === b.id)) participants.push({ ...b });
+          if (!participants.some(p => p.id === b.id)) participants.push({ ...b, lastSeen: Date.now() });
         });
       }
 
-      if (wantsHost) {
-        if (pinVal !== HOST_PIN) {
-          alert('⛔ Mã PIN Chủ tọa không chính xác! Nếu bạn là thành viên tham dự, vui lòng bỏ tích ô Chủ tọa.');
-          return;
-        }
+      let roomCode = 'UTE101';
+
+      if (lobbyMode === 'create') {
+        const customTitle = document.getElementById('createRoomTitleInput').value.trim();
+        const customJoinCode = document.getElementById('createJoinCodeInput').value.trim().toUpperCase() || ('UTE' + Math.floor(100 + Math.random() * 900));
+        const customHostPin = document.getElementById('createHostCodeInput').value.trim() || '2020';
+
+        roomCode = customJoinCode;
+        currentRoomJoinCode = customJoinCode;
+        currentRoomHostPin = customHostPin;
+        currentRoomTitle = customTitle || `Phòng của ${rawName || 'Chủ trì'}`;
+
         isOwnerAuthenticated = true;
         currentViewerId = 'p0';
         assignedHostId = 'p0';
-        participants[0].name = rawName || 'Đình Lâm';
-        participants[0].role = rawRole || 'Chủ Tọa';
-        participants[0].seat = 0;
-        participants[0].joinedAt = 1000;
-        if (myUploadedAvatarUrl) participants[0].avatarUrl = myUploadedAvatarUrl;
+
+        participants = participants.filter(p => p.isBot);
+        participants.unshift({
+          id: 'p0',
+          name: rawName || 'Chủ Trì Phòng',
+          role: rawRole || 'Chủ Tọa',
+          seat: 0,
+          joinedAt: 1000,
+          lastSeen: Date.now(),
+          avatarUrl: myUploadedAvatarUrl,
+          speaking: false,
+          bubble: `🎉 Chào mừng đến với ${currentRoomTitle}! Mã tham gia: ${currentRoomJoinCode}`,
+          bounceUntil: 0,
+          isBot: false
+        });
       } else {
-        isOwnerAuthenticated = false;
-        const memberName = rawName || ('Thành viên ' + Math.floor(Math.random() * 90 + 10));
-        const memberRole = rawRole || 'Sinh viên UTE';
+        roomCode = document.getElementById('joinRoomCodeInput').value.trim().toUpperCase() || 'UTE101';
+        currentRoomJoinCode = roomCode;
+        const wantsHost = document.getElementById('loginIsHostCheckbox').checked;
+        const pinVal = document.getElementById('loginPinInput').value.trim();
 
-        const occupiedSeats = new Set(participants.map(p => p.seat));
-        occupiedSeats.add(0);
-
-        let targetSeat = null;
-        for (const [sIdx, rName] of Object.entries(preassignedSeatNames)) {
-          const sNum = parseInt(sIdx, 10);
-          if (rName && rName.toLowerCase() === memberName.toLowerCase() && !occupiedSeats.has(sNum)) {
-            targetSeat = sNum;
-            delete preassignedSeatNames[sIdx];
-            break;
+        if (wantsHost) {
+          if (pinVal !== currentRoomHostPin && pinVal !== '2020') {
+            alert(`⛔ Code Chủ trì không chính xác! Vui lòng nhập đúng Code Chủ trì của phòng ${roomCode} hoặc bỏ tích ô Chủ trì để vào với tư cách thành viên.`);
+            return;
           }
-        }
-
-        if (targetSeat === null) {
-          targetSeat = findNextFreeSeat(occupiedSeats);
-        }
-
-        const myExisting = participants.find(p => p.id === myClientId);
-        if (myExisting) {
-          myExisting.name = memberName;
-          myExisting.role = memberRole;
-          if (myUploadedAvatarUrl) myExisting.avatarUrl = myUploadedAvatarUrl;
+          isOwnerAuthenticated = true;
+          currentViewerId = 'p0';
+          assignedHostId = 'p0';
+          let hostP = participants.find(p => p.id === 'p0');
+          if (!hostP) {
+            hostP = { id: 'p0', name: rawName || 'Đình Lâm', role: rawRole || 'Chủ Tọa', seat: 0, joinedAt: 1000, lastSeen: Date.now(), avatarUrl: myUploadedAvatarUrl, speaking: false, bubble: '', bounceUntil: 0, isBot: false };
+            participants.unshift(hostP);
+          } else {
+            hostP.name = rawName || hostP.name;
+            hostP.role = rawRole || 'Chủ Tọa';
+            hostP.seat = 0;
+            hostP.lastSeen = Date.now();
+            if (myUploadedAvatarUrl) hostP.avatarUrl = myUploadedAvatarUrl;
+          }
         } else {
-          participants.push({
-            id: myClientId,
-            name: memberName,
-            role: memberRole,
-            seat: targetSeat,
-            joinedAt: Date.now(),
-            avatarUrl: myUploadedAvatarUrl,
-            speaking: false,
-            bubble: '',
-            bounceUntil: 0,
-            isBot: false
-          });
+          isOwnerAuthenticated = false;
+          const memberName = rawName || ('Thành viên ' + Math.floor(Math.random() * 90 + 10));
+          const memberRole = rawRole || 'Thành viên';
+
+          const occupiedSeats = new Set(participants.map(p => p.seat));
+          occupiedSeats.add(0);
+
+          let targetSeat = null;
+          for (const [sIdx, rName] of Object.entries(preassignedSeatNames)) {
+            const sNum = parseInt(sIdx, 10);
+            if (rName && rName.toLowerCase() === memberName.toLowerCase() && !occupiedSeats.has(sNum)) {
+              targetSeat = sNum;
+              delete preassignedSeatNames[sIdx];
+              break;
+            }
+          }
+          if (targetSeat === null) {
+            targetSeat = findNextFreeSeat(occupiedSeats);
+          }
+
+          const myExisting = participants.find(p => p.id === myClientId);
+          if (myExisting) {
+            myExisting.name = memberName;
+            myExisting.role = memberRole;
+            myExisting.lastSeen = Date.now();
+            if (myUploadedAvatarUrl) myExisting.avatarUrl = myUploadedAvatarUrl;
+          } else {
+            participants.push({
+              id: myClientId,
+              name: memberName,
+              role: memberRole,
+              seat: targetSeat,
+              joinedAt: Date.now(),
+              lastSeen: Date.now(),
+              avatarUrl: myUploadedAvatarUrl,
+              speaking: false,
+              bubble: '',
+              bounceUntil: 0,
+              isBot: false
+            });
+          }
+          currentViewerId = myClientId;
         }
-        currentViewerId = myClientId;
       }
 
       hasEnteredRoom = true;
@@ -1479,6 +2010,7 @@
 
       const me = participants.find(p => p.id === currentViewerId) || participants[0];
       document.getElementById('currentUserBadge').innerText = `👤 ${me.name} (Ghế #${me.seat})`;
+      document.getElementById('headerJoinCodeBadge').innerText = currentRoomJoinCode;
       document.getElementById('loginOverlay').style.display = 'none';
 
       updatePermissionUI();
@@ -1489,6 +2021,11 @@
 
       connectRealtimeRoom(roomCode);
       broadcastRealtime('USER_JOIN', { member: me });
+      startRoomHeartbeat();
+
+      if (lobbyMode === 'create') {
+        openInviteRoomModal();
+      }
     }
 
     function isCurrentUserHost() {
@@ -1509,7 +2046,6 @@
       const miniTag = document.getElementById('permissionMiniTag');
       const sceneButtons = document.querySelectorAll('.scene-btn');
       const assignBtn = document.getElementById('btnAssignHost');
-      const shareBtn = document.getElementById('btnShareScreen');
       const camBtn = document.getElementById('btnUserCam');
       const quizBuilder = document.getElementById('hostQuizBuilderBox');
 
@@ -1522,50 +2058,47 @@
         sceneButtons.forEach(b => b.classList.remove('opacity-40', 'cursor-not-allowed'));
       } else {
         miniTag.className = 'text-[11px] text-amber-300 font-semibold mr-1';
-        miniTag.innerText = activeSpeakerId === currentViewerId ? '🎙️ Người phát biểu' : '🔒 Thành viên';
+        miniTag.innerText = activeSpeakerId === currentViewerId ? '🎙️ Người phát biểu' : '👥 Thành viên (Được Share màn hình)';
         sceneButtons.forEach(b => b.classList.add('opacity-40', 'cursor-not-allowed'));
       }
 
       if (canPresent) {
-        shareBtn.classList.remove('opacity-40', 'cursor-not-allowed');
         camBtn.classList.remove('opacity-40', 'cursor-not-allowed');
       } else {
-        shareBtn.classList.add('opacity-40', 'cursor-not-allowed');
         camBtn.classList.add('opacity-40', 'cursor-not-allowed');
       }
     }
 
-    // ================= SHARE MÀN HÌNH HD & CAMERA GÓC TRÁI =================
+    // ================= SHARE CÙNG LÚC 6 MÀN HÌNH (3 CỘT X 2 HÀNG) & CAMERA GÓC TRÁI =================
     async function toggleScreenShare() {
-      if (!canCurrentUserPresentOrCam()) {
-        alert('💡 Vui lòng bấm "🎙️ Bật Mic Nói Trực Tiếp" (hoặc được Chủ tọa mời phát biểu) để Share Màn Hình HD!');
-        return;
-      }
       const videoEl = document.getElementById('screenShareVideo');
       const btn = document.getElementById('btnShareScreen');
       const me = participants.find(p => p.id === currentViewerId) || participants[0];
 
       if (!isScreenSharing) {
+        // Kiểm tra xem đã đầy 6 slot màn hình chưa
+        if (!activeScreenShares[currentViewerId] && Object.keys(activeScreenShares).length >= MAX_SCREEN_SHARES) {
+          alert('⚠️ Hiện đã có đủ 6 người đang Share màn hình (Tối đa 3 cột x 2 hàng)! Vui lòng đợi 1 thành viên tắt Share hoặc nhờ Chủ tọa giải phóng bớt slot.');
+          return;
+        }
+
         try {
           screenStream = await navigator.mediaDevices.getDisplayMedia({
-            video: { width: { ideal: 1920 }, height: { ideal: 1080 }, cursor: 'always' },
+            video: { width: { ideal: 1280 }, height: { ideal: 720 }, cursor: 'always' },
             audio: false
           });
           videoEl.srcObject = screenStream;
           await videoEl.play();
 
-          screenVideoTexture = new THREE.VideoTexture(videoEl);
-          screenVideoTexture.minFilter = THREE.LinearFilter;
-          screenVideoTexture.magFilter = THREE.LinearFilter;
-          if (renderer) screenVideoTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-
           isScreenSharing = true;
-          isRemoteScreenSharing = false;
-          if (screenMesh) {
-            screenMesh.material.map = screenVideoTexture;
-            screenMesh.material.needsUpdate = true;
-          }
-          btn.innerText = '🛑 Dừng Share HD';
+
+          // Chụp khung hình đầu tiên đưa vào lưới 6 màn hình
+          screenCaptureCtx.drawImage(videoEl, 0, 0, screenCaptureCanvas.width, screenCaptureCanvas.height);
+          const firstJpg = screenCaptureCanvas.toDataURL('image/jpeg', 0.72);
+          upsertActiveScreenShareFrame(currentViewerId, me.name, firstJpg, videoEl);
+          broadcastRealtime('SCREEN_FRAME', { sharerId: currentViewerId, sharerName: me.name, jpg: firstJpg });
+
+          btn.innerHTML = `🛑 Dừng Share (<span id="activeScreensCountBadge">${Object.keys(activeScreenShares).length}</span>/6)`;
           btn.className = 'px-2.5 py-0.5 bg-rose-600 hover:bg-rose-500 text-white rounded text-xs font-extrabold flex items-center gap-1 shadow animate-pulse';
 
           if (screenBroadcastTimer) clearInterval(screenBroadcastTimer);
@@ -1574,20 +2107,24 @@
             screenCaptureCtx.imageSmoothingEnabled = true;
             screenCaptureCtx.imageSmoothingQuality = 'high';
             screenCaptureCtx.drawImage(videoEl, 0, 0, screenCaptureCanvas.width, screenCaptureCanvas.height);
-            const jpgData = screenCaptureCanvas.toDataURL('image/jpeg', 0.78);
+            const jpgData = screenCaptureCanvas.toDataURL('image/jpeg', 0.68);
+            if (activeScreenShares[currentViewerId]) {
+              activeScreenShares[currentViewerId].jpg = jpgData;
+              activeScreenShares[currentViewerId].updatedAt = Date.now();
+            }
             broadcastRealtime('SCREEN_FRAME', { sharerId: currentViewerId, sharerName: me.name, jpg: jpgData });
-            updateHdZoomMirrorIfOpen();
-          }, 420);
+            renderHdZoomOverlayContent();
+          }, 480);
 
-          screenStream.getVideoTracks()[0].onended = () => stopScreenShareCleanup();
+          screenStream.getVideoTracks()[0].onended = () => stopScreenShareCleanup(true);
           setCamPreset('boardCloseUp');
         } catch (err) {}
       } else {
-        stopScreenShareCleanup();
+        stopScreenShareCleanup(true);
       }
     }
 
-    function stopScreenShareCleanup() {
+    function stopScreenShareCleanup(shouldNotify = true) {
       const btn = document.getElementById('btnShareScreen');
       if (screenBroadcastTimer) {
         clearInterval(screenBroadcastTimer);
@@ -1598,14 +2135,13 @@
         screenStream = null;
       }
       isScreenSharing = false;
-      if (screenMesh) {
-        screenMesh.material.map = screenTexture;
-        screenMesh.material.needsUpdate = true;
-      }
-      drawSlideTo3DScreen();
-      btn.innerText = '🖥️ Share Màn Hình HD';
+      delete activeScreenShares[currentViewerId];
+      if (focusedScreenSharerId === currentViewerId) focusedScreenSharerId = null;
+
+      updateMultiScreenUIAndBoard();
+      btn.innerHTML = `🖥️ Share Màn Hình (<span id="activeScreensCountBadge">${Object.keys(activeScreenShares).length}</span>/6)`;
       btn.className = 'px-2.5 py-0.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded text-xs font-extrabold flex items-center gap-1 shadow';
-      broadcastRealtime('SCREEN_STOP', {});
+      if (shouldNotify) broadcastRealtime('SCREEN_STOP', { sharerId: currentViewerId });
     }
 
     async function toggleUserCamera() {
@@ -1747,7 +2283,7 @@
       quizState.isActive = false;
       if (quizTimerInterval) clearInterval(quizTimerInterval);
       document.getElementById('liveQuizFloatingBanner').classList.add('hidden');
-      drawSlideTo3DScreen();
+      drawMultiScreenOrSlideTo3DBoard();
       renderQuizUI();
       broadcastRealtime('QUIZ_END', {});
     }
@@ -1889,7 +2425,7 @@
       screenCtx.font = 'bold 42px sans-serif';
       screenCtx.fillText(`📊 Đã nộp: ${quizState.submissions.length} học viên  |  Tổng số: ${quizState.questions.length} câu hỏi`, 90, 980);
       screenTexture.needsUpdate = true;
-      updateHdZoomMirrorIfOpen();
+      renderHdZoomOverlayContent();
     }
 
     // ================= SẮP XẾP KÉO THẢ (2D & 3D) VÀ CHỈ ĐỊNH CHỖ NGỒI =================
@@ -2020,6 +2556,7 @@
         id: 'p_' + Date.now(), name, role,
         seat: isNaN(targetSeat) ? participants.length : targetSeat,
         joinedAt: Date.now(),
+        lastSeen: Date.now(),
         avatarUrl: null,
         speaking: false, bubble: '', bounceUntil: 0, isBot: false
       });
@@ -2332,14 +2869,9 @@
     function kickMemberById(targetId) {
       if (!isCurrentUserHost()) return;
       if (targetId === assignedHostId) return;
-      participants = participants.filter(p => p.id !== targetId);
-      whisperGroupIds = whisperGroupIds.filter(id => id !== targetId);
+      removeMemberFromRoomAndGroups(targetId);
       sendReaction('🥾', true);
-      updateOnlineCountUI();
-      renderWhisperUI();
-      build3DScene();
       broadcastRealtime('KICK', { targetId });
-      if (!document.getElementById('hostModal').classList.contains('hidden')) openHostAssignModal();
     }
 
     function openHostAssignModal() {
@@ -2599,7 +3131,7 @@
     }
 
     function drawSlideTo3DScreen() {
-      if (!screenCtx || isRemoteScreenSharing) return;
+      if (!screenCtx) return;
       if (quizState.isActive) {
         drawQuizTo3DScreen();
         return;
@@ -2625,11 +3157,10 @@
       const hostObj = participants.find(p => p.id === assignedHostId) || participants[0];
       screenCtx.fillStyle = '#34d399';
       screenCtx.font = 'bold 44px sans-serif';
-      screenCtx.fillText(`👑 Chủ trì: ${hostObj ? hostObj.name : 'Đình Lâm'}  |  Slide ${currentSlideIdx + 1}/${slides.length} (Full HD 1080p)`, 95, 975);
+      screenCtx.fillText(`👑 Chủ trì: ${hostObj ? hostObj.name : 'Đình Lâm'}  |  Mã phòng: ${currentRoomJoinCode}  |  Slide ${currentSlideIdx + 1}/${slides.length}`, 95, 975);
 
       screenTexture.needsUpdate = true;
       document.getElementById('slideIndicator').innerText = `${currentSlideIdx + 1}/${slides.length}`;
-      updateHdZoomMirrorIfOpen();
     }
 
     function build3DScene() {
@@ -2695,7 +3226,7 @@
         clickableSponsorMeshes.push(board);
       });
 
-      // 2. Bảng thuyết trình Full HD + Banner trên bảng
+      // 2. Bảng thuyết trình Full HD (Hiển thị Slide hoặc Lưới 6 Màn Hình 3x2) + Banner trên bảng
       const topBannerSlot = sponsorSlots.find(s => s.id === 'top_banner');
       if (topBannerSlot) {
         const topBannerMesh = new THREE.Mesh(
@@ -2715,14 +3246,13 @@
       boardFrame.position.set(0, 4.9, -14.2);
       sceneObjectsGroup.add(boardFrame);
 
-      const activeBoardTexture = (isScreenSharing && screenVideoTexture) ? screenVideoTexture : screenTexture;
       screenMesh = new THREE.Mesh(
         new THREE.PlaneGeometry(16.2, 6.3),
-        new THREE.MeshBasicMaterial({ map: activeBoardTexture })
+        new THREE.MeshBasicMaterial({ map: screenTexture })
       );
       screenMesh.position.set(0, 4.9, -13.98);
       sceneObjectsGroup.add(screenMesh);
-      if (!isScreenSharing && !isRemoteScreenSharing) drawSlideTo3DScreen();
+      drawMultiScreenOrSlideTo3DBoard();
 
       // 3. Bàn Chủ tọa (#0) đặt tại tâm sân khấu quay đối diện khán đài
       const stageRadius = currentScene === 'vongcung' ? 5.2 : 4.5;
@@ -3083,6 +3613,11 @@
       requestAnimationFrame(animate3D);
       controls.update();
 
+      // Nếu máy hiện tại đang Share màn hình trực tiếp, vẽ mượt từng khung hình lên lưới 3D
+      if (isScreenSharing && Object.keys(activeScreenShares).length > 0) {
+        drawMultiScreenOrSlideTo3DBoard();
+      }
+
       const now = Date.now();
       participants.forEach(p => {
         const meshObj = avatarMeshes[p.id];
@@ -3138,15 +3673,13 @@
 
     // ================= SLIDE, PHÁT BIỂU GIỌNG NÓI & BIÊN BẢN =================
     function prevSlide() {
-      if (isScreenSharing) stopScreenShareCleanup();
       currentSlideIdx = (currentSlideIdx - 1 + slides.length) % slides.length;
-      drawSlideTo3DScreen();
+      drawMultiScreenOrSlideTo3DBoard();
       broadcastRealtime('SLIDE_UPDATE', { slides, currentSlideIdx });
     }
     function nextSlide() {
-      if (isScreenSharing) stopScreenShareCleanup();
       currentSlideIdx = (currentSlideIdx + 1) % slides.length;
-      drawSlideTo3DScreen();
+      drawMultiScreenOrSlideTo3DBoard();
       broadcastRealtime('SLIDE_UPDATE', { slides, currentSlideIdx });
     }
     function openAddSlideModal() {
@@ -3156,10 +3689,9 @@
       const title = document.getElementById('slideTitleInput').value.trim();
       const body = document.getElementById('slideBodyInput').value.trim();
       if (!title) return;
-      if (isScreenSharing) stopScreenShareCleanup();
       slides.push({ title: title.toUpperCase(), lines: body.split('\n').filter(Boolean) });
       currentSlideIdx = slides.length - 1;
-      drawSlideTo3DScreen();
+      drawMultiScreenOrSlideTo3DBoard();
       document.getElementById('slideModal').classList.add('hidden');
       broadcastRealtime('SLIDE_UPDATE', { slides, currentSlideIdx });
     }
@@ -3345,7 +3877,8 @@
 ----------------------------------------
 BIÊN BẢN TỔNG HỢP HỘI NGHỊ & KẾT QUẢ THI TRẮC NGHIỆM 3D UTE
 
-1. CHỦ TRÌ & DANH SÁCH THAM DỰ (${participants.length} thành viên):
+1. THÔNG TIN PHÒNG & DANH SÁCH THAM DỰ (${participants.length} thành viên):
+- Tên phòng: ${currentRoomTitle} (Mã tham gia: ${currentRoomJoinCode})
 - Chủ trì điều hành: ${hostObj ? hostObj.name : 'Đình Lâm'}
 ${seatingSummary}
 
@@ -3364,7 +3897,7 @@ ${speakerSummary}
       const blob = new Blob([document.getElementById('summaryTextarea').value], { type: 'text/plain;charset=utf-8' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = 'Bien-Ban-Va-Diem-Thi-UTE-3D.txt';
+      a.download = `Bien-Ban-${currentRoomJoinCode}-3D.txt`;
       a.click();
     }
 
@@ -3405,6 +3938,7 @@ ${speakerSummary}
     }
 
     window.addEventListener('DOMContentLoaded', () => {
+      checkUrlInviteParams();
       updatePermissionUI();
       renderTranscripts();
       renderWhisperUI();
