@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Khán Phòng Vòng Cung 3D UTE V2.1 - Khảo sát & WebRTC Voice</title>
+  <title>Khán Phòng Vòng Cung 3D UTE V2.2 - Responsive Mobile & Tablet + Khảo sát & WebRTC Voice</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -51,6 +51,140 @@
     .v2-table th, .v2-table td { border-bottom: 1px solid #334155; padding: 8px; text-align: left; vertical-align: top; }
     .v2-table th { background: #1e293b; color: #a5f3fc; position: sticky; top: 0; }
     .v2-pill { border-radius: 100px; padding: 2px 8px; background: #334155; font-size: 10px; }
+
+    /* ===== V2.2 RESPONSIVE: Không gian 3D ưu tiên trên màn hình nhỏ ===== */
+    html, body { overscroll-behavior: none; }
+    button, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+    button { touch-action: manipulation; }
+    #mobileBottomNav, #mobileActionsSheet, #mobileTextToggle { display: none; }
+    @media (max-width: 1023px) {
+      html, body { height: 100%; height: 100dvh; width: 100%; overflow: hidden; }
+      body { min-height: 0; }
+      #mainHeader { height: auto !important; min-height: 100px; padding: 6px 8px 5px; display: grid;
+        grid-template-columns: minmax(0,1fr) auto; grid-template-rows: 44px 37px; column-gap: 4px; row-gap: 3px; }
+      #headerRoomCluster { grid-column: 1 / -1; grid-row: 1; min-width: 0; gap: 5px; justify-content: space-between; }
+      #networkStatusPill { flex: 0 1 45%; min-width: 0; padding: 6px; white-space: nowrap; }
+      #networkText { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      #headerRoomCluster > button { padding: 6px 7px; flex-shrink: 0; }
+      #headerRoomCluster > button span { font-size: 10px; }
+      #headerRoomCluster > div:nth-child(3) { display: none !important; }
+      #sceneSwitcher { grid-column: 1 / -1; grid-row: 2; display: flex; width: 100%; min-width: 0;
+        flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; gap: 5px; padding: 4px; }
+      #sceneSwitcher::-webkit-scrollbar { display:none; }
+      #sceneSwitcher > button { flex: 0 0 auto; font-size: 10px; padding: 6px 10px; min-height: 30px; }
+      #headerActionCluster { display: none !important; }
+      #meetingMain { min-height: 0; overflow: hidden; }
+      #viewport3d { flex: 1 1 auto; width: 100%; min-width: 0; min-height: 0 !important; height: 100%; }
+      #cameraPresetDock { left: 7px; right: 7px; top: 8px; max-width: none; width: calc(100% - 14px);
+        flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; padding: 6px;
+        gap: 5px; height: 40px; }
+      #cameraPresetDock::-webkit-scrollbar {display:none;}
+      #cameraPresetDock > * { flex: 0 0 auto; white-space: nowrap; }
+      #cameraPresetDock button { min-height: 28px; }
+      #topRightControlDock, #btnRestoreTopRightDock { display: none !important; }
+      #leftHallCameraDock { top: 53px; left: 8px; width: min(195px, 51vw); border-width: 1px; }
+      #leftHallCameraDock .h-40 { height: 105px !important; }
+      #liveQuizFloatingBanner { left: 8px !important; right: 8px !important; top: 54px !important;
+        width: auto !important; max-width: none; transform: none !important; padding: 10px;
+        max-height: calc(100% - 208px); overflow-y: auto; }
+      #liveQuizFloatingBanner > div { min-width: 0; }
+      #floatingQuizQuestionBody { max-height: min(36dvh, 240px); }
+      #liveQuizFloatingBanner .flex.items-center.justify-between { gap: 5px; flex-wrap: wrap; }
+      #interactionPopup { max-width: calc(100% - 16px); left: 8px !important; right: 8px !important; bottom: 160px !important; top: auto !important;
+        width: auto !important; max-height: min(56dvh, 460px); overflow-y: auto; }
+      #voiceControlDock { bottom: calc(71px + env(safe-area-inset-bottom, 0px)); left: 7px; right: 7px;
+        display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0,.95fr) auto auto;
+        align-items: center; gap: 5px; padding: 7px; border-radius: 15px; }
+      #voiceControlDock > button { min-width: 0; min-height: 40px; padding: 7px 8px; justify-content: center;
+        white-space: nowrap; font-size: 11px; }
+      #voiceControlDock #btnMic { line-height: 1.22; white-space: normal; font-size: 11px; }
+      #btnSpeechTranscription { display: none !important; }
+      #mobileTextToggle { display: inline-flex; align-items: center; justify-content: center;
+        border:1px solid #475569; border-radius:10px; background:#1e293b; color:white; font-size:16px; }
+      #voiceControlDock #manualSpeechInput, #voiceControlDock #btnManualSpeechSend, #reactionCluster { display: none !important; }
+      #voiceControlDock.mobile-text-open #manualSpeechInput { display: block !important; grid-column: 1 / 4; grid-row: 2;
+        width: 100%; font-size: 16px; min-width: 0; height: 42px; }
+      #voiceControlDock.mobile-text-open #btnManualSpeechSend { display: block !important; grid-column: 4; grid-row: 2; }
+      #rightSidebarPanel { display: none !important; position: absolute; inset: 0; width: 100% !important;
+        height: 100% !important; z-index: 45; border: 0; background: #0f172a; }
+      #rightSidebarPanel.mobile-sidebar-open:not(.hidden) { display: flex !important; }
+      #rightSidebarPanel > div:first-child { flex: 0 0 auto; gap: 3px; padding: 7px 5px; overflow-x: auto; }
+      #rightSidebarPanel > div:first-child button { flex: 0 0 auto; padding: 9px 7px; font-size: 10px; white-space: nowrap; }
+      #rightSidebarPanel #panel-transcript, #rightSidebarPanel #panel-quiz,
+      #rightSidebarPanel #panel-whisper, #rightSidebarPanel #panel-summary { min-height: 0; }
+      #rightSidebarPanel input, #rightSidebarPanel select, #rightSidebarPanel textarea { font-size: 16px; }
+      #panel-whisper .mt-2, #panel-transcript .mt-2 { flex-shrink: 0; }
+      #mobileBottomNav { position: fixed; z-index: 42; bottom: 0; left: 0; right: 0;
+        padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px)); height: calc(66px + env(safe-area-inset-bottom, 0px));
+        background: #0f172a; border-top: 1px solid #334155; display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px;
+        box-shadow: 0 -8px 30px rgba(0,0,0,.4); }
+      .mobile-nav-button { min-width: 0; display: flex; flex-direction: column; align-items: center;
+        justify-content: center; gap: 2px; border-radius: 11px; font-size: 10px; color:#94a3b8;
+        font-weight: 700; padding: 2px 0; }
+      .mobile-nav-icon { font-size: 20px; line-height: 1.1; }
+      .mobile-nav-button.active { background: rgba(34,211,238,.12); color: #67e8f9; }
+      #mobileActionsSheet:not(.hidden) { display: flex; align-items: flex-end; position: fixed; z-index: 48;
+        inset:0; background:rgba(2,6,23,.72); backdrop-filter: blur(6px); }
+      .mobile-sheet-inner { width: 100%; background: #0f172a; border:1px solid #334155;
+        border-radius: 20px 20px 0 0; padding: 14px 12px calc(18px + env(safe-area-inset-bottom, 0px));
+        max-height: min(80dvh, 700px); display:flex; flex-direction:column; gap: 12px; }
+      .mobile-sheet-top { display:flex; justify-content:space-between; align-items:center; }
+      .mobile-sheet-top b { font-size:15px; color:#e2e8f0; }
+      .mobile-sheet-top p { font-size:11px; color:#94a3b8; margin-top:4px; }
+      .mobile-sheet-top button { background:#334155; border-radius:10px; min-width:38px; min-height:38px; }
+      .mobile-sheet-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px;
+        overflow-y:auto; min-height:0; padding:2px; }
+      .mobile-sheet-grid button { min-height: 52px; background:#1e293b; border:1px solid #334155; border-radius:12px;
+        padding:9px 10px; text-align:left; font-size:18px; display:flex; align-items:center; gap:9px; }
+      .mobile-sheet-grid span { font-size:12px; font-weight:700; }
+      .mobile-sheet-hint { font-size:10px; color:#94a3b8; line-height:1.5; }
+      #v2Modal { padding:0 !important; align-items:stretch; }
+      #v2Modal > div { height: 100dvh !important; max-height: 100dvh !important; border:0; border-radius:0; }
+      #v2Modal > div > div:first-child { padding:12px; gap: 8px; flex-shrink:0; }
+      #v2Modal h2 { font-size:14px; line-height:1.35; }
+      #v2Modal > div > div:first-child p { font-size:9px; }
+      #v2Modal > div > div:first-child button { white-space:nowrap; padding:9px 12px; }
+      #v2TabButtons { display:flex; flex-wrap:nowrap; overflow-x:auto; white-space:nowrap; flex-shrink:0;
+        scrollbar-width:none; padding:8px; gap:7px; }
+      #v2TabButtons::-webkit-scrollbar { display:none; }
+      #v2TabButtons button { flex: 0 0 auto; min-height: 40px; }
+      #v2Content { min-height: 0; overflow-y:auto; overscroll-behavior: contain; padding:10px; }
+      #v2Content .v2-panel-card { padding:12px; }
+      #v2Content .v2-btn { min-height: 42px; }
+      #v2Content .v2-field { min-height:43px; font-size:16px; }
+      #v2Content .v2-label { font-size:12px; }
+      #v2Content .v2-table { min-width: 620px; }
+      #v2Modal > div > div:last-child { padding: 6px 10px; font-size: 9px; line-height:1.3; flex-shrink:0; }
+      #hdZoomOverlay { padding: 8px; }
+      #hdZoomOverlay > div:first-child { flex-direction:column; align-items:stretch; gap:8px; padding: 5px 0; }
+      #hdZoomOverlay > div:first-child > div:first-child { flex-wrap:wrap; }
+      #hdZoomOverlay .bg-cyan-500 { font-size:9px; }
+      #hdMultiScreenGridContainer.grid { grid-template-columns:repeat(2,minmax(0,1fr)); grid-auto-rows:minmax(120px,1fr);
+        grid-template-rows: none; overflow-y:auto !important; align-content:start; gap:8px; }
+      #hdMultiScreenGridContainer.grid > div { min-height:130px; }
+      #loginOverlay { padding:8px; }
+      #loginOverlay > div { width:100%; max-height: calc(100dvh - 16px); padding:16px; }
+      #loginOverlay input, #loginOverlay select { font-size:16px; }
+      #inviteRoomModal, #seatingPlannerModal, #sponsorModal, #hostModal, #slideModal { padding: 8px; }
+      #inviteRoomModal > div, #seatingPlannerModal > div, #sponsorModal > div,
+      #hostModal > div, #slideModal > div { width:100%; max-height:calc(100dvh - 16px); overflow-y:auto; padding:14px; }
+      #seatingPlannerModal .flex.flex-wrap.items-center.justify-between { gap:10px; }
+      #seatingPlannerModal input, #seatingPlannerModal select { font-size:16px; }
+      #loginOverlay .grid-cols-3, #lobbyJoinSection .grid-cols-3 { gap: 8px; }
+    }
+    @media (max-width: 380px) {
+      #mainHeader { min-height: 94px; }
+      #voiceControlDock { grid-template-columns:minmax(0,1fr) minmax(0,.75fr) auto auto; }
+      #voiceControlDock > button { padding: 6px; font-size:10px; }
+      #v2Modal > div > div:last-child { display:none; }
+      .mobile-nav-button { font-size:9px; }
+    }
+    @media (max-height: 620px) and (max-width: 767px) {
+      #mainHeader { min-height: 88px; }
+      #cameraPresetDock { height:34px; }
+      #voiceControlDock { bottom: calc(67px + env(safe-area-inset-bottom,0px)); padding:5px; }
+      #voiceControlDock > button { min-height:35px; }
+    }
   </style>
 </head>
 <body class="h-screen w-screen flex flex-col select-none">
@@ -259,8 +393,8 @@
   </div>
 
   <!-- HEADER ĐIỀU KHIỂN CHÍNH -->
-  <header class="h-14 bg-slate-900/95 border-b border-slate-800 px-3 flex items-center justify-between z-30 shrink-0 gap-2">
-    <div class="flex items-center gap-2">
+  <header id="mainHeader" class="h-14 bg-slate-900/95 border-b border-slate-800 px-3 flex items-center justify-between z-30 shrink-0 gap-2">
+    <div id="headerRoomCluster" class="flex items-center gap-2">
       <div id="networkStatusPill" class="flex items-center gap-1.5 bg-emerald-500/15 border border-emerald-500/40 px-2.5 py-1 rounded-full">
         <span id="networkDot" class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
         <span id="networkText" class="text-[10px] font-extrabold text-emerald-400">Đang kết nối...</span>
@@ -280,7 +414,7 @@
     </div>
 
     <!-- CHỌN MẪU BỐI CẢNH 3D -->
-    <div class="flex items-center gap-1 bg-slate-800/90 p-1 rounded-xl border border-slate-700 overflow-x-auto">
+    <div id="sceneSwitcher" class="flex items-center gap-1 bg-slate-800/90 p-1 rounded-xl border border-slate-700 overflow-x-auto">
       <button onclick="changeScene('vongcung')" id="btn-scene-vongcung" class="scene-btn px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500 text-slate-950 transition whitespace-nowrap">🏟️ Khán Phòng Vòng Cung</button>
       <button onclick="changeScene('lop')" id="btn-scene-lop" class="scene-btn px-2.5 py-1 rounded-lg text-xs font-bold text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">🏫 Lớp Học & Họp</button>
       <button onclick="changeScene('hoitruong')" id="btn-scene-hoitruong" class="scene-btn px-2.5 py-1 rounded-lg text-xs font-bold text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">🏛️ Hội Trường</button>
@@ -288,7 +422,7 @@
       <button onclick="changeScene('chua')" id="btn-scene-chua" class="scene-btn px-2.5 py-1 rounded-lg text-xs font-bold text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">🪷 Thiền Đường 3D</button>
     </div>
 
-    <div class="flex items-center gap-1.5">
+    <div id="headerActionCluster" class="flex items-center gap-1.5">
       <button onclick="triggerUploadMyAvatar()" class="bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 shadow" title="Đổi ảnh Avatar trên mặt nhân vật 3D của bạn">
         🙂 Avatar
       </button>
@@ -315,7 +449,7 @@
   </header>
 
   <!-- KHÔNG GIAN CHÍNH -->
-  <div class="flex-1 flex overflow-hidden relative">
+  <div id="meetingMain" class="flex-1 flex overflow-hidden relative">
     <!-- KHUNG 3D TRUNG TÂM -->
     <div class="flex-1 relative overflow-hidden" id="viewport3d" onclick="closeInteractionMenu(event)">
       <canvas id="canvas3d"></canvas>
@@ -323,7 +457,7 @@
       <div id="floatingReactionsLayer" class="absolute inset-0 pointer-events-none overflow-hidden z-20"></div>
 
       <!-- THANH ĐIỀU KHIỂN GÓC MÁY 3D NHỎ GỌN Ở GÓC TRÊN BÊN TRÁI -->
-      <div class="absolute top-3 left-3 bg-slate-900/90 border border-slate-700/80 backdrop-blur px-2.5 py-1.5 rounded-xl z-20 flex flex-wrap items-center gap-1.5 shadow-lg">
+      <div id="cameraPresetDock" class="absolute top-3 left-3 bg-slate-900/90 border border-slate-700/80 backdrop-blur px-2.5 py-1.5 rounded-xl z-20 flex flex-wrap items-center gap-1.5 shadow-lg">
         <span class="text-[11px] font-extrabold text-amber-400 mr-1">🎥 <span id="onlineCountLabel">1 người</span></span>
         <button onclick="setCamPreset('overview')" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 px-2 py-1 rounded text-[10px] font-semibold">🌌 Toàn cảnh</button>
         <button onclick="setCamPreset('boardCloseUp')" class="bg-emerald-700/80 hover:bg-emerald-600 text-white px-2 py-1 rounded text-[10px] font-bold">🔍 Cận Bảng HD</button>
@@ -487,20 +621,21 @@
       </button>
 
       <!-- Thanh phát biểu & truyền giọng nói trực tiếp dưới đáy -->
-      <div class="absolute bottom-3 left-3 right-3 bg-slate-900/95 border border-slate-700/90 backdrop-blur-md px-3 py-2 rounded-2xl flex items-center gap-2 z-20 shadow-2xl">
+      <div id="voiceControlDock" class="absolute bottom-3 left-3 right-3 bg-slate-900/95 border border-slate-700/90 backdrop-blur-md px-3 py-2 rounded-2xl flex items-center gap-2 z-20 shadow-2xl">
         <button onclick="toggleMic()" id="btnMic" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-lg shrink-0 transition">
           🎙️ Bật Mic Nói Trực Tiếp
         </button>
         <button onclick="toggleSpeechTranscription()" id="btnSpeechTranscription" title="Ghi âm giọng nói thành chữ (tùy chọn, mặc định tắt)" class="px-2 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl text-[11px] font-semibold shrink-0">📝 Ghi chữ: TẮT</button>
         <button onclick="rtcVoiceResumeAudio()" id="btnLiveVoiceListen" title="Bấm để cho phép trình duyệt phát âm thanh từ các thành viên khác" class="px-2 py-2 bg-cyan-800 hover:bg-cyan-700 border border-cyan-500 rounded-xl text-[11px] font-bold shrink-0">🔊 Nghe live</button>
-        <button onclick="raiseHand()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl text-xs font-semibold shrink-0">
+        <button id="btnRaiseHand" onclick="raiseHand()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl text-xs font-semibold shrink-0">
           ✋ Giơ tay
         </button>
+        <button id="mobileTextToggle" type="button" onclick="mobileToggleTextComposer()" aria-label="Nhập lời phát biểu" title="Nhập lời phát biểu">⌨️</button>
         <input id="manualSpeechInput" type="text" placeholder="Nhập lời phát biểu (tự động đọc giọng nói & đồng bộ sang máy mọi người)..." class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400" onkeydown="if(event.key==='Enter') submitManualSpeech()" />
-        <button onclick="submitManualSpeech()" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-xl text-xs font-extrabold shrink-0">
+        <button id="btnManualSpeechSend" onclick="submitManualSpeech()" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-xl text-xs font-extrabold shrink-0">
           Phát biểu
         </button>
-        <div class="flex items-center gap-1 pl-1 border-l border-slate-700">
+        <div id="reactionCluster" class="flex items-center gap-1 pl-1 border-l border-slate-700">
           <button onclick="sendReaction('👏', true)" class="text-lg hover:scale-125 transition">👏</button>
           <button onclick="sendReaction('🍻', true)" class="text-lg hover:scale-125 transition">🍻</button>
           <button onclick="sendReaction('🪷', true)" class="text-lg hover:scale-125 transition">🪷</button>
@@ -626,12 +761,48 @@
   </div>
 
 
+
+  <!-- Mobile-first: điều hướng chính, không làm trùng ID các nút desktop -->
+  <nav id="mobileBottomNav" aria-label="Điều hướng trên điện thoại">
+    <button onclick="mobileGoHome()" data-mobile-nav="home" class="mobile-nav-button active" aria-label="Khán phòng"><span class="mobile-nav-icon">🏟️</span><span>Khán phòng</span></button>
+    <button onclick="mobileOpenV2('survey')" data-mobile-nav="survey" class="mobile-nav-button" aria-label="Khảo sát"><span class="mobile-nav-icon">📋</span><span>Khảo sát</span></button>
+    <button onclick="mobileOpenPanel('quiz')" data-mobile-nav="quiz" class="mobile-nav-button" aria-label="Bài thi"><span class="mobile-nav-icon">📝</span><span>Bài thi</span></button>
+    <button onclick="mobileOpenPanel('whisper')" data-mobile-nav="whisper" class="mobile-nav-button" aria-label="Chat"><span class="mobile-nav-icon">💬</span><span>Chat</span></button>
+    <button onclick="mobileOpenActions()" data-mobile-nav="more" class="mobile-nav-button" aria-label="Chức năng khác"><span class="mobile-nav-icon">☰</span><span>Thêm</span></button>
+  </nav>
+
+  <!-- Mobile action sheet: giữ nguyên các hàm xử lý của V2.1 -->
+  <div id="mobileActionsSheet" class="hidden" role="dialog" aria-modal="true" aria-label="Chức năng khác" onclick="if(event.target===this)mobileCloseActions()">
+    <div class="mobile-sheet-inner">
+      <div class="mobile-sheet-top"><div><b>☰ Các chức năng khác</b><p>Thao tác nhanh trong khán phòng</p></div><button onclick="mobileCloseActions()" aria-label="Đóng bảng chức năng">✕</button></div>
+      <div class="mobile-sheet-grid">
+        <button onclick="mobileQuickAction(()=>openInviteRoomModal())">🔗 <span>Mời tham gia</span></button>
+        <button onclick="mobileQuickAction(()=>toggleHdZoomModal())">🖥️ <span>Xem màn hình HD</span></button>
+        <button onclick="mobileQuickAction(()=>toggleScreenShare())">📺 <span>Chia sẻ màn hình</span></button>
+        <button onclick="mobileQuickAction(()=>toggleUserCamera())">📷 <span>Bật / tắt camera</span></button>
+        <button onclick="mobileQuickAction(()=>openSeatingPlannerModal())">🪑 <span>Sắp xếp chỗ</span></button>
+        <button onclick="mobileQuickAction(()=>openSponsorLogoModal())">🏅 <span>Logo đơn vị</span></button>
+        <button onclick="mobileQuickAction(()=>openHostAssignModal())">👑 <span>Quản lý chủ tọa</span></button>
+        <button onclick="mobileQuickAction(()=>triggerUploadMyAvatar())">🙂 <span>Đổi Avatar</span></button>
+        <button onclick="mobileQuickAction(()=>openAddSlideModal())">📊 <span>Thêm slide</span></button>
+        <button onclick="mobileQuickAction(()=>toggleSpeechTranscription())">✍️ <span>Bật / tắt ghi chữ</span></button>
+        <button onclick="mobileQuickAction(()=>toggleVoiceSpeakerMute())">🔊 <span>Bật / tắt loa</span></button>
+        <button onclick="mobileQuickAction(()=>reopenLoginModal())">🔑 <span>Đổi phòng</span></button>
+        <button onclick="mobileOpenV2('attendance')">📍 <span>Điểm danh GPS</span></button>
+        <button onclick="mobileOpenV2('grades')">🏆 <span>Bảng điểm</span></button>
+        <button onclick="mobileOpenPanel('transcript')">🎙️ <span>Nội dung phát biểu</span></button>
+        <button onclick="mobileOpenPanel('summary')">📄 <span>Biên bản họp</span></button>
+      </div>
+      <p class="mobile-sheet-hint">Lưu ý: Chia sẻ màn hình trên điện thoại phụ thuộc hỗ trợ của trình duyệt và thiết bị.</p>
+    </div>
+  </div>
+
   <!-- V2: KHẢO SÁT, HUY HIỆU, GPS ĐIỂM DANH, BẢNG ĐIỂM -->
   <div id="v2Modal" class="hidden fixed inset-0 bg-black/85 backdrop-blur-md z-50 items-center justify-center p-2 sm:p-4" role="dialog" aria-modal="true" aria-label="Bảng điều khiển V2">
     <div class="bg-slate-900 border border-cyan-500/50 rounded-2xl shadow-2xl w-full max-w-6xl h-[92vh] flex flex-col overflow-hidden">
       <div class="flex justify-between items-center gap-2 border-b border-slate-700 p-3 sm:px-5">
         <div>
-          <h2 class="text-base font-extrabold text-cyan-300">📊 KHÁN PHÒNG 3D UTE — V2.1</h2>
+          <h2 class="text-base font-extrabold text-cyan-300">📊 KHÁN PHÒNG 3D UTE — V2.2</h2>
           <p class="text-[10px] text-slate-400">Khảo sát • Huy hiệu Khoa • Điểm danh GPS • Kết quả thi</p>
         </div>
         <button onclick="v2Close()" class="bg-rose-700 hover:bg-rose-600 px-4 py-2 rounded-xl text-xs font-bold">✕ Đóng</button>
@@ -644,7 +815,7 @@
       </div>
       <div class="flex-1 overflow-y-auto p-3 sm:p-5 space-y-3" id="v2Content"></div>
       <div class="border-t border-slate-800 px-4 py-2 bg-slate-950 text-[10px] text-amber-200/90">
-        Bản V2.1 thử nghiệm: âm thanh live dùng WebRTC mesh tối đa 12 người/phòng và STUN (chưa có TURN/SFU). MQTT công cộng chỉ làm signaling, không dùng cho production; GPS, khảo sát và thi chưa có backend bảo mật.
+        Bản V2.2 thử nghiệm: âm thanh live dùng WebRTC mesh tối đa 12 người/phòng và STUN (chưa có TURN/SFU). MQTT công cộng chỉ làm signaling, không dùng cho production; GPS, khảo sát và thi chưa có backend bảo mật.
       </div>
     </div>
   </div>
@@ -1140,6 +1311,11 @@
       else if (forceShow === false) isRightSidebarHidden = true;
       else isRightSidebarHidden = !isRightSidebarHidden;
 
+      // V2.2: Sidebar là panel toàn màn hình trên điện thoại, tránh che khán phòng khi vừa vào.
+      if (window.matchMedia('(max-width: 1023px)').matches) {
+        sidebar.classList.toggle('mobile-sidebar-open', !isRightSidebarHidden);
+        mobileSetActiveNav(isRightSidebarHidden ? 'home' : 'quiz');
+      }
       if (isRightSidebarHidden) {
         sidebar.classList.add('hidden');
         btnHeader.innerText = '◧ Mở Sidebar';
@@ -3180,7 +3356,7 @@
 
       renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas3d'), antialias: true, powerPreference: 'high-performance' });
       renderer.setSize(w, h);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2.5));
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobileViewportQuery.matches ? 1.5 : 2.5));
 
       controls = new THREE.OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
@@ -4192,6 +4368,9 @@ ${speakerSummary}
       document.getElementById(`tab-${tab}`).className = 'flex-1 py-2 rounded-xl bg-indigo-600 text-white';
       if (tab === 'summary' && !document.getElementById('summaryTextarea').value) generateMeetingSummary();
       if (tab === 'quiz') renderQuizUI();
+      if (window.matchMedia('(max-width: 1023px)').matches && !isRightSidebarHidden) {
+        mobileSetActiveNav(tab === 'quiz' ? 'quiz' : tab === 'whisper' ? 'whisper' : 'more');
+      }
     }
 
     // ===== V2: Khảo sát, điểm danh, huy hiệu Khoa và xuất báo cáo (prototype) =====
@@ -4263,11 +4442,13 @@ ${speakerSummary}
     function v2Open(tab='survey') {
       document.getElementById('v2Modal').classList.remove('hidden');
       document.getElementById('v2Modal').classList.add('flex');
+      if (window.matchMedia('(max-width: 1023px)').matches) mobileSetActiveNav('survey');
       v2Switch(tab);
     }
     function v2Close() {
       document.getElementById('v2Modal').classList.add('hidden');
       document.getElementById('v2Modal').classList.remove('flex');
+      if (window.matchMedia('(max-width: 1023px)').matches) mobileSetActiveNav('home');
     }
     function v2Switch(tab) {
       v2ActiveTab=tab;
@@ -4637,6 +4818,67 @@ ${speakerSummary}
       }
     }
 
+
+    // ===== V2.2 Mobile navigation, only changes presentation; existing business logic is preserved. =====
+    const mobileViewportQuery = window.matchMedia('(max-width: 1023px)');
+    function mobileSetActiveNav(key) {
+      document.querySelectorAll('[data-mobile-nav]').forEach(b => b.classList.toggle('active', b.dataset.mobileNav === key));
+    }
+    function mobileCloseActions() {
+      document.getElementById('mobileActionsSheet').classList.add('hidden');
+      if (mobileViewportQuery.matches && isRightSidebarHidden && document.getElementById('v2Modal').classList.contains('hidden')) mobileSetActiveNav('home');
+    }
+    function mobileOpenActions() {
+      if (!mobileViewportQuery.matches) return;
+      document.getElementById('mobileActionsSheet').classList.remove('hidden');
+      mobileSetActiveNav('more');
+    }
+    function mobileQuickAction(action) {
+      mobileCloseActions();
+      action();
+    }
+    function mobileGoHome() {
+      mobileCloseActions();
+      if (!document.getElementById('v2Modal').classList.contains('hidden')) v2Close();
+      toggleRightSidebar(false);
+      mobileSetActiveNav('home');
+    }
+    function mobileOpenV2(tab='survey') {
+      mobileCloseActions();
+      if (mobileViewportQuery.matches) toggleRightSidebar(false);
+      v2Open(tab);
+    }
+    function mobileOpenPanel(tab) {
+      mobileCloseActions();
+      if (!document.getElementById('v2Modal').classList.contains('hidden')) v2Close();
+      toggleRightSidebar(true);
+      switchTab(tab);
+    }
+    function mobileToggleTextComposer() {
+      const dock = document.getElementById('voiceControlDock');
+      const open = dock.classList.toggle('mobile-text-open');
+      document.getElementById('mobileTextToggle').textContent = open ? '✕' : '⌨️';
+      document.getElementById('mobileTextToggle').setAttribute('aria-label', open ? 'Ẩn nhập chữ' : 'Nhập lời phát biểu');
+      if (open) document.getElementById('manualSpeechInput').focus();
+    }
+    function mobileLayoutAdjust() {
+      if (mobileViewportQuery.matches) {
+        toggleRightSidebar(false);
+        mobileCloseActions();
+      } else {
+        document.getElementById('rightSidebarPanel').classList.remove('mobile-sidebar-open');
+        document.getElementById('mobileActionsSheet').classList.add('hidden');
+        document.getElementById('voiceControlDock').classList.remove('mobile-text-open');
+        if (isRightSidebarHidden) toggleRightSidebar(true);
+      }
+    }
+    mobileViewportQuery.addEventListener('change', mobileLayoutAdjust);
+    window.addEventListener('keydown', e => { if (e.key === 'Escape') {
+      if (!document.getElementById('mobileActionsSheet').classList.contains('hidden')) mobileCloseActions();
+      else if (!document.getElementById('v2Modal').classList.contains('hidden')) v2Close();
+      else if (mobileViewportQuery.matches && !isRightSidebarHidden) mobileGoHome();
+    }});
+
     window.addEventListener('DOMContentLoaded', () => {
       checkUrlInviteParams();
       updatePermissionUI();
@@ -4646,6 +4888,7 @@ ${speakerSummary}
       init3D();
       connectRealtimeRoom(currentRoomChannel);
       v2UpdateFacultySuggestions();
+      if (mobileViewportQuery.matches) mobileLayoutAdjust();
     });
   </script>
 </body>
